@@ -155,8 +155,7 @@ class Robot:
                 return
 
             info = raw.get("response") or {}
-
-            Logger.info(f"QTrobot: {info}")
+            
             # Basic info
             self._robot_type = info.get("robot_type")
             self._robot_version = info.get("robot_version")

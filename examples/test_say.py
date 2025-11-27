@@ -5,7 +5,7 @@ from luxai.robot.core import Robot
 
 def main():
     # Replace with your robot’s IP
-    ROBOT_IP = "192.168.3.152"
+    ROBOT_IP = "192.168.3.173"
 
     # 1) Connect to robot via ZMQ
     robot = Robot.connect_zmq(host=ROBOT_IP, default_timeout=10.0)
@@ -13,8 +13,9 @@ def main():
     print("Connected to robot.")
 
     try:
-        res = robot.say_text("Hello this is blocking.").result()
+        res = robot.speech.say("Hello this is blocking.").result()        
         print("Speech action result:", res)
+        robot.emotion.show("QT/happy").result()
     except KeyboardInterrupt:
         print("Interrupted by user.")
     except Exception as e:
@@ -42,6 +43,6 @@ def main():
     # print("Transport closed.")
 
 if __name__ == "__main__":
-    Logger.set_level("DEBUG")
+    # Logger.set_level("DEBUG")
     main()
 

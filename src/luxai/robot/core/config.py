@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Type
 
 from .. import __version__ as SDK_VERSION
 
-from api_list import QTROBOT_CORE_APIS
+from .api_list import QTROBOT_CORE_APIS
 
 # Service used for system/robot description
 SYSTEM_DESCRIBE_SERVICE = "/robot/system/describe"
