@@ -1,11 +1,11 @@
 # test_say.py
 
 from luxai.magpie.utils import Logger
-from luxai2.robot.core import Robot
+from luxai.robot.core import Robot
 
 def main():
     # Replace with your robot’s IP
-    ROBOT_IP = "192.168.3.173"
+    ROBOT_IP = "192.168.3.152"
 
     # 1) Connect to robot via ZMQ
     robot = Robot.connect_zmq(host=ROBOT_IP, default_timeout=10.0)
@@ -13,7 +13,7 @@ def main():
     print("Connected to robot.")
 
     try:
-        res = robot.say_text("Hello this is blocking.").result(timeout=0.2)
+        res = robot.say_text("Hello this is blocking.").result()
         print("Speech action result:", res)
     except KeyboardInterrupt:
         print("Interrupted by user.")

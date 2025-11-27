@@ -5,11 +5,11 @@ from typing import Any, Dict, Sequence
 
 from luxai.magpie.utils import Logger
 
+
 from .actions import ActionHandle
 from .transport.transport import Transport
 from .transport.zmq_transport import ZmqTransport
 from .config import QTROBOT_CORE_APIS, SDK_VERSION, SYSTEM_DESCRIBE_SERVICE
-
 
 
 class Robot:
@@ -36,6 +36,11 @@ class Robot:
         self._robot_version: str | None = None
         self._supported_apis: set[str] | None = None
         self._deprecated_apis: set[str] | None = None
+        self._supported_services: set[str] | None = None
+        self._deprecated_services: set[str] | None = None
+        self._supported_subscribers: set[str] | None = None
+        self._supported_publishers: set[str] | None = None
+
 
         # Preallocate RPC requesters if the transport supports it
         try:
@@ -142,41 +147,77 @@ class Robot:
                 args={"sdk_version": SDK_VERSION},
                 timeout=5.0,
             )
-            if raw.get("status"):
-                info = raw.get("response") or {}
-
-                self._robot_type = info.get("robot_type")
-                self._robot_version = info.get("robot_version")
-
-                supported = info.get("supported_apis")
-                if supported:
-                    self._supported_apis = set(supported)
-
-                deprecated = info.get("deprecated_apis")
-                if deprecated:
-                    self._deprecated_apis = set(deprecated)
-
-                min_sdk = info.get("min_sdk")
-                max_sdk = info.get("max_sdk")
-                if min_sdk and SDK_VERSION < min_sdk:
-                    Logger.warning(
-                        f"Robot SDK {SDK_VERSION} is older than robot's "
-                        f"minimum supported SDK {min_sdk}."
-                    )
-                if max_sdk and SDK_VERSION > max_sdk:
-                    Logger.warning(
-                        f"Robot SDK {SDK_VERSION} is newer than robot's "
-                        f"maximum tested SDK {max_sdk}."
-                    )
-            else:
+            if not raw.get("status"):                
                 Logger.warning(
-                    "Robot: system describe returned status=False; "
+                    "QTrobot: system describe returned status=False; "
                     "capability information may be incomplete."
                 )
+                return
 
-        except Exception as e:
-            Logger.debug(f"Robot: system describe not available: {e}")
+            info = raw.get("response") or {}
 
+            Logger.info(f"QTrobot: {info}")
+            # Basic info
+            self._robot_type = info.get("robot_type")
+            self._robot_version = info.get("robot_version")
+
+            # ---- Version compatibility (min_sdk / max_sdk) ----
+            min_sdk = info.get("min_sdk")
+            max_sdk = info.get("max_sdk")
+
+            sdk_v = self._parse_version(SDK_VERSION)            
+            if min_sdk:
+                if sdk_v < self._parse_version(min_sdk):
+                    Logger.warning(
+                        f"QTrobot SDK {SDK_VERSION} is older than robot's "
+                        f"minimum supported SDK {min_sdk}."
+                    )
+            if max_sdk:
+                if sdk_v > self._parse_version(max_sdk):
+                    Logger.warning(
+                        f"QTrobot SDK {SDK_VERSION} is newer than robot's "
+                        f"maximum tested SDK {max_sdk}."
+                    )
+
+            # ---- Services → API names mapping ----
+            supported_services = info.get("supported_services")
+            if supported_services:
+                self._supported_services = set(supported_services)
+                self._supported_apis = {
+                    api_name
+                    for api_name, spec in QTROBOT_CORE_APIS.items()
+                    if spec.get("service_name") in self._supported_services
+                }
+
+            deprecated_services = info.get("deprecated_services")
+            if deprecated_services:
+                self._deprecated_services = set(deprecated_services)
+                self._deprecated_apis = {
+                    api_name
+                    for api_name, spec in QTROBOT_CORE_APIS.items()
+                    if spec.get("service_name") in self._deprecated_services
+                }
+
+            # ---- Topics (for future use) ----
+            supported_sub = info.get("supported_subscribers")
+            if supported_sub:
+                self._supported_subscribers = set(supported_sub)
+
+            supported_pub = info.get("supported_publishers")
+            if supported_pub:
+                self._supported_publishers = set(supported_pub)
+
+        except Exception as e:            
+            Logger.debug(f"QTrobot: system describe not available: {e}")
+
+
+    def _parse_version(self, v: str) -> tuple[int, int, int]:
+        parts = v.split(".")
+        parts = (parts + ["0", "0", "0"])[:3]
+        try:
+            return tuple(int(p) for p in parts)  # type: ignore[return-value]
+        except ValueError:
+            return (0, 0, 0)
 
 # ----------------------------------------------------------------------
 # Attach auto-generated APIs

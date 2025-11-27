@@ -70,11 +70,11 @@ package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["luxai2*"]
+include = ["luxai.robot*"]
 
 # [tool.setuptools.package-data]
 # "luxai.robot" = ["assets/*.png"]
 
 # This tells setuptools how to read version dynamically
 [tool.setuptools.dynamic]
-version = {attr = "luxai2.robot.__version__"}
+version = {attr = "luxai.robot.__version__"}
