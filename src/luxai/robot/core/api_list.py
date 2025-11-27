@@ -222,7 +222,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
         "cancel_service_name": None,
         "params": [
             ("parts", list),
-            ("velocity", int),  # 0–255 or implementation-specific
+            ("velocity", int),  # 0-255 or implementation-specific
         ],
         "response_type": type(None),
         "since": "0.1.0",
@@ -290,14 +290,14 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
         "service_name": "/qt_robot/setting/setVolume",
         "cancel_service_name": None,
         "params": [
-            ("volume", int),  # 0–100
+            ("volume", int),  # 0-100
         ],
         "response_type": type(None),
         "since": "0.1.0",
         "deprecated": False,
         "deprecated_message": None,
         "robots": ["qtrobot-v3"],
-        "doc": "Set the master speaker output volume (0–100).",
+        "doc": "Set the master speaker output volume (0-100).",
     },
 
     # =========================
