@@ -50,6 +50,22 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
         "robots": ["qtrobot-v3"],
         "doc": "Stop any ongoing speech or talk behavior.",
     },
+    # qtrobot.speech.config()
+    "speech.config": {
+        "service_name": "/qt_robot/speech/config",
+        "cancel_service_name": None,
+        "params": [
+            ("language", str, None),   # e.g. "en-US", "fr-FR", None = keep current
+            ("pitch", int, 100),       # int16 in ROS
+            ("speed", int, 100),       # int16 in ROS
+        ],
+        "response_type": type(None),   # bool status internally
+        "since": "0.1.0",
+        "deprecated": False,
+        "deprecated_message": None,
+        "robots": ["qtrobot-v3"],
+        "doc": "Configure TTS parameters (language, pitch, speed).",
+    },
 
     # =========================
     # EMOTION  -> qtrobot.emotion.*

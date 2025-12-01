@@ -9,13 +9,20 @@ def main():
 
     # 1) Connect to robot via ZMQ
     robot = Robot.connect_zmq(host=ROBOT_IP, default_timeout=10.0)
-
+    
     print("Connected to robot.")
-
+    
     try:
-        res = robot.speech.say("Hello this is blocking.").result()        
-        print("Speech action result:", res)
-        robot.emotion.show("QT/happy").result()
+        print(robot.speech.config(language="en-US", speed=80).result())
+        robot.speech.say("Hello! this is Cutee robot.")
+
+        print(robot.speech.config(language="en-US", speed=110).result())
+        robot.speech.say("Hello! this is Cutee robot.")
+
+        print(robot.speech.config(language="en-US", speed=70).result())
+        robot.speech.say("Hello! this is Cutee robot.")
+
+
     except KeyboardInterrupt:
         print("Interrupted by user.")
     except Exception as e:

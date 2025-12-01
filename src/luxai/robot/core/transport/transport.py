@@ -14,7 +14,8 @@ class Transport(Protocol):
     This is intentionally aligned with magpie:
     - call_rpc: request/response services
     - publish: one-way commands
-    - subscribe/unsubscribe: streaming data
+    - subscribe/unsubscribe: streaming data (callback-based)
+    - make_reader/make_writer: explicit reader/writer objects for pull-style streaming
     """
 
     def call_rpc(
@@ -43,12 +44,20 @@ class Transport(Protocol):
         """Remove a subscription."""
         ...
 
+    def make_reader(self, topic: str, *, queue_size: int = 1):
+        """Return a transport-specific reader object with .read(timeout) semantics."""
+        ...
+
+    def make_writer(self, topic: str, *, queue_size: int = 1):
+        """Return a transport-specific writer object with .write(message) semantics."""
+        ...
+
     def close(self) -> None:
         """Close underlying resources."""
         ...
+
 
 # Optional interface — only ZMQ implements this.
 class SupportsPreallocation(Protocol):
     def preallocate_requesters(self, service_names: list[str]) -> None:
         ...
-
