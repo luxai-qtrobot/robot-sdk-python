@@ -1,65 +1,29 @@
 # src/luxai/robot/core/client.py
 from __future__ import annotations
 
-from typing import Any, Dict, Sequence
+import threading
 
-from luxai.magpie.utils import Logger
+from typing import Any, Dict, Optional
 
+from luxai.magpie.utils.logger import Logger
+from luxai.magpie.transport.stream_reader import StreamReader
+from luxai.magpie.transport.stream_writer import StreamWriter
 
 from .actions import ActionHandle
-from .transport.transport import Transport
-from .transport.zmq_transport import ZmqTransport
-from .config import QTROBOT_CORE_APIS, SDK_VERSION, SYSTEM_DESCRIBE_SERVICE
+from .transport import Transport, SupportsPreallocation, UnsupportedAPIError, ZmqTransport
+
+from .config import ( QTROBOT_CORE_APIS, SDK_VERSION, SYSTEM_DESCRIBE_SERVICE)
 
 
 class Robot:
     """
-    High-level SDK client for controlling Robot.
+    High-level SDK client for controlling a robot.
 
-    Transport-agnostic: uses a Transport implementation internally (ZMQ today,
-    MQTT/Ably/etc in the future).
+    Transport-agnostic:
+      - Robot never looks at "zmq", "mqtt", endpoints, node_id, etc.
+      - It only stores the 'transports' blocks from SYSTEM_DESCRIPTION and
+        forwards them to the Transport object.
     """
-
-    def __init__(self, transport: Transport, *, default_timeout: float = None) -> None:
-        """
-        Low-level constructor; most users should use 'connect_*' helpers.
-
-        Args:
-            transport: A concrete Transport instance.
-            default_timeout: Default RPC timeout for actions (seconds).
-        """
-        self._transport = transport
-        self._default_timeout = float(default_timeout)
-
-        # Robot capability info (may stay None if handshake fails)
-        self._robot_type: str | None = None
-        self._robot_version: str | None = None
-        self._supported_apis: set[str] | None = None
-        self._deprecated_apis: set[str] | None = None
-        self._supported_services: set[str] | None = None
-        self._deprecated_services: set[str] | None = None
-        self._supported_subscribers: set[str] | None = None
-        self._supported_publishers: set[str] | None = None
-
-
-        # Preallocate RPC requesters if the transport supports it
-        try:
-            from .config import QTROBOT_CORE_APIS
-            service_names = []
-            for spec in QTROBOT_CORE_APIS.values():
-                service_names.append(spec["service_name"])
-                if spec.get("cancel_service_name"):
-                    service_names.append(spec["cancel_service_name"])
-
-            self._transport.preallocate_requesters(service_names)
-
-        except (ImportError, AttributeError):
-            # Transport does NOT implement preallocation — this is OK (MQTT, Ably, etc.)
-            pass
-
-        # ---- Optional handshake with robot ----
-        self._handshake_with_robot()
-
 
     # ------------------------------------------------------------------
     # Connection helpers
@@ -67,53 +31,117 @@ class Robot:
     @classmethod
     def connect_zmq(
         cls,
-        host: str,
         *,
-        data_port: int = 50555,
-        cmd_port: int = 50556,
-        rpc_port: int = 50557,
-        default_timeout: float = None,
+        endpoint: str | None = None,
+        node_id: str | None = None,
+        connect_timeout: float = 5.0,
+        default_rpc_timeout: float | None = None,
     ) -> "Robot":
         """
         Create a Robot client using ZMQ/magpie transport.
 
-        Example:
-            robot = Robot.connect_zmq("192.168.3.10")
+        Either:
+            robot = Robot.connect_zmq(endpoint="tcp://192.168.3.10:50557")
+
+        Or:
+            robot = Robot.connect_zmq(node_id="QTRD000320")
         """
         transport = ZmqTransport(
-            host=host,
-            data_port=data_port,
-            cmd_port=cmd_port,
-            rpc_port=rpc_port,
+            endpoint=endpoint,
+            node_id=node_id,
+            discovery_timeout=connect_timeout,
         )
-        return cls(transport=transport, default_timeout=default_timeout)
+        return cls(transport=transport, default_rpc_timeout=default_rpc_timeout)
+
+    # ------------------------------------------------------------------
+    # Constructor
+    # ------------------------------------------------------------------
+    def __init__(
+        self,
+        transport: Transport,
+        *,
+        default_rpc_timeout: float | None = None,
+    ) -> None:
+        """
+        Low-level constructor; most users should use 'connect_*' helpers.
+
+        Args:
+            transport: A concrete Transport instance.
+            default_rpc_timeout: Default RPC timeout for actions (seconds).
+        """
+        self._transport = transport
+        self._default_rpc_timeout = float(default_rpc_timeout) if default_rpc_timeout is not None else None
+
+        # Robot capability info (may stay None if handshake fails)
+        self._robot_type: str | None = None
+        self._robot_version: str | None = None
+        self._min_sdk: str | None = None
+        self._max_sdk: str | None = None
+
+        # Routing maps built from SYSTEM_DESCRIPTION
+        # service_name -> { "service_name", "transports", "deprecated", "experimental" }
+        self._rpc_routes: Dict[str, Dict[str, Any]] = {}
+        # topic -> { "topic", "direction", "frame_type", "transports", "deprecated", "experimental" }
+        self._stream_routes: Dict[str, Dict[str, Any]] = {}
+        self._stream_resources: list[object] = []
+
+        # requeters are usually shared among multiple apis and need protection
+        self._rpc_locks: Dict[str, threading.Lock] = {}
+
+        # ---- Handshake with robot ----
+        self._handshake_with_robot()
+
+        # ---- Optional preallocation of RPC requesters ----
+        if isinstance(self._transport, SupportsPreallocation):
+            if self._rpc_routes:
+                self._transport.preallocate_requesters(self._rpc_routes)
 
     def close(self) -> None:
         """Close the underlying transport and free resources."""
+        # close stream readers/writers/subscriptions first
+        for streamer in self._stream_resources:
+            try:
+                streamer.close()
+            except Exception:
+                pass            
+        self._stream_resources.clear()        
         self._transport.close()
+        self._rpc_locks.clear()
+
+   
 
     # ------------------------------------------------------------------
-    # Low-level generic calls (escape hatch)
+    # Internal RPC helper used by ActionHandle
     # ------------------------------------------------------------------
-    def call_rpc(
+    def _rpc_call(
         self,
         service_name: str,
-        args: Dict[str, Any] | None = None,
-        timeout: float | None = None,
+        args: Dict[str, Any],
+        timeout: float | None,
     ) -> Dict[str, Any]:
         """
-        Generic RPC escape hatch.
+        Internal helper to perform a single RPC call via the current Transport.
 
-        Normally you should prefer the typed convenience methods, but this
-        can be useful for experimentation or advanced use.
+        Uses _rpc_routes to find the 'transports' block for this service.
+        If there is no route for the given service_name, this API is considered
+        unsupported by the robot.
         """
-        if args is None:
-            args = {}
-        return self._transport.call_rpc(service_name, args, timeout=timeout)
+        route = self._rpc_routes.get(service_name)
+        if route is None:
+            raise UnsupportedAPIError(f"RPC service {service_name!r} is not supported by this robot.")
 
-    def publish(self, topic: str, message: Dict[str, Any]) -> None:
-        """Generic publish escape hatch."""
-        self._transport.publish(topic, message)
+        transports_meta = route.get("transports") or {}
+        if not transports_meta:
+            # The description knows about the service_name but did not provide
+            # any transports; treat as unsupported.
+            raise UnsupportedAPIError(f"RPC service {service_name!r} has no transports configured.")
+
+        lock = self._rpc_locks.setdefault(service_name, threading.Lock())
+        requester = self._transport.get_requester(service_name, transports_meta)
+        rpc_req = {"name": service_name, "args": args}
+        with lock:
+            return requester.call(rpc_req, timeout=timeout)        
+            
 
     # ------------------------------------------------------------------
     # Internal helper for starting actions
@@ -127,89 +155,219 @@ class Robot:
         timeout: float | None = None,
         blocking: bool = False,
     ) -> ActionHandle:
+        """
+        Central place where all auto-generated RPC APIs ultimately end up.
+        """
+        effective_timeout = timeout if timeout is not None else self._default_rpc_timeout
+
         handle = ActionHandle(
-            transport=self._transport,
             service_name=service_name,
             args=args,
-            timeout=timeout or self._default_timeout,
+            timeout=effective_timeout,
             cancel_service_name=cancel_service_name,
+            rpc_call=self._rpc_call,
         )
         if blocking:
             handle.wait()
         return handle
 
+    # ------------------------------------------------------------------
+    # Stream helpers (used by generated stream APIs)
+    # ------------------------------------------------------------------
+    def get_stream_reader(
+        self,
+        topic: str,
+        *,
+        queue_size: int | None = None,
+    ) -> StreamReader:
+        """
+        Create a StreamReader for a given topic via the current Transport.
 
+        This is the entry point that stream-related APIs (e.g.
+        robot.motors.stream.open_joints_reader()) should call.
+
+        Raises:
+            UnsupportedAPIError if the topic is not known to this robot,
+            or if the stream direction does not allow reading.
+        """
+        route = self._stream_routes.get(topic)
+        if route is None:
+            raise UnsupportedAPIError(f"Stream topic {topic!r} is not supported by this robot.")
+
+        direction = route.get("direction")
+        if direction not in ("out", None):
+            # "out" means robot -> SDK; anything else is not readable here
+            raise UnsupportedAPIError(f"Stream topic {topic!r} is not readable (direction={direction!r}).")
+
+        transports_meta = route.get("transports") or {}
+        if not transports_meta:
+            raise UnsupportedAPIError(f"Stream topic {topic!r} has no transports configured.")
+
+        reader =  self._transport.get_stream_reader(
+            topic=topic,
+            transports=transports_meta,
+            queue_size=queue_size,
+        )
+        self._stream_resources.append(reader)
+        return reader
+
+    def get_stream_writer(
+        self,
+        topic: str,
+        *,
+        queue_size: int | None = None,
+    ) -> StreamWriter:
+        """
+        Create a StreamWriter for a given topic via the current Transport.
+
+        This is the entry point that stream-related APIs (e.g.
+        robot.motors.stream.open_head_position_writer()) should call.
+
+        Raises:
+            UnsupportedAPIError if the topic is not known to this robot,
+            or if the stream direction does not allow writing.
+        """
+        route = self._stream_routes.get(topic)
+        if route is None:
+            raise UnsupportedAPIError(f"Stream topic {topic!r} is not supported by this robot.")
+
+        direction = route.get("direction")
+        if direction not in ("in", None):
+            # "in" means SDK -> robot; anything else is not writable here
+            raise UnsupportedAPIError(f"Stream topic {topic!r} is not writable (direction={direction!r}).")
+
+        transports_meta = route.get("transports") or {}
+        if not transports_meta:
+            raise UnsupportedAPIError(f"Stream topic {topic!r} has no transports configured.")
+
+        writer = self._transport.get_stream_writer(
+            topic=topic,
+            transports=transports_meta,
+            queue_size=queue_size,
+        )
+        self._stream_resources.append(writer)
+        return writer
+
+    # ------------------------------------------------------------------
+    # Handshake: SYSTEM_DESCRIBE_SERVICE + route building
+    # ------------------------------------------------------------------
     def _handshake_with_robot(self) -> None:
-        """Internal capability negotiation with robot."""
+        """
+        Fetch SYSTEM_DESCRIPTION from the robot and build:
+          - rpc routes (services)
+          - stream routes (topics)
+          - compatibility warnings
+        """
         try:
-            raw = self._transport.call_rpc(
-                SYSTEM_DESCRIBE_SERVICE,
-                args={"sdk_version": SDK_VERSION},
-                timeout=5.0,
-            )
-            if not raw.get("status"):                
+            # raw = self._rpc_call(
+            #     SYSTEM_DESCRIBE_SERVICE,
+            #     args={"sdk_version": SDK_VERSION},
+            #     timeout=5.0,
+            # )
+            requester = self._transport.get_requester(SYSTEM_DESCRIBE_SERVICE, None)
+            rpc_req = {"name": SYSTEM_DESCRIBE_SERVICE, "args": {"sdk_version": SDK_VERSION}}            
+            raw = requester.call(rpc_req, timeout=5.0)        
+
+        except Exception as e:
+            Logger.debug(f"Robot: system describe RPC failed: {e}")
+            return
+
+        if not isinstance(raw, dict) or not raw.get("status"):
+            Logger.warning("Robot: system describe returned invalid payload or status=False.")
+            return
+
+        desc: Dict[str, Any] = raw.get("response") or {}
+        self._apply_system_description(desc)
+
+
+    def _apply_system_description(self, desc: Dict[str, Any]) -> None:
+        """
+        Apply SYSTEM_DESCRIPTION payload from the robot.
+        Expected format:
+            {
+                "robot_type": "qtrobot-v3",
+                "robot_version": "1.2.3",
+                "min_sdk": "0.5.0",
+                "max_sdk": "0.9.0",
+
+                "rpc": {
+                    "/qt_robot/speech/say": {
+                        "transports": { "zmq": { ... } },
+                        "deprecated": False,
+                        "experimental": False,
+                    },
+                    ...
+                },
+
+                "stream": {
+                    "/qt_robot/joints/state": {
+                        "direction": "out",
+                        "frame_type": "Frame",
+                        "transports": { "zmq": { ... } },
+                        "deprecated": False,
+                        "experimental": False,
+                    },
+                    ...
+                },
+            }
+        """
+        # --- identity & compatibility ---
+        self._robot_type = desc.get("robot_type")
+        self._robot_version = desc.get("robot_version")
+        self._min_sdk = desc.get("min_sdk")
+        self._max_sdk = desc.get("max_sdk")
+
+        sdk_v = self._parse_version(SDK_VERSION)
+        if self._min_sdk:
+            if sdk_v < self._parse_version(self._min_sdk):
                 Logger.warning(
-                    "QTrobot: system describe returned status=False; "
-                    "capability information may be incomplete."
+                    f"Robot SDK {SDK_VERSION} is older than robot's "
+                    f"minimum supported SDK {self._min_sdk}."
                 )
-                return
+        if self._max_sdk:
+            if sdk_v > self._parse_version(self._max_sdk):
+                Logger.warning(
+                    f"Robot SDK {SDK_VERSION} is newer than robot's "
+                    f"maximum tested SDK {self._max_sdk}."
+                )
 
-            info = raw.get("response") or {}
-            
-            # Basic info
-            self._robot_type = info.get("robot_type")
-            self._robot_version = info.get("robot_version")
+        # --- RPC routes ---
+        self._rpc_routes.clear()
+        rpc_services = desc.get("rpc", {})
+        for service_name, meta in rpc_services.items():
+            transports_meta = meta.get("transports") or {}
 
-            # ---- Version compatibility (min_sdk / max_sdk) ----
-            min_sdk = info.get("min_sdk")
-            max_sdk = info.get("max_sdk")
+            self._rpc_routes[service_name] = {
+                "service_name": service_name,
+                "transports": transports_meta,
+                "deprecated": bool(meta.get("deprecated", False)),
+                "experimental": bool(meta.get("experimental", False)),
+            }
 
-            sdk_v = self._parse_version(SDK_VERSION)            
-            if min_sdk:
-                if sdk_v < self._parse_version(min_sdk):
-                    Logger.warning(
-                        f"QTrobot SDK {SDK_VERSION} is older than robot's "
-                        f"minimum supported SDK {min_sdk}."
-                    )
-            if max_sdk:
-                if sdk_v > self._parse_version(max_sdk):
-                    Logger.warning(
-                        f"QTrobot SDK {SDK_VERSION} is newer than robot's "
-                        f"maximum tested SDK {max_sdk}."
-                    )
+        # --- Stream routes ---
+        self._stream_routes.clear()
+        streams = desc.get("stream", {})
+        for topic, meta in streams.items():
+            transports_meta = meta.get("transports") or {}
 
-            # ---- Services → API names mapping ----
-            supported_services = info.get("supported_services")
-            if supported_services:
-                self._supported_services = set(supported_services)
-                self._supported_apis = {
-                    api_name
-                    for api_name, spec in QTROBOT_CORE_APIS.items()
-                    if spec.get("service_name") in self._supported_services
-                }
+            self._stream_routes[topic] = {
+                "topic": topic,
+                "direction": meta.get("direction"),
+                "frame_type": meta.get("frame_type"),
+                "transports": transports_meta,
+                "deprecated": bool(meta.get("deprecated", False)),
+                "experimental": bool(meta.get("experimental", False)),
+            }
 
-            deprecated_services = info.get("deprecated_services")
-            if deprecated_services:
-                self._deprecated_services = set(deprecated_services)
-                self._deprecated_apis = {
-                    api_name
-                    for api_name, spec in QTROBOT_CORE_APIS.items()
-                    if spec.get("service_name") in self._deprecated_services
-                }
+        Logger.debug(
+            f"Robot: system description applied. "
+            f"{len(self._rpc_routes)} RPC services, "
+            f"{len(self._stream_routes)} streams."
+        )
 
-            # ---- Topics (for future use) ----
-            supported_sub = info.get("supported_subscribers")
-            if supported_sub:
-                self._supported_subscribers = set(supported_sub)
-
-            supported_pub = info.get("supported_publishers")
-            if supported_pub:
-                self._supported_publishers = set(supported_pub)
-
-        except Exception as e:            
-            Logger.debug(f"QTrobot: system describe not available: {e}")
-
-
+    # ------------------------------------------------------------------
+    # Version parser (same as before)
+    # ------------------------------------------------------------------
     def _parse_version(self, v: str) -> tuple[int, int, int]:
         parts = v.split(".")
         parts = (parts + ["0", "0", "0"])[:3]
@@ -218,10 +376,10 @@ class Robot:
         except ValueError:
             return (0, 0, 0)
 
+
 # ----------------------------------------------------------------------
 # Attach auto-generated APIs
 # ----------------------------------------------------------------------
-from .config import QTROBOT_CORE_APIS
-from .api_factory import attach_core_apis
+from .api_factory import attach_core_apis  # noqa: E402
 
 attach_core_apis(Robot, QTROBOT_CORE_APIS)

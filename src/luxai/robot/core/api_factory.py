@@ -2,39 +2,116 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Dict
+import threading
+from typing import Any, Callable, Dict, Set, TYPE_CHECKING
 
 from luxai.magpie.utils.logger import Logger
-from .actions import ActionHandle, ActionError
+from luxai.magpie.transport.stream_reader import StreamReader
+from luxai.magpie.transport.stream_writer import StreamWriter
+
+from .actions import ActionHandle  # only for type hints / docstrings
+
+if TYPE_CHECKING:
+    from .client import Robot  # for type hints only
 
 
-def create_api_method(api_name: str, method_name: str, spec: Dict[str, Any]):
+# ---------------------------------------------------------------------------
+# Internal helper for stream callbacks
+# ---------------------------------------------------------------------------
+
+
+class _StreamSubscription:
     """
-    Create a Robot instance method from an IDL spec.
+    Handle for a streaming callback subscription.
 
-    api_name:
-        Full API name from IDL, e.g. "speech.say".
-        This is what we use for compatibility checks (supported_apis, deprecated_apis).
+    Internally:
+      - holds a StreamReader
+      - runs a background thread that repeatedly calls reader.read()
+        and invokes the user callback with each frame.
 
-    method_name:
-        The concrete Python method name attached to Robot, e.g. "say".
+    Users can call .stop() to terminate the thread.
+    """
 
-    Spec keys:
-        - service_name: str
+    def __init__(self, reader: StreamReader, callback: Callable[[Any], None]) -> None:
+        self._reader = reader
+        self._callback = callback
+        self._stop_event = threading.Event()
+        self._thread = threading.Thread(
+            target=self._run_loop,
+            name="RobotStreamCallback",
+            daemon=True,
+        )
+        self._thread.start()
+
+    @property
+    def reader(self) -> StreamReader:
+        """Access to the underlying StreamReader (if needed)."""
+        return self._reader
+
+    def _run_loop(self) -> None:
+        while not self._stop_event.is_set():
+            try:
+                frame = self._reader.read()
+                if frame is None:
+                    continue
+                data, _ = frame         
+                self._callback(data)
+            except Exception as e:  # pragma: no cover - defensive logging
+                Logger.warning(f"Robot stream callback raised: {e}")
+        self._reader.close()
+
+    def stop(self) -> None:
+        """Stop the callback thread."""        
+        self._stop_event.set()
+        # We don't force-join; daemon=True means it won't block process exit.
+
+
+# ---------------------------------------------------------------------------
+# RPC API generation
+# ---------------------------------------------------------------------------
+
+
+def _split_namespace(api_key: str) -> tuple[str | None, str]:
+    """
+    Split an IDL key like "speech.say" into:
+        ("speech", "say")
+
+    If there is no '.', returns (None, api_key).
+    """
+    if "." in api_key:
+        ns, leaf = api_key.split(".", 1)
+        return ns, leaf
+    return None, api_key
+
+
+def create_rpc_method(api_key: str, spec: Dict[str, Any]):
+    """
+    Create a Robot instance method for an RPC API defined in the IDL.
+
+    api_key example: "speech.say"
+
+    spec keys (simplified):
+        - service_name: str  (e.g. "/qt_robot/speech/say")
         - cancel_service_name: Optional[str]
         - params: List[(name, type) or (name, type, default)]
+        - response_type: type
         - since: Optional[str]
         - deprecated: bool
         - deprecated_message: Optional[str]
         - robots: Optional[List[str]]
         - doc: Optional[str]
     """
-
     service_name: str = spec["service_name"]
     cancel_service_name: str | None = spec.get("cancel_service_name")
-    api_robots = spec.get("robots")  # e.g. ["qtrobot-v1", "qtrobot-sim"]
-    deprecated_flag: bool = bool(spec.get("deprecated", False))
-    deprecated_message: str | None = spec.get("deprecated_message")
+
+    ns, leaf = _split_namespace(api_key)
+    # Under-the-hood Robot attribute name, e.g. "speech_say"
+    if ns:
+        method_attr_name = f"{ns}_{leaf}"
+        qualname = f"Robot.{ns}.{leaf}"
+    else:
+        method_attr_name = leaf
+        qualname = f"Robot.{leaf}"
 
     # Build signature: (self, <params...>, *, blocking=True)
     params = [
@@ -59,7 +136,6 @@ def create_api_method(api_name: str, method_name: str, spec: Dict[str, Any]):
             )
         )
 
-    # Blocking by default; user can override with blocking=False
     params.append(
         inspect.Parameter(
             "blocking",
@@ -78,36 +154,6 @@ def create_api_method(api_name: str, method_name: str, spec: Dict[str, Any]):
         self = bound.arguments["self"]
         blocking: bool = bound.arguments["blocking"]
 
-        # ---- Compatibility check: robot capabilities + IDL robots ----
-        robot_type = getattr(self, "_robot_type", None)
-        supported_apis = getattr(self, "_supported_apis", None)
-        deprecated_apis = getattr(self, "_deprecated_apis", None)
-
-        # 1) If robot reported supported_apis and this API is not in it → unsupported
-        #    We use api_name here (e.g. "speech.say"), not method_name.
-        if supported_apis is not None and api_name not in supported_apis:
-            raise ActionError(
-                f"API '{api_name}' is not supported by this robot "
-                f"(type={robot_type!r})."
-            )
-
-        # 2) If IDL says this API is limited to certain robot types → enforce
-        if api_robots and robot_type and robot_type not in api_robots:
-            raise ActionError(
-                f"API '{api_name}' is not supported for robot type {robot_type!r}."
-            )
-
-        # 3) Deprecation warnings (static + robot-reported)
-        is_deprecated = deprecated_flag or (
-            deprecated_apis is not None and api_name in deprecated_apis
-        )
-        if is_deprecated:
-            msg = (
-                deprecated_message
-                or f"API '{api_name}' is deprecated and may be removed in future versions."
-            )
-            Logger.warning(f"Robot: {msg}")
-
         # Build RPC args: skip self and blocking; skip None values
         rpc_args: Dict[str, Any] = {}
         for name, value in bound.arguments.items():
@@ -117,7 +163,7 @@ def create_api_method(api_name: str, method_name: str, spec: Dict[str, Any]):
                 continue
             rpc_args[name] = value
 
-        # Delegate to Robot._start_action
+        # Delegate to Robot._start_action (which uses ActionHandle + _rpc_call)
         return self._start_action(
             service_name=service_name,
             args=rpc_args,
@@ -126,53 +172,253 @@ def create_api_method(api_name: str, method_name: str, spec: Dict[str, Any]):
             blocking=blocking,
         )
 
-    api_func.__name__ = method_name
-    api_func.__qualname__ = f"Robot.{method_name}"
+    api_func.__name__ = method_attr_name
+    api_func.__qualname__ = qualname
+
+    doc = spec.get("doc") or f"Auto-generated RPC API for service {service_name}."
+    api_func.__doc__ = doc
     api_func.__signature__ = signature
 
-    doc = spec.get("doc") or f"Auto-generated API for service {service_name}."
-    api_func.__doc__ = doc
-
-    return api_func
+    return method_attr_name, api_func
 
 
-def attach_core_apis(Robot_cls, api_specs: Dict[str, Dict[str, Any]]) -> None:
+# ---------------------------------------------------------------------------
+# Stream API generation
+# ---------------------------------------------------------------------------
+
+
+def create_stream_methods(api_key: str, spec: Dict[str, Any]):
     """
-    Attach methods to Robot_cls from the given specs.
+    Create Robot instance methods for a stream API defined in the IDL.
 
-    IDL keys are expected to be "namespace.method", e.g. "speech.say".
-    We:
-      - create a property 'speech' on the class that simply returns self
-      - create a method 'say' on the class
+    api_key example: "motors.joints_state"
 
-    So users can call both:
-      robot.say(...)
-      robot.speech.say(...)
+    spec keys (simplified):
+        - direction: "out" (robot -> SDK) or "in" (SDK -> robot)
+        - frame_type: Optional[str]
+        - topic: str (e.g. "/qt_robot/joints/state")
+        - deprecated: bool
+        - experimental: bool
+        - doc: Optional[str]
+
+    Generated methods are attached to Robot with internal names like:
+        - "motors_stream_open_joints_state_reader"
+        - "motors_stream_on_joints_state"
+        - "motors_stream_open_head_position_writer"
+
+    They are exposed to users via namespace views:
+        robot.motors.stream.open_joints_state_reader(...)
+        robot.motors.stream.on_joints_state(...)
+    """
+    topic: str = spec["topic"]
+    direction: str | None = spec.get("direction")
+    doc: str | None = spec.get("doc")
+
+    ns, leaf = _split_namespace(api_key)
+    if ns is None:
+        # For streams we expect a namespace like "motors.joints_state".
+        ns = "root"  # fallback, but practically you won't use this
+    base = leaf  # e.g. "joints_state"
+
+    methods: Dict[str, Callable[..., Any]] = {}
+
+    # ---- Outgoing from robot -> SDK: reader + callback ----
+    if direction in ("out", None):
+        # 1) open_<base>_reader(queue_size=None) -> StreamReader
+        reader_attr_name = f"{ns}_stream_open_{base}_reader"
+
+        def open_reader(self, queue_size: int | None = None) -> StreamReader:
+            """
+            Open a StreamReader for this stream.
+
+            Exposed as:
+                robot.<ns>.stream.open_<base>_reader(queue_size=None)
+            """
+            return self.get_stream_reader(topic=topic, queue_size=queue_size)
+
+        open_reader.__name__ = reader_attr_name
+        open_reader.__qualname__ = f"Robot.{ns}.stream.open_{base}_reader"
+        open_reader.__doc__ = doc or f"Open a reader for stream topic {topic!r}."
+        methods[reader_attr_name] = open_reader
+
+        # 2) on_<base>(callback, queue_size=None) -> _StreamSubscription
+        on_attr_name = f"{ns}_stream_on_{base}"
+
+        def on_stream(
+            self,
+            callback: Callable[[Any], None],
+            queue_size: int | None = None,
+        ) -> _StreamSubscription:
+            """
+            Subscribe to this stream with a callback.
+
+            Exposed as:
+                robot.<ns>.stream.on_<base>(callback, queue_size=None)
+
+            Returns a _StreamSubscription handle; call .stop() to terminate.
+            """
+            reader = self.get_stream_reader(topic=topic, queue_size=queue_size)
+            return _StreamSubscription(reader, callback)
+
+        on_stream.__name__ = on_attr_name
+        on_stream.__qualname__ = f"Robot.{ns}.stream.on_{base}"
+        on_stream.__doc__ = (
+            doc or f"Attach a callback to stream topic {topic!r}."
+        )
+        methods[on_attr_name] = on_stream
+
+    # ---- Incoming to robot (SDK -> robot): writer ----
+    if direction in ("in", None):
+        writer_attr_name = f"{ns}_stream_open_{base}_writer"
+
+        def open_writer(self, queue_size: int | None = None) -> StreamWriter:
+            """
+            Open a StreamWriter for this stream.
+
+            Exposed as:
+                robot.<ns>.stream.open_<base>_writer(queue_size=None)
+            """
+            return self.get_stream_writer(topic=topic, queue_size=queue_size)
+
+        open_writer.__name__ = writer_attr_name
+        open_writer.__qualname__ = f"Robot.{ns}.stream.open_{base}_writer"
+        open_writer.__doc__ = doc or f"Open a writer for stream topic {topic!r}."
+        methods[writer_attr_name] = open_writer
+
+    return methods
+
+
+# ---------------------------------------------------------------------------
+# Namespace views (robot.speech, robot.motors.stream, etc.)
+# ---------------------------------------------------------------------------
+
+
+class _NamespaceView:
+    """
+    View object for a top-level namespace, e.g. robot.speech, robot.motors.
+
+    It forwards attribute access to Robot methods named "<ns>_<attr>".
+
+    Example:
+        - api_key "speech.say" -> Robot.speech_say(...)
+        - user calls robot.speech.say(...)
+          -> _NamespaceView.__getattr__("say")
+          -> getattr(robot, "speech_say")
     """
 
-    created_namespaces: set[str] = set()
+    def __init__(self, robot: "Robot", prefix: str) -> None:
+        self._robot = robot
+        self._prefix = prefix
 
-    for api_name, spec in api_specs.items():
-        # Parse "speech.say" → ns_name = "speech", method_name = "say"
-        try:
-            ns_name, method_name = api_name.split(".", 1)
-        except ValueError:
-            raise ValueError(
-                f"Invalid API name '{api_name}': expected 'namespace.method' format"
-            )
+    def __getattr__(self, name: str) -> Any:
+        attr_name = f"{self._prefix}_{name}"
+        return getattr(self._robot, attr_name)
 
-        # Create namespace property only once per namespace name
-        if ns_name not in created_namespaces:
-            if not hasattr(Robot_cls, ns_name):
-                # Simple property that just returns self.
-                # This keeps the object flat but gives a nicer dot-namespace:
-                #   robot.speech.say(...)
-                def _ns(self, _ns_name=ns_name):
-                    return self
+    @property
+    def stream(self) -> "_StreamNamespaceView":
+        """
+        Nested namespace for streams under this group, e.g. robot.motors.stream.
+        """
+        return _StreamNamespaceView(self._robot, self._prefix)
 
-                setattr(Robot_cls, ns_name, property(_ns))
-            created_namespaces.add(ns_name)
 
-        # Create and attach the actual bound method (e.g. Robot.say)
-        func = create_api_method(api_name, method_name, spec)
-        setattr(Robot_cls, method_name, func)
+class _StreamNamespaceView:
+    """
+    View object for stream APIs under a namespace, e.g. robot.motors.stream.
+
+    It forwards attribute access to Robot methods named
+    "<ns>_stream_<attr>".
+
+    Example:
+        - IDL "motors.joints_state" (direction="out")
+        - internal Robot method: "motors_stream_open_joints_state_reader"
+        - user calls: robot.motors.stream.open_joints_state_reader(...)
+          -> _StreamNamespaceView.__getattr__("open_joints_state_reader")
+          -> getattr(robot, "motors_stream_open_joints_state_reader")
+    """
+
+    def __init__(self, robot: "Robot", prefix: str) -> None:
+        self._robot = robot
+        self._prefix = prefix
+
+    def __getattr__(self, name: str) -> Any:
+        attr_name = f"{self._prefix}_stream_{name}"
+        return getattr(self._robot, attr_name)
+
+
+def _attach_namespace_properties(Robot_cls: type["Robot"], namespaces: Set[str]) -> None:
+    """
+    Attach properties like 'speech', 'motors', 'audio' to Robot:
+
+        @property
+        def speech(self) -> _NamespaceView:
+            return _NamespaceView(self, "speech")
+
+    Also used for stream APIs via .stream on the view.
+    """
+
+    def make_prop(ns: str):
+        def prop(self: "Robot") -> _NamespaceView:
+            return _NamespaceView(self, ns)
+
+        prop.__doc__ = f"Namespace view for '{ns}' APIs."
+        return property(prop)
+
+    for ns in namespaces:
+        # Avoid overriding existing attributes
+        if hasattr(Robot_cls, ns):
+            continue
+        setattr(Robot_cls, ns, make_prop(ns))
+
+
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
+
+
+def attach_core_apis(Robot_cls: type["Robot"], api_specs: Dict[str, Dict[str, Any]]) -> None:
+    """
+    Attach all RPC + stream APIs (and namespace views) to the Robot class.
+
+    api_specs structure:
+
+        {
+            "rpc": {
+                "speech.say": { ... },
+                "gesture.play": { ... },
+                ...
+            },
+            "stream": {
+                "motors.joints_state": { ... },
+                "motors.head_position": { ... },
+                ...
+            },
+        }
+    """
+    rpc_specs: Dict[str, Dict[str, Any]] = api_specs.get("rpc", {})
+    stream_specs: Dict[str, Dict[str, Any]] = api_specs.get("stream", {})
+
+    namespaces: Set[str] = set()
+
+    # ---- Attach RPC methods ----
+    for api_key, spec in rpc_specs.items():
+        ns, _ = _split_namespace(api_key)
+        if ns:
+            namespaces.add(ns)
+
+        attr_name, func = create_rpc_method(api_key, spec)
+        setattr(Robot_cls, attr_name, func)
+
+    # ---- Attach stream methods ----
+    for api_key, spec in stream_specs.items():
+        ns, _ = _split_namespace(api_key)
+        if ns:
+            namespaces.add(ns)
+
+        methods = create_stream_methods(api_key, spec)
+        for attr_name, func in methods.items():
+            setattr(Robot_cls, attr_name, func)
+
+    # ---- Attach namespace properties on Robot (speech, motors, audio, ...) ----
+    if namespaces:
+        _attach_namespace_properties(Robot_cls, namespaces)

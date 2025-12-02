@@ -1,0 +1,252 @@
+
+1. Robot-side architecture
+    1 PUB socket per “class” of data is recommended
+    Light streams (joints, motors state, voice activity, audio) can stay on 50555.
+    Video stream should be moved to its own PUB port (defined in robot description) to avoid HOL blocking.
+    Robot exposes a single RPC port (e.g., 50557)
+    Used for handshake and all RPC actions.
+
+2. regaridng robot description (which we just concluded)
+3. Transport layer (robot SDK)
+    class Transport(Protocol):
+        def get_requester(self, service_name: str, **opts) -> RpcRequester: ...
+        def get_stream_reader(self, topic: str, **opts) -> StreamReader: ...
+        def get_stream_writer(self, topic: str, **opts) -> StreamWriter: ...
+        def close(self) -> None: ...
+
+4. Stream API in SDK (user-facing)
+  reader = robot.motors.stream.open_joints_reader(queue_size=10)
+  state = reader.read()
+
+  writer = robot.motors.stream.open_head_position_writer() 
+  writer.write({"data": [30, 0]})
+
+5. Callback support
+  sub = robot.motors.stream.on_joints_state(callback)
+  # internal: open_reader + worker thread → callback(msg)
+6. Reader semantics
+7. Writer semantics
+
+
+
+
+ROBOT_IDL = {
+    "rpc": {
+        "speech.say": {
+            "service_name": "/qt_robot/speech/say",
+            "cancel_service_name": "/qt_robot/speech/stop",
+            "params": [("message", str)],
+            "since": "0.5.0",
+            "deprecated": False,
+            "experimental": False,
+            "doc": "Say a text using TTS.",
+            "robots": ["qtrobot-v3"],
+        },
+
+        "audio.play_stream": {
+            "service_name": "/qt_robot/audio/playStream",
+            "params": [("filename", str)],
+            "deprecated": False,
+            "experimental": True,
+            "doc": "Experimental streamed audio playback.",
+        },
+
+        # ...
+    },
+
+    "streams": {
+        "motors.joints_state": {
+            "direction": "out",                # robot -> SDK
+            "frame_type": "JointsStateFrame",
+            "topic": "/qt_robot/joints/state",
+            "deprecated": False,
+            "experimental": False,
+            "doc": "Robot joint states (pos/vel/effort).",
+            "transports": {
+                "zmq": {
+                    "default_delivery": "reliable",
+                    "default_queue_size": 10,
+                },
+            },
+        },
+
+        "motors.head_command": {
+            "direction": "in",                 # SDK -> robot
+            "frame_type": "JointsCommandFrame",
+            "topic": "/qt_robot/head_position/command",
+            "deprecated": False,
+            "experimental": False,
+            "doc": "Command head joint positions.",
+            "transports": {
+                "zmq": {
+                    "default_queue_size": 10,
+                },
+            },
+        },
+
+        "audio.mic.channel": {
+            "direction": "out",
+            "frame_type": "AudioFrameFlac",
+            "topic_template": "/qt_respeaker_app/channel{channel}",
+            "deprecated": False,
+            "experimental": False,
+            "doc": "Microphone audio channels 0..N.",
+            "transports": {
+                "zmq": {
+                    "default_delivery": "latest",
+                    "default_queue_size": 20,
+                },
+            },
+        },
+
+        "vision.front_video": {
+            "direction": "out",
+            "frame_type": "ImageFrameJpeg",
+            "topic": "/qt_robot/video/front",
+            "deprecated": False,
+            "experimental": True,
+            "doc": "Front camera video stream.",
+            "transports": {
+                "zmq": {
+                    "default_delivery": "latest",
+                    "default_queue_size": 1,
+                },
+            },
+        },
+    },
+}
+
+
+SYSTEM_DESCRIPTION = {
+    "robot_type": "qtrobot-v3",
+    "robot_version": "1.2.3",
+
+    "min_sdk": "0.5.0",
+    "max_sdk": "0.9.0",
+
+    # ---- RPC services actually available on this robot ----
+    "rpc": {
+        "/qt_robot/speech/say": {
+            "deprecated": False,
+            "experimental": False,
+            "transports": {
+                "zmq": {
+                    "endpoint": "tcp://*:50557",   # same host as robot RPC
+                },
+            },
+        },
+        "/qt_robot/speech/stop": {
+            "deprecated": False,
+            "experimental": False,
+            "transports": {
+                "zmq": {
+                    "endpoint": "tcp://*:50557",
+                },
+            },
+        },
+        "/qt_robot/audio/playStream": {
+            "deprecated": False,
+            "experimental": True,
+            "transports": {
+                "zmq": {
+                    "endpoint": "tcp://qtpc:50567",  # served from qtpc
+                },
+            },
+        },
+        # ...
+    },
+
+    # ---- Streams (publish/subscribe topics) ----
+    "stream": {
+        "/qt_robot/joints/state": {
+            "direction": "out",
+            "frame_type": "JointsState",
+            "deprecated": False,
+            "experimental": False,
+            "transports": {
+                "zmq": {
+                    "endpoint": "tcp://*:50555",       # same host as robot RPC
+                    "delivery": "reliable",
+                    "queue_size": 10,
+                },
+            },
+        },
+
+        "/qt_robot/head_position/command": {
+            "direction": "in",
+            "frame_type": "JointsCommand",
+            "deprecated": False,
+            "experimental": False,
+            "transports": {
+                "zmq": {
+                    "endpoint": "tcp://*:50556",
+                    "queue_size": 10,
+                },
+            },
+        },
+
+        "/qt_respeaker_app/channel0": {
+            "direction": "out",
+            "frame_type": "AudioFrameFlac",
+            "deprecated": False,
+            "experimental": False,
+            "transports": {
+                "zmq": {
+                    "endpoint": "tcp://*:50555",
+                    "delivery": "latest",
+                    "queue_size": 20,
+                },
+            },
+        },
+
+        "/qt_robot/video/front": {
+            "direction": "out",
+            "frame_type": "ImageFrameJpeg",
+            "deprecated": False,
+            "experimental": True,
+            "transports": {
+                "zmq": {
+                    "endpoint": "tcp://qtpc:50560",    # on qtpc
+                    "delivery": "latest",
+                    "queue_size": 1,
+                },
+            },
+        },
+    },
+}
+
+
+# using node id
+
+"stream": {
+    "/qt_robot/joints/state": {
+        "direction": "out",
+        "frame_type": "JointsState",
+        "deprecated": False,
+        "experimental": False,
+        "transports": {
+            "zmq": {
+                "endpoint": "tcp://*:50555",  # same node as main robot
+                # node_id omitted → same as robot_host
+                "delivery": "reliable",
+                "queue_size": 10,
+            },
+        },
+    },
+
+    "/qt_robot/video/front": {
+        "direction": "out",
+        "frame_type": "ImageFrameJpeg",
+        "deprecated": False,
+        "experimental": True,
+        "transports": {
+            "zmq": {
+                "endpoint": "tcp://*:50560",  # port on qtpc
+                "node_id": "qtpc-main",      # resolve via discovery
+                "delivery": "latest",
+                "queue_size": 1,
+            },
+        },
+    },
+}
+

@@ -25,15 +25,15 @@ class ActionHandle:
     """
 
     def __init__(
-        self,
-        transport: Transport,
+        self,        
         service_name: str,
         args: Dict[str, Any],
         *,
         timeout: float | None = None,
         cancel_service_name: str | None = None,
+        rpc_call: Any
     ) -> None:
-        self._transport = transport
+        self._call_rpc = rpc_call
         self._service_name = service_name
         self._args = args
         self._timeout = timeout
@@ -53,7 +53,7 @@ class ActionHandle:
     # ---------- internal worker ----------
     def _run(self) -> None:
         try:
-            raw = self._transport.call_rpc(
+            raw = self._call_rpc(
                 self._service_name,
                 self._args,
                 timeout=self._timeout,
@@ -132,7 +132,7 @@ class ActionHandle:
             return
 
         try:
-            self._transport.call_rpc(
+            self._call_rpc(
                 self._cancel_service_name,
                 args={},
                 timeout=timeout,
