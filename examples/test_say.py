@@ -17,7 +17,11 @@ def main():
     joint_reader = robot.motors.stream.open_joints_state_reader()
     data, _ = joint_reader.read()
     Logger.info(data)
-    
+
+    mic = robot.microphone.stream.open_channel0_reader()    
+    data, _ = mic.read()
+    f = Frame.from_dict(data) # -> AudioFrameFlac. Or explicilty use AudioFrameFlac.from_dict()
+    Logger.info(f)
 
     should_stop = False
     try:
@@ -35,6 +39,6 @@ def main():
     # print("Transport closed.")
 
 if __name__ == "__main__":
-    Logger.set_level("INFO")
+    # Logger.set_level("DEBUG")
     main()
 
