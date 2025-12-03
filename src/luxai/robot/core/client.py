@@ -36,7 +36,7 @@ class Robot:
         node_id: str | None = None,
         connect_timeout: float = 5.0,
         default_rpc_timeout: float | None = None,
-    ) -> "Robot":
+    ) -> Robot:
         """
         Create a Robot client using ZMQ/magpie transport.
 
@@ -108,12 +108,93 @@ class Robot:
         self._transport.close()
         self._rpc_locks.clear()
 
-   
+
+    # ------------------------------------------------------------------
+    # Stream helpers (used by generated stream APIs)
+    # ------------------------------------------------------------------
+    def get_stream_reader(
+        self,
+        topic: str,
+        *,
+        queue_size: int | None = None,
+    ) -> StreamReader:
+        """
+        Create a StreamReader for a given topic via the current Transport.
+
+        This is the entry point that stream-related APIs (e.g.
+        robot.motors.stream.open_joints_reader()) should call.
+
+        Raises:
+            UnsupportedAPIError if the topic is not known to this robot,
+            or if the stream direction does not allow reading.
+        """
+        route = self._stream_routes.get(topic)
+        if route is None:
+            raise UnsupportedAPIError(f"Stream topic {topic!r} is not supported by this robot.")
+
+        direction = route.get("direction")
+        if direction not in ("out", None):
+            # "out" means robot -> SDK; anything else is not readable here
+            raise UnsupportedAPIError(f"Stream topic {topic!r} is not readable (direction={direction!r}).")
+
+        transports_meta = route.get("transports") or {}
+        if not transports_meta:
+            raise UnsupportedAPIError(f"Stream topic {topic!r} has no transports configured.")
+
+        reader =  self._transport.get_stream_reader(
+            topic=topic,
+            transports=transports_meta,
+            queue_size=queue_size,
+        )
+        self._stream_resources.append(reader)
+        return reader
+
+
+    def get_stream_writer(
+        self,
+        topic: str,
+        *,
+        queue_size: int | None = None,
+    ) -> StreamWriter:
+        """
+        Create a StreamWriter for a given topic via the current Transport.
+
+        This is the entry point that stream-related APIs (e.g.
+        robot.motors.stream.open_head_position_writer()) should call.
+
+        Raises:
+            UnsupportedAPIError if the topic is not known to this robot,
+            or if the stream direction does not allow writing.
+        """
+        route = self._stream_routes.get(topic)
+        if route is None:
+            raise UnsupportedAPIError(f"Stream topic {topic!r} is not supported by this robot.")
+
+        direction = route.get("direction")
+        if direction not in ("in", None):
+            # "in" means SDK -> robot; anything else is not writable here
+            raise UnsupportedAPIError(f"Stream topic {topic!r} is not writable (direction={direction!r}).")
+
+        transports_meta = route.get("transports") or {}
+        if not transports_meta:
+            raise UnsupportedAPIError(f"Stream topic {topic!r} has no transports configured.")
+
+        writer = self._transport.get_stream_writer(
+            topic=topic,
+            transports=transports_meta,
+            queue_size=queue_size,
+        )
+        self._stream_resources.append(writer)
+        return writer
+
+
+
+
 
     # ------------------------------------------------------------------
     # Internal RPC helper used by ActionHandle
     # ------------------------------------------------------------------
-    def _rpc_call(
+    def rpc_call(
         self,
         service_name: str,
         args: Dict[str, Any],
@@ -165,88 +246,12 @@ class Robot:
             args=args,
             timeout=effective_timeout,
             cancel_service_name=cancel_service_name,
-            rpc_call=self._rpc_call,
+            rpc_call=self.rpc_call,
         )
         if blocking:
             handle.wait()
         return handle
 
-    # ------------------------------------------------------------------
-    # Stream helpers (used by generated stream APIs)
-    # ------------------------------------------------------------------
-    def get_stream_reader(
-        self,
-        topic: str,
-        *,
-        queue_size: int | None = None,
-    ) -> StreamReader:
-        """
-        Create a StreamReader for a given topic via the current Transport.
-
-        This is the entry point that stream-related APIs (e.g.
-        robot.motors.stream.open_joints_reader()) should call.
-
-        Raises:
-            UnsupportedAPIError if the topic is not known to this robot,
-            or if the stream direction does not allow reading.
-        """
-        route = self._stream_routes.get(topic)
-        if route is None:
-            raise UnsupportedAPIError(f"Stream topic {topic!r} is not supported by this robot.")
-
-        direction = route.get("direction")
-        if direction not in ("out", None):
-            # "out" means robot -> SDK; anything else is not readable here
-            raise UnsupportedAPIError(f"Stream topic {topic!r} is not readable (direction={direction!r}).")
-
-        transports_meta = route.get("transports") or {}
-        if not transports_meta:
-            raise UnsupportedAPIError(f"Stream topic {topic!r} has no transports configured.")
-
-        reader =  self._transport.get_stream_reader(
-            topic=topic,
-            transports=transports_meta,
-            queue_size=queue_size,
-        )
-        self._stream_resources.append(reader)
-        return reader
-
-    def get_stream_writer(
-        self,
-        topic: str,
-        *,
-        queue_size: int | None = None,
-    ) -> StreamWriter:
-        """
-        Create a StreamWriter for a given topic via the current Transport.
-
-        This is the entry point that stream-related APIs (e.g.
-        robot.motors.stream.open_head_position_writer()) should call.
-
-        Raises:
-            UnsupportedAPIError if the topic is not known to this robot,
-            or if the stream direction does not allow writing.
-        """
-        route = self._stream_routes.get(topic)
-        if route is None:
-            raise UnsupportedAPIError(f"Stream topic {topic!r} is not supported by this robot.")
-
-        direction = route.get("direction")
-        if direction not in ("in", None):
-            # "in" means SDK -> robot; anything else is not writable here
-            raise UnsupportedAPIError(f"Stream topic {topic!r} is not writable (direction={direction!r}).")
-
-        transports_meta = route.get("transports") or {}
-        if not transports_meta:
-            raise UnsupportedAPIError(f"Stream topic {topic!r} has no transports configured.")
-
-        writer = self._transport.get_stream_writer(
-            topic=topic,
-            transports=transports_meta,
-            queue_size=queue_size,
-        )
-        self._stream_resources.append(writer)
-        return writer
 
     # ------------------------------------------------------------------
     # Handshake: SYSTEM_DESCRIBE_SERVICE + route building
@@ -259,11 +264,6 @@ class Robot:
           - compatibility warnings
         """
         try:
-            # raw = self._rpc_call(
-            #     SYSTEM_DESCRIBE_SERVICE,
-            #     args={"sdk_version": SDK_VERSION},
-            #     timeout=5.0,
-            # )
             requester = self._transport.get_requester(SYSTEM_DESCRIBE_SERVICE, None)
             rpc_req = {"name": SYSTEM_DESCRIBE_SERVICE, "args": {"sdk_version": SDK_VERSION}}            
             raw = requester.call(rpc_req, timeout=5.0)        

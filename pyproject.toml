@@ -23,7 +23,7 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
-    "luxai-magpie",
+    "luxai-magpie[discovery,audio]",
 ]
 
 [project.optional-dependencies]

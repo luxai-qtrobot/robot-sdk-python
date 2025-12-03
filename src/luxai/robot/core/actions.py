@@ -163,7 +163,7 @@ class ActionHandle:
 
 
 # Simple helpers; you can extend these later if needed
-def wait_all(handles: List[ActionHandle], timeout: float | None = None) -> None:
+def wait_all_actions(handles: List[ActionHandle], timeout: float | None = None) -> None:
     """
     Block until all actions are finished.
 
@@ -184,7 +184,7 @@ def wait_all(handles: List[ActionHandle], timeout: float | None = None) -> None:
         h.wait(timeout=remaining)
 
 
-def wait_any(handles: List[ActionHandle], timeout: float | None = None) -> ActionHandle:
+def wait_any_action(handles: List[ActionHandle], timeout: float | None = None) -> ActionHandle:
     """
     Block until the first action finishes and return its handle.
 

@@ -1,1 +1,1 @@
-luxai-magpie
+luxai-magpie[discovery,audio]

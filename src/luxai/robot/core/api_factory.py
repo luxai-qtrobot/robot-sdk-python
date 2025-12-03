@@ -163,7 +163,7 @@ def create_rpc_method(api_key: str, spec: Dict[str, Any]):
                 continue
             rpc_args[name] = value
 
-        # Delegate to Robot._start_action (which uses ActionHandle + _rpc_call)
+        # Delegate to Robot._start_action (which uses ActionHandle + rpc_call)
         return self._start_action(
             service_name=service_name,
             args=rpc_args,
