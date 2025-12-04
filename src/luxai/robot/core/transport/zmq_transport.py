@@ -87,7 +87,8 @@ class ZmqTransport(Transport, SupportsPreallocation):
             self._default_host = ip
 
         # (service_name, endpoint) -> ZMQRpcRequester
-        self._requesters: Dict[Tuple[str, str], ZMQRpcRequester] = {}        
+        self._requesters: Dict[Tuple[str, str], ZMQRpcRequester] = {}
+        self._stream_resources: list[object] = []   
 
         self._lock_global = threading.Lock()
         self._closed = False
@@ -178,6 +179,7 @@ class ZmqTransport(Transport, SupportsPreallocation):
             f"ZmqTransport: created ZMQSubscriber for topic={topic!r} at {endpoint}, "
             f"queue_size={qsize}, delivery={delivery}, bind={bind}"
         )
+        self._stream_resources.append(sub)
         return sub
 
     def get_stream_writer(
@@ -223,6 +225,7 @@ class ZmqTransport(Transport, SupportsPreallocation):
             f"ZmqTransport: created ZMQPublisher for {topic!r} at {endpoint}, "
             f"queue_size={qsize}, delivery={delivery}, bind={bind}"            
         )
+        self._stream_resources.append(pub)
         return pub
 
     # ------------------------------------------------------------------
@@ -305,9 +308,14 @@ class ZmqTransport(Transport, SupportsPreallocation):
     # ------------------------------------------------------------------
     def close(self) -> None:
         if self._closed:
-            return
+            return        
 
-        self._closed = True
+        for streamer in self._stream_resources:
+            try:
+                streamer.close()
+            except Exception:
+                pass            
+        self._stream_resources.clear()        
 
         with self._lock_global:
             for key, requester in list(self._requesters.items()):
@@ -321,3 +329,5 @@ class ZmqTransport(Transport, SupportsPreallocation):
                         f"ZmqTransport: error closing requester {key}: {e}"
                     )
             self._requesters.clear()
+
+        self._closed = True

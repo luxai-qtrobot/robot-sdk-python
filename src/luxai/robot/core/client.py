@@ -82,8 +82,7 @@ class Robot:
         # service_name -> { "service_name", "transports", "deprecated", "experimental" }
         self._rpc_routes: Dict[str, Dict[str, Any]] = {}
         # topic -> { "topic", "direction", "frame_type", "transports", "deprecated", "experimental" }
-        self._stream_routes: Dict[str, Dict[str, Any]] = {}
-        self._stream_resources: list[object] = []
+        self._stream_routes: Dict[str, Dict[str, Any]] = {}        
 
         # requeters are usually shared among multiple apis and need protection
         self._rpc_locks: Dict[str, threading.Lock] = {}
@@ -98,13 +97,6 @@ class Robot:
 
     def close(self) -> None:
         """Close the underlying transport and free resources."""
-        # close stream readers/writers/subscriptions first
-        for streamer in self._stream_resources:
-            try:
-                streamer.close()
-            except Exception:
-                pass            
-        self._stream_resources.clear()        
         self._transport.close()
         self._rpc_locks.clear()
 
@@ -145,8 +137,7 @@ class Robot:
             topic=topic,
             transports=transports_meta,
             queue_size=queue_size,
-        )
-        self._stream_resources.append(reader)
+        )        
         return reader
 
 
@@ -183,12 +174,8 @@ class Robot:
             topic=topic,
             transports=transports_meta,
             queue_size=queue_size,
-        )
-        self._stream_resources.append(writer)
+        )        
         return writer
-
-
-
 
 
     # ------------------------------------------------------------------
