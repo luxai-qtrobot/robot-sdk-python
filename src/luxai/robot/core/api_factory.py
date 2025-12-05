@@ -22,6 +22,8 @@ FRAME_TYPE_REGISTRY: dict[str, type[Frame]] = {
     "MotorStateFrame": MotorStateFrame,
     "JointStateFrame": JointStateFrame,
     "JointTrajectoryFrame": JointTrajectoryFrame,
+    "JointCommandFrame": JointCommandFrame,
+    "LedColorFrame": LedColorFrame,
     "Frame": Frame,
     "BoolFrame": BoolFrame,
     "IntFrame": IntFrame,

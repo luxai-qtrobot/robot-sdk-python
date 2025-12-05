@@ -354,6 +354,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
     }, # end of rpc
 
     "stream": {
+        # =========================
+        # Motors: qtrobot.motors.*
+        # =========================
         "motors.joints": {
             "direction": "out",
             "frame_type": "JointStateFrame",
@@ -372,6 +375,36 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "robots": ["qtrobot-v3"],
             "doc": "Robot motors state (temperature/voltage).",
         },
+        "motors.joints": {
+            "direction": "in",
+            "frame_type": "JointCommandFrame",
+            "topic": "/qt_robot/joints/command",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "doc": "Robot joints command input",
+        },        
+        # =========================
+        # MICROPHONE: qtrobot.microphone.*
+        # =========================
+        "microphone.activity": {
+            "direction": "out",
+            "frame_type": "BoolFrame",
+            "topic": "/qt_respeaker_app/is_speaking",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "doc": "Respeaker microphone sound activity detection",
+        },
+        "microphone.direction": {
+            "direction": "out",
+            "frame_type": "IntFrame",
+            "topic": "/qt_respeaker_app/sound_direction",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "doc": "Respeaker microphone sound direction detection",
+        },
         "microphone.channel0": {
             "direction": "out",
             "frame_type": "AudioFrameFlac",
@@ -380,6 +413,61 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "experimental": False,
             "robots": ["qtrobot-v3"],
             "doc": "Respeaker microphone audio channel 0",
+        },
+        "microphone.channel1": {
+            "direction": "out",
+            "frame_type": "AudioFrameFlac",
+            "topic": "/qt_respeaker_app/channel1",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "doc": "Respeaker microphone audio channel ",
+        },
+        "microphone.channel2": {
+            "direction": "out",
+            "frame_type": "AudioFrameFlac",
+            "topic": "/qt_respeaker_app/channel",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "doc": "Respeaker microphone audio channel ",
         },        
+        "microphone.channel3": {
+            "direction": "out",
+            "frame_type": "AudioFrameFlac",
+            "topic": "/qt_respeaker_app/channel3",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "doc": "Respeaker microphone audio channel 3",
+        },
+        "microphone.channel4": {
+            "direction": "out",
+            "frame_type": "AudioFrameFlac",
+            "topic": "/qt_respeaker_app/channel4",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "doc": "Respeaker microphone audio channel 4",
+        },
+        "microphone.external1": {
+            "direction": "out",
+            "frame_type": "AudioFrameFlac",
+            "topic": "/qt_respeaker_app/external1",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "doc": "External microphone audio channel 1",
+        },
+        "microphone.led": {
+            "direction": "in",
+            "frame_type": "LedColorFrame",
+            "topic": "/qt_respeaker_app/status_led",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "doc": "Respeaker microphone LED color inpur",
+        },
+
     }
 }

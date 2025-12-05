@@ -176,7 +176,7 @@ def generate_client_stub() -> str:
                     api_lines.append(
                         f"    def open_{local_name}_writer("
                         "self, queue_size: int | None = ..."
-                        ") -> StreamWriter:"
+                        f") -> TypedStreamWriter[{frame_type_name}]:"
                     )
                     api_lines.append(
                         f'        """Open a writer for stream topic {topic!r}. (API: {api_id})"""'

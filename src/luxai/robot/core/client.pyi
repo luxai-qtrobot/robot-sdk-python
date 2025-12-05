@@ -168,12 +168,72 @@ class GestureAPI:
 class MicrophoneStreamAPI:
     """Stream APIs for microphone namespace."""
 
+    def open_activity_reader(self, queue_size: int | None = ...) -> TypedStreamReader[BoolFrame]:
+        """Open a reader for stream topic '/qt_respeaker_app/is_speaking'. (API: microphone.activity)"""
+        ...
+
+    def on_activity(self, callback: Callable[[BoolFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """Attach a callback to stream topic '/qt_respeaker_app/is_speaking'. (API: microphone.activity)"""
+        ...
+
+    def open_direction_reader(self, queue_size: int | None = ...) -> TypedStreamReader[IntFrame]:
+        """Open a reader for stream topic '/qt_respeaker_app/sound_direction'. (API: microphone.direction)"""
+        ...
+
+    def on_direction(self, callback: Callable[[IntFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """Attach a callback to stream topic '/qt_respeaker_app/sound_direction'. (API: microphone.direction)"""
+        ...
+
     def open_channel0_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
         """Open a reader for stream topic '/qt_respeaker_app/channel0'. (API: microphone.channel0)"""
         ...
 
     def on_channel0(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
         """Attach a callback to stream topic '/qt_respeaker_app/channel0'. (API: microphone.channel0)"""
+        ...
+
+    def open_channel1_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
+        """Open a reader for stream topic '/qt_respeaker_app/channel1'. (API: microphone.channel1)"""
+        ...
+
+    def on_channel1(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
+        """Attach a callback to stream topic '/qt_respeaker_app/channel1'. (API: microphone.channel1)"""
+        ...
+
+    def open_channel2_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
+        """Open a reader for stream topic '/qt_respeaker_app/channel'. (API: microphone.channel2)"""
+        ...
+
+    def on_channel2(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
+        """Attach a callback to stream topic '/qt_respeaker_app/channel'. (API: microphone.channel2)"""
+        ...
+
+    def open_channel3_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
+        """Open a reader for stream topic '/qt_respeaker_app/channel3'. (API: microphone.channel3)"""
+        ...
+
+    def on_channel3(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
+        """Attach a callback to stream topic '/qt_respeaker_app/channel3'. (API: microphone.channel3)"""
+        ...
+
+    def open_channel4_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
+        """Open a reader for stream topic '/qt_respeaker_app/channel4'. (API: microphone.channel4)"""
+        ...
+
+    def on_channel4(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
+        """Attach a callback to stream topic '/qt_respeaker_app/channel4'. (API: microphone.channel4)"""
+        ...
+
+    def open_external1_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
+        """Open a reader for stream topic '/qt_respeaker_app/external1'. (API: microphone.external1)"""
+        ...
+
+    def on_external1(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
+        """Attach a callback to stream topic '/qt_respeaker_app/external1'. (API: microphone.external1)"""
+        ...
+
+    def open_led_writer(self, queue_size: int | None = ...) -> TypedStreamWriter[LedColorFrame]:
+        """Open a writer for stream topic '/qt_respeaker_app/status_led'. (API: microphone.led)"""
         ...
 
 
@@ -197,12 +257,8 @@ class MicrophoneAPI:
 class MotorsStreamAPI:
     """Stream APIs for motors namespace."""
 
-    def open_joints_reader(self, queue_size: int | None = ...) -> TypedStreamReader[JointStateFrame]:
-        """Open a reader for stream topic '/qt_robot/joints/state'. (API: motors.joints)"""
-        ...
-
-    def on_joints(self, callback: Callable[[JointStateFrame], None], queue_size: int | None = ...) -> StreamSubscription:
-        """Attach a callback to stream topic '/qt_robot/joints/state'. (API: motors.joints)"""
+    def open_joints_writer(self, queue_size: int | None = ...) -> TypedStreamWriter[JointCommandFrame]:
+        """Open a writer for stream topic '/qt_robot/joints/command'. (API: motors.joints)"""
         ...
 
     def open_state_reader(self, queue_size: int | None = ...) -> TypedStreamReader[MotorStateFrame]:

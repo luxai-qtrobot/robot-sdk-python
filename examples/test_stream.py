@@ -1,10 +1,10 @@
 # test_say.py
 import time
 import inspect
-
+import random
 from luxai.magpie.utils import Logger
 from luxai.magpie.frames import Frame, AudioFrameFlac
-from luxai.robot.core.frames import JointStateFrame
+from luxai.robot.core.frames import JointStateFrame, LedColorFrame, JointCommandFrame
 from luxai.robot.core import Robot, wait_all_actions, wait_any_action
 
 
@@ -18,17 +18,33 @@ def main():
     # robot = Robot.connect_zmq(node_id="QTPC")
     print("Connected to robot.")
 
-    joint_reader = robot.motors.stream.open_joints_reader()
-    state = joint_reader.read()
-    Logger.info(type(state))
-    Logger.info(state.position("HeadYaw"))
-    
-    mic = robot.microphone.stream.on_channel0(on_mic_0)
- 
+    # joint_reader = robot.motors.stream.open_joints_reader()
+    # state = joint_reader.read()
+    # Logger.info(type(state))
+    # Logger.info(state.position("HeadYaw"))
+    # mic = robot.microphone.stream.on_channel0(on_mic_0)
+
+    led = robot.microphone.stream.open_led_writer()    
+
+    # joints = robot.motors.stream.open_joints_writer()
+    # cmd = JointCommandFrame()    
+    # cmd.set_joint("HeadYaw", position=0)
+    # cmd.set_joint("HeadPitch", position=0)
+    # cmd.set_joint("RightShoulderPitch", position=-80)
+    # cmd.set_joint("LeftShoulderPitch", position=80)
+    # Logger.info(cmd)
+
     should_stop = False
     try:
         while(not should_stop):
-            time.sleep(5)
+            # joints.write(cmd)
+            color = LedColorFrame(
+                r=random.random(), 
+                g=random.random(), 
+                b=random.random()
+                )
+            led.write(color)
+            time.sleep(3)
     except KeyboardInterrupt:
         should_stop = True
         print("Interrupted by user.")
