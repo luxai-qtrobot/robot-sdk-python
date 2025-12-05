@@ -3,17 +3,39 @@ from __future__ import annotations
 
 import inspect
 import threading
-from typing import Any, Callable, Dict, Set, TYPE_CHECKING
+from typing import Any, Callable, Dict, Set, Type, TYPE_CHECKING
 
 from luxai.magpie.utils.logger import Logger
-from luxai.magpie.transport.stream_reader import StreamReader
 from luxai.magpie.transport.stream_writer import StreamWriter
 
 from .actions import ActionHandle  # only for type hints / docstrings
 
+from luxai.magpie.frames import * 
+from .frames import *
+from .typed_stream import TypedStreamReader, TypedStreamWriter
+
 if TYPE_CHECKING:
     from .client import Robot  # for type hints only
 
+
+FRAME_TYPE_REGISTRY: dict[str, type[Frame]] = {
+    "MotorStateFrame": MotorStateFrame,
+    "JointStateFrame": JointStateFrame,
+    "JointTrajectoryFrame": JointTrajectoryFrame,
+    "Frame": Frame,
+    "BoolFrame": BoolFrame,
+    "IntFrame": IntFrame,
+    "FloatFrame": FloatFrame,
+    "StringFrame": StringFrame,
+    "BytesFrame": BytesFrame,
+    "DictFrame": DictFrame,
+    "ListFrame": ListFrame,
+    "AudioFrameRaw": AudioFrameRaw,
+    "AudioFrameFlac": AudioFrameFlac,
+    "ImageFrameRaw": ImageFrameRaw,
+    "ImageFrameCV": ImageFrameCV,
+    "ImageFrameJpeg": ImageFrameJpeg,
+}
 
 # ---------------------------------------------------------------------------
 # Internal helper for stream callbacks
@@ -25,14 +47,14 @@ class _StreamSubscription:
     Handle for a streaming callback subscription.
 
     Internally:
-      - holds a StreamReader
+      - holds a TypedStreamReader
       - runs a background thread that repeatedly calls reader.read()
         and invokes the user callback with each frame.
 
-    Users can call .stop() to terminate the thread.
+    Users can call .cancel() to terminate the thread.
     """
 
-    def __init__(self, reader: StreamReader, callback: Callable[[Any], None]) -> None:
+    def __init__(self, reader: TypedStreamReader, callback: Callable[[Frame], None]) -> None:
         self._reader = reader
         self._callback = callback
         self._stop_event = threading.Event()
@@ -44,8 +66,8 @@ class _StreamSubscription:
         self._thread.start()
 
     @property
-    def reader(self) -> StreamReader:
-        """Access to the underlying StreamReader (if needed)."""
+    def reader(self) -> TypedStreamReader:
+        """Access to the underlying TypedStreamReader (if needed)."""
         return self._reader
 
     def _run_loop(self) -> None:
@@ -53,14 +75,13 @@ class _StreamSubscription:
             try:
                 frame = self._reader.read()
                 if frame is None:
-                    continue
-                data, _ = frame         
-                self._callback(data)
+                    continue                
+                self._callback(frame)
             except Exception as e:  # pragma: no cover - defensive logging
                 Logger.warning(f"Robot stream callback raised: {e}")
-        self._reader.close()
+        self._reader.close()        
 
-    def stop(self) -> None:
+    def cancel(self) -> None:
         """Stop the callback thread."""        
         self._stop_event.set()
         # We don't force-join; daemon=True means it won't block process exit.
@@ -222,19 +243,32 @@ def create_stream_methods(api_key: str, spec: Dict[str, Any]):
 
     methods: Dict[str, Callable[..., Any]] = {}
 
+    frame_type_name: str | None = spec.get("frame_type")
+    if frame_type_name is not None:
+        try:
+            frame_cls: Type[Frame] = FRAME_TYPE_REGISTRY[frame_type_name]
+        except KeyError:
+            raise ValueError(f"Unknown frame_type {frame_type_name!r} in spec for {api_key!r}")
+    else:
+        frame_cls = Frame  # or some default like DictFrame
+
     # ---- Outgoing from robot -> SDK: reader + callback ----
     if direction in ("out", None):
-        # 1) open_<base>_reader(queue_size=None) -> StreamReader
+        # 1) open_<base>_reader(queue_size=None) -> TypedStreamReader
         reader_attr_name = f"{ns}_stream_open_{base}_reader"
 
-        def open_reader(self, queue_size: int | None = None) -> StreamReader:
+        def open_reader(
+            self,
+            queue_size: int | None = None,
+            _frame_cls: type[Frame] = frame_cls,  # bind via default arg!
+        ) -> TypedStreamReader[Frame]:
             """
-            Open a StreamReader for this stream.
+            Open a TypedStreamReader for this stream.
 
             Exposed as:
                 robot.<ns>.stream.open_<base>_reader(queue_size=None)
             """
-            return self.get_stream_reader(topic=topic, queue_size=queue_size)
+            return self.get_stream_reader(topic=topic, queue_size=queue_size, frame_type=_frame_cls)
 
         open_reader.__name__ = reader_attr_name
         open_reader.__qualname__ = f"Robot.{ns}.stream.open_{base}_reader"
@@ -246,8 +280,9 @@ def create_stream_methods(api_key: str, spec: Dict[str, Any]):
 
         def on_stream(
             self,
-            callback: Callable[[Any], None],
+            callback: Callable[[Frame], None],  # type-wise: Frame
             queue_size: int | None = None,
+            _frame_cls: type[Frame] = frame_cls,
         ) -> _StreamSubscription:
             """
             Subscribe to this stream with a callback.
@@ -255,9 +290,13 @@ def create_stream_methods(api_key: str, spec: Dict[str, Any]):
             Exposed as:
                 robot.<ns>.stream.on_<base>(callback, queue_size=None)
 
-            Returns a _StreamSubscription handle; call .stop() to terminate.
-            """
-            reader = self.get_stream_reader(topic=topic, queue_size=queue_size)
+            Returns a _StreamSubscription handle; call .cancel() to terminate.
+            """            
+            reader = self.get_stream_reader(
+                topic=topic,
+                queue_size=queue_size,
+                frame_type=_frame_cls,
+            )          
             return _StreamSubscription(reader, callback)
 
         on_stream.__name__ = on_attr_name
@@ -271,9 +310,9 @@ def create_stream_methods(api_key: str, spec: Dict[str, Any]):
     if direction in ("in", None):
         writer_attr_name = f"{ns}_stream_open_{base}_writer"
 
-        def open_writer(self, queue_size: int | None = None) -> StreamWriter:
+        def open_writer(self, queue_size: int | None = None) -> TypedStreamWriter[Frame]:
             """
-            Open a StreamWriter for this stream.
+            Open a TypedStreamWriter for this stream.
 
             Exposed as:
                 robot.<ns>.stream.open_<base>_writer(queue_size=None)

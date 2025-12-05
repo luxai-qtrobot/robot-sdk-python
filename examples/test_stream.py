@@ -4,8 +4,12 @@ import inspect
 
 from luxai.magpie.utils import Logger
 from luxai.magpie.frames import Frame, AudioFrameFlac
+from luxai.robot.core.frames import JointStateFrame
 from luxai.robot.core import Robot, wait_all_actions, wait_any_action
 
+
+def on_mic_0(data:AudioFrameFlac):
+    Logger.info(data)
 
 
 def main():
@@ -14,15 +18,13 @@ def main():
     # robot = Robot.connect_zmq(node_id="QTPC")
     print("Connected to robot.")
 
-    joint_reader = robot.motors.stream.open_joints_state_reader()
-    data, _ = joint_reader.read()
-    Logger.info(data)
-
-    mic = robot.microphone.stream.open_channel0_reader()    
-    data, _ = mic.read()
-    f = Frame.from_dict(data) # -> AudioFrameFlac. Or explicilty use AudioFrameFlac.from_dict()
-    Logger.info(f)
-
+    joint_reader = robot.motors.stream.open_joints_reader()
+    state = joint_reader.read()
+    Logger.info(type(state))
+    Logger.info(state.position("HeadYaw"))
+    
+    mic = robot.microphone.stream.on_channel0(on_mic_0)
+ 
     should_stop = False
     try:
         while(not should_stop):

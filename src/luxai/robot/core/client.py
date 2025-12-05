@@ -2,18 +2,20 @@
 from __future__ import annotations
 
 import threading
+from typing import Any, Dict, TypeVar
 
-from typing import Any, Dict, Optional
-
+from luxai.magpie.frames import Frame
 from luxai.magpie.utils.logger import Logger
 from luxai.magpie.transport.stream_reader import StreamReader
 from luxai.magpie.transport.stream_writer import StreamWriter
 
 from .actions import ActionHandle
 from .transport import Transport, SupportsPreallocation, UnsupportedAPIError, ZmqTransport
-
 from .config import ( QTROBOT_CORE_APIS, SDK_VERSION, SYSTEM_DESCRIBE_SERVICE)
+from .typed_stream import TypedStreamReader, TypedStreamWriter
 
+
+F = TypeVar("F", bound="Frame")
 
 class Robot:
     """
@@ -109,7 +111,8 @@ class Robot:
         topic: str,
         *,
         queue_size: int | None = None,
-    ) -> StreamReader:
+        frame_type: type[F]
+    ) -> TypedStreamReader[F]:
         """
         Create a StreamReader for a given topic via the current Transport.
 
@@ -133,12 +136,17 @@ class Robot:
         if not transports_meta:
             raise UnsupportedAPIError(f"Stream topic {topic!r} has no transports configured.")
 
-        reader =  self._transport.get_stream_reader(
+        stream_reader =  self._transport.get_stream_reader(
             topic=topic,
             transports=transports_meta,
             queue_size=queue_size,
-        )        
-        return reader
+        ) 
+
+        typed_reader: TypedStreamReader[F] = TypedStreamReader(
+            stream_reader=stream_reader,
+            frame_type=frame_type
+        )
+        return typed_reader
 
 
     def get_stream_writer(
@@ -146,7 +154,7 @@ class Robot:
         topic: str,
         *,
         queue_size: int | None = None,
-    ) -> StreamWriter:
+    ) -> TypedStreamWriter[Frame]:
         """
         Create a StreamWriter for a given topic via the current Transport.
 
@@ -170,12 +178,17 @@ class Robot:
         if not transports_meta:
             raise UnsupportedAPIError(f"Stream topic {topic!r} has no transports configured.")
 
-        writer = self._transport.get_stream_writer(
+        stream_writer = self._transport.get_stream_writer(
             topic=topic,
             transports=transports_meta,
             queue_size=queue_size,
-        )        
-        return writer
+        )      
+        typed_writer: TypedStreamWriter[Frame] = TypedStreamWriter(
+            stream_writer=stream_writer,
+            topic=topic            
+        )
+
+        return typed_writer
 
 
     # ------------------------------------------------------------------

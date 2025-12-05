@@ -1,10 +1,23 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, TypeVar, Callable
 from luxai.robot.core.transport import Transport
 from luxai.robot.core.actions import ActionHandle
-from luxai.magpie.transport import StreamReader, StreamWriter
+from luxai.robot.core.frames import *
+from luxai.magpie.frames import *
+from .typed_stream import TypedStreamReader, TypedStreamWriter
 
+
+F = TypeVar("F", bound="Frame")
+
+
+class StreamSubscription:
+    """Handle for an active stream subscription."""
+
+    def cancel(self) -> None:
+        """Unsubscribe from the stream."""
+        ...
+        
 
 class Robot:
     """Type stub for Robot client (manual core methods)."""
@@ -32,10 +45,21 @@ class Robot:
     def close(self) -> None:
         ...
 
-    def get_stream_reader(self, topic: str, *, queue_size: int | None = None) -> StreamReader:
+    def get_stream_reader(
+        self,
+        topic: str,
+        *,
+        queue_size: int | None = None,
+        frame_type: type[F]
+    ) -> TypedStreamReader[F]:
         ...
 
-    def get_stream_writer(self, topic: str, *, queue_size: int | None = None) -> StreamWriter:
+    def get_stream_writer(
+        self,
+        topic: str,
+        *,
+        queue_size: int | None = None,
+    ) -> TypedStreamWriter[F]: 
         ...
 
     def rpc_call(

@@ -1,10 +1,23 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, TypeVar, Callable
 from luxai.robot.core.transport import Transport
 from luxai.robot.core.actions import ActionHandle
-from luxai.magpie.transport import StreamReader, StreamWriter
+from luxai.robot.core.frames import *
+from luxai.magpie.frames import *
+from .typed_stream import TypedStreamReader, TypedStreamWriter
 
+
+F = TypeVar("F", bound="Frame")
+
+
+class StreamSubscription:
+    """Handle for an active stream subscription."""
+
+    def cancel(self) -> None:
+        """Unsubscribe from the stream."""
+        ...
+        
 
 class Robot:
     """Type stub for Robot client (manual core methods)."""
@@ -32,10 +45,21 @@ class Robot:
     def close(self) -> None:
         ...
 
-    def get_stream_reader(self, topic: str, *, queue_size: int | None = None) -> StreamReader:
+    def get_stream_reader(
+        self,
+        topic: str,
+        *,
+        queue_size: int | None = None,
+        frame_type: type[F]
+    ) -> TypedStreamReader[F]:
         ...
 
-    def get_stream_writer(self, topic: str, *, queue_size: int | None = None) -> StreamWriter:
+    def get_stream_writer(
+        self,
+        topic: str,
+        *,
+        queue_size: int | None = None,
+    ) -> TypedStreamWriter[F]: 
         ...
 
     def rpc_call(
@@ -144,11 +168,11 @@ class GestureAPI:
 class MicrophoneStreamAPI:
     """Stream APIs for microphone namespace."""
 
-    def open_channel0_reader(self, queue_size: int | None = ...) -> StreamReader:
+    def open_channel0_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
         """Open a reader for stream topic '/qt_respeaker_app/channel0'. (API: microphone.channel0)"""
         ...
 
-    def on_channel0(self, callback: Callable[[Any], None], queue_size: int | None = ...) -> Any:
+    def on_channel0(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
         """Attach a callback to stream topic '/qt_respeaker_app/channel0'. (API: microphone.channel0)"""
         ...
 
@@ -173,12 +197,20 @@ class MicrophoneAPI:
 class MotorsStreamAPI:
     """Stream APIs for motors namespace."""
 
-    def open_joints_state_reader(self, queue_size: int | None = ...) -> StreamReader:
-        """Open a reader for stream topic '/qt_robot/joints/state'. (API: motors.joints_state)"""
+    def open_joints_reader(self, queue_size: int | None = ...) -> TypedStreamReader[JointStateFrame]:
+        """Open a reader for stream topic '/qt_robot/joints/state'. (API: motors.joints)"""
         ...
 
-    def on_joints_state(self, callback: Callable[[Any], None], queue_size: int | None = ...) -> Any:
-        """Attach a callback to stream topic '/qt_robot/joints/state'. (API: motors.joints_state)"""
+    def on_joints(self, callback: Callable[[JointStateFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """Attach a callback to stream topic '/qt_robot/joints/state'. (API: motors.joints)"""
+        ...
+
+    def open_state_reader(self, queue_size: int | None = ...) -> TypedStreamReader[MotorStateFrame]:
+        """Open a reader for stream topic '/qt_robot/motors/states'. (API: motors.state)"""
+        ...
+
+    def on_state(self, callback: Callable[[MotorStateFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """Attach a callback to stream topic '/qt_robot/motors/states'. (API: motors.state)"""
         ...
 
 

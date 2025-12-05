@@ -146,13 +146,13 @@ def generate_client_stub() -> str:
                 topic = spec.get("topic", "")
                 direction = spec.get("direction")
                 doc = spec.get("doc") or f"Auto-generated stream API for topic {topic!r}."
-
+                frame_type_name = spec.get("frame_type", "Frame")
                 # robot -> SDK: reader + callback
                 if direction in ("out", None):
                     api_lines.append(
                         f"    def open_{local_name}_reader("
                         "self, queue_size: int | None = ..."
-                        ") -> StreamReader:"
+                        f") -> TypedStreamReader[{frame_type_name}]:"
                     )
                     api_lines.append(
                         f'        """Open a reader for stream topic {topic!r}. (API: {api_id})"""'
@@ -162,8 +162,8 @@ def generate_client_stub() -> str:
 
                     api_lines.append(
                         f"    def on_{local_name}("
-                        "self, callback: Callable[[Any], None], queue_size: int | None = ..."
-                        ") -> Any:"
+                        f"self, callback: Callable[[{frame_type_name}], None], queue_size: int | None = ..."
+                        ") -> StreamSubscription:"
                     )
                     api_lines.append(
                         f'        """Attach a callback to stream topic {topic!r}. (API: {api_id})"""'

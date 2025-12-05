@@ -354,16 +354,24 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
     }, # end of rpc
 
     "stream": {
-        "motors.joints_state": {
-            "direction": "out",                # robot -> SDK
-            "frame_type": "Frame",
+        "motors.joints": {
+            "direction": "out",
+            "frame_type": "JointStateFrame",
             "topic": "/qt_robot/joints/state",
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Robot joint states (pos/vel/effort).",
+            "doc": "Robot joints state (position/velocity/effort).",
         },
-
+        "motors.state": {
+            "direction": "out",
+            "frame_type": "MotorStateFrame",
+            "topic": "/qt_robot/motors/states",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "doc": "Robot motors state (temperature/voltage).",
+        },
         "microphone.channel0": {
             "direction": "out",
             "frame_type": "AudioFrameFlac",
