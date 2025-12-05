@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Type
 
+from .api_doc import QTROBOT_API_DOCS
 
 QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
     # =========================
@@ -15,15 +16,14 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [
                 ("message", str),
             ],
-            "response_type": type(None),   # bool status in ROS, mapped to success/exception
+            "response_type": type(None),
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Say a text using TTS.",
+            "doc": QTROBOT_API_DOCS.get("speech.say", ""),
         },
 
-        # qtrobot.speech.talk()  (behavior-level talk)
         "speech.talk": {
             "service_name": "/qt_robot/behavior/talkText",
             "cancel_service_name": "/qt_robot/speech/stop",
@@ -35,10 +35,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Trigger a higher-level talking behavior with the given text.",
+            "doc": QTROBOT_API_DOCS.get("speech.talk", ""),
         },
 
-        # qtrobot.speech.stop()
         "speech.stop": {
             "service_name": "/qt_robot/speech/stop",
             "cancel_service_name": None,
@@ -48,36 +47,34 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Stop any ongoing speech or talk behavior.",
+            "doc": QTROBOT_API_DOCS.get("speech.stop", ""),
         },
-        # qtrobot.speech.config()
+
         "speech.config": {
             "service_name": "/qt_robot/speech/config",
             "cancel_service_name": None,
             "params": [
-                ("language", str, None),   # e.g. "en-US", "fr-FR", None = keep current
-                ("pitch", int, 100),       # int16 in ROS
-                ("speed", int, 100),       # int16 in ROS
+                ("language", str, None),
+                ("pitch", int, 100),
+                ("speed", int, 100),
             ],
-            "response_type": type(None),   # bool status internally
+            "response_type": type(None),
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Configure TTS parameters (language, pitch, speed).",
+            "doc": QTROBOT_API_DOCS.get("speech.config", ""),
         },
 
         # =========================
-        # EMOTION  -> qtrobot.emotion.*
+        # EMOTION
         # =========================
-
-        # qtrobot.emotion.look()
         "emotion.look": {
             "service_name": "/qt_robot/emotion/look",
             "cancel_service_name": "/qt_robot/emotion/stop",
             "params": [
-                ("eye_l", list),          # left eye positions (int16[])
-                ("eye_r", list),          # right eye positions (int16[])
+                ("eye_l", list),
+                ("eye_r", list),
                 ("duration", float, 1.0),
             ],
             "response_type": type(None),
@@ -85,25 +82,23 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Move the robot eyes to the given positions over a duration.",
+            "doc": QTROBOT_API_DOCS.get("emotion.look", ""),
         },
 
-        # qtrobot.emotion.show()
         "emotion.show": {
             "service_name": "/qt_robot/emotion/show",
             "cancel_service_name": "/qt_robot/emotion/stop",
             "params": [
-                ("name", str),  # e.g. 'happy', 'sad', 'surprised'
+                ("name", str),
             ],
             "response_type": type(None),
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Show a named facial emotion on the robot.",
+            "doc": QTROBOT_API_DOCS.get("emotion.show", ""),
         },
 
-        # qtrobot.emotion.stop()
         "emotion.stop": {
             "service_name": "/qt_robot/emotion/stop",
             "cancel_service_name": None,
@@ -113,28 +108,24 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Stop any active emotion or eye animation.",
+            "doc": QTROBOT_API_DOCS.get("emotion.stop", ""),
         },
 
         # =========================
-        # GESTURE  -> qtrobot.gesture.*
+        # GESTURE
         # =========================
-
-        # qtrobot.gesture.get_all()
         "gesture.get_all": {
             "service_name": "/qt_robot/gesture/list",
             "cancel_service_name": None,
             "params": [],
-            # ROS: string[] gestures + bool status; exposed as List[str]
             "response_type": list,
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Return the list of available gesture names.",
+            "doc": QTROBOT_API_DOCS.get("gesture.get_all", ""),
         },
 
-        # qtrobot.gesture.play()
         "gesture.play": {
             "service_name": "/qt_robot/gesture/play",
             "cancel_service_name": "/qt_robot/gesture/stop",
@@ -147,10 +138,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Play a stored gesture by name at the given speed.",
+            "doc": QTROBOT_API_DOCS.get("gesture.play", ""),
         },
 
-        # qtrobot.gesture.stop()
         "gesture.stop": {
             "service_name": "/qt_robot/gesture/stop",
             "cancel_service_name": None,
@@ -160,15 +150,14 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Stop any ongoing gesture playback or recording.",
+            "doc": QTROBOT_API_DOCS.get("gesture.stop", ""),
         },
 
-        # qtrobot.gesture.record()
         "gesture.record": {
             "service_name": "/qt_robot/gesture/record",
             "cancel_service_name": "/qt_robot/gesture/stop",
             "params": [
-                ("parts", list),          # e.g. ['left_arm'], ['head', 'right_arm']
+                ("parts", list),
                 ("idle_parts", bool, True),
                 ("wait", int, 0),
                 ("timeout", int, 0),
@@ -178,10 +167,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Start recording a gesture for the given body parts.",
+            "doc": QTROBOT_API_DOCS.get("gesture.record", ""),
         },
 
-        # qtrobot.gesture.save()
         "gesture.save": {
             "service_name": "/qt_robot/gesture/save",
             "cancel_service_name": None,
@@ -194,65 +182,59 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Save the last recorded gesture under the given name and path.",
+            "doc": QTROBOT_API_DOCS.get("gesture.save", ""),
         },
 
         # =========================
-        # MOTORS  -> qtrobot.motors.*
+        # MOTORS
         # =========================
-
-        # qtrobot.motors.home()
         "motors.home": {
             "service_name": "/qt_robot/motors/home",
             "cancel_service_name": None,
             "params": [
-                ("parts", list),  # e.g. ['head'], ['right_arm', 'left_arm']
+                ("parts", list),
             ],
             "response_type": type(None),
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Move the specified motor groups to their home positions.",
+            "doc": QTROBOT_API_DOCS.get("motors.home", ""),
         },
 
-        # qtrobot.motors.set_mode()
         "motors.set_mode": {
             "service_name": "/qt_robot/motors/setControlMode",
             "cancel_service_name": None,
             "params": [
                 ("parts", list),
-                ("mode", int),  # ROS constants: 0=ON, 1=OFF, 2=BRAKE
+                ("mode", int),
             ],
             "response_type": type(None),
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Set control mode for the specified motors (ON, OFF, BRAKE).",
+            "doc": QTROBOT_API_DOCS.get("motors.set_mode", ""),
         },
 
-        # qtrobot.motors.set_velocity()
         "motors.set_velocity": {
             "service_name": "/qt_robot/motors/setVelocity",
             "cancel_service_name": None,
             "params": [
                 ("parts", list),
-                ("velocity", int),  # 0-255 or implementation-specific
+                ("velocity", int),
             ],
             "response_type": type(None),
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Set movement velocity for the specified motor groups.",
+            "doc": QTROBOT_API_DOCS.get("motors.set_velocity", ""),
         },
 
         # =========================
-        # AUDIO CORE  -> qtrobot.audio.*
+        # AUDIO CORE
         # =========================
-
-        # qtrobot.audio.play()
         "audio.play": {
             "service_name": "/qt_robot/audio/play",
             "cancel_service_name": "/qt_robot/audio/stop",
@@ -265,10 +247,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Play an audio file on the robot speakers.",
+            "doc": QTROBOT_API_DOCS.get("audio.play", ""),
         },
 
-        # qtrobot.audio.stop()
         "audio.stop": {
             "service_name": "/qt_robot/audio/stop",
             "cancel_service_name": None,
@@ -278,10 +259,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Stop any audio currently playing.",
+            "doc": QTROBOT_API_DOCS.get("audio.stop", ""),
         },
 
-        # qtrobot.audio.talk()
         "audio.talk": {
             "service_name": "/qt_robot/behavior/talkAudio",
             "cancel_service_name": "/qt_robot/audio/stop",
@@ -294,49 +274,43 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Trigger a higher-level audio-based talking behavior.",
+            "doc": QTROBOT_API_DOCS.get("audio.talk", ""),
         },
 
         # =========================
-        # SPEAKER  -> qtrobot.speaker.*
+        # SPEAKER
         # =========================
-
-        # qtrobot.speaker.set_volume()
         "speaker.set_volume": {
             "service_name": "/qt_robot/setting/setVolume",
             "cancel_service_name": None,
             "params": [
-                ("volume", int),  # 0-100
+                ("volume", int),
             ],
             "response_type": type(None),
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Set the master speaker output volume (0-100).",
+            "doc": QTROBOT_API_DOCS.get("speaker.set_volume", ""),
         },
 
         # =========================
-        # MICROPHONE TUNING  -> qtrobot.microphone.*
+        # MICROPHONE TUNING
         # =========================
-
-        # qtrobot.microphone.get_tuning()
         "microphone.get_tuning": {
             "service_name": "/qt_respeaker_app/tuning/get",
             "cancel_service_name": None,
             "params": [
-                ("param", str),  # e.g. 'gain', 'noise_suppression'
+                ("param", str),
             ],
-            # ROS: float32 value + bool status
             "response_type": float,
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Get a tuning parameter value from the microphone front-end.",
+            "doc": QTROBOT_API_DOCS.get("microphone.get_tuning", ""),
         },
 
-        # qtrobot.microphone.set_tuning()
         "microphone.set_tuning": {
             "service_name": "/qt_respeaker_app/tuning/set",
             "cancel_service_name": None,
@@ -349,14 +323,12 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": "Set a tuning parameter value on the microphone front-end.",
+            "doc": QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
         },
-    }, # end of rpc
+    },  # end of rpc
 
+    # STREAM SECTION
     "stream": {
-        # =========================
-        # Motors: qtrobot.motors.*
-        # =========================
         "motors.joints": {
             "direction": "out",
             "frame_type": "JointStateFrame",
@@ -364,7 +336,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Robot joints state (position/velocity/effort).",
+            "doc": QTROBOT_API_DOCS.get("motors.joints.out", ""),
         },
         "motors.state": {
             "direction": "out",
@@ -373,7 +345,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Robot motors state (temperature/voltage).",
+            "doc": QTROBOT_API_DOCS.get("motors.state", ""),
         },
         "motors.joints": {
             "direction": "in",
@@ -382,11 +354,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Robot joints command input",
-        },        
-        # =========================
-        # MICROPHONE: qtrobot.microphone.*
-        # =========================
+            "doc": QTROBOT_API_DOCS.get("motors.joints.in", ""),
+        },
+
         "microphone.activity": {
             "direction": "out",
             "frame_type": "BoolFrame",
@@ -394,7 +364,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Respeaker microphone sound activity detection",
+            "doc": QTROBOT_API_DOCS.get("microphone.activity", ""),
         },
         "microphone.direction": {
             "direction": "out",
@@ -403,8 +373,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Respeaker microphone sound direction detection",
+            "doc": QTROBOT_API_DOCS.get("microphone.direction", ""),
         },
+
         "microphone.channel0": {
             "direction": "out",
             "frame_type": "AudioFrameFlac",
@@ -412,7 +383,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Respeaker microphone audio channel 0",
+            "doc": QTROBOT_API_DOCS.get("microphone.channel0", ""),
         },
         "microphone.channel1": {
             "direction": "out",
@@ -421,7 +392,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Respeaker microphone audio channel ",
+            "doc": QTROBOT_API_DOCS.get("microphone.channel1", ""),
         },
         "microphone.channel2": {
             "direction": "out",
@@ -430,8 +401,8 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Respeaker microphone audio channel ",
-        },        
+            "doc": QTROBOT_API_DOCS.get("microphone.channel2", ""),
+        },
         "microphone.channel3": {
             "direction": "out",
             "frame_type": "AudioFrameFlac",
@@ -439,7 +410,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Respeaker microphone audio channel 3",
+            "doc": QTROBOT_API_DOCS.get("microphone.channel3", ""),
         },
         "microphone.channel4": {
             "direction": "out",
@@ -448,7 +419,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Respeaker microphone audio channel 4",
+            "doc": QTROBOT_API_DOCS.get("microphone.channel4", ""),
         },
         "microphone.external1": {
             "direction": "out",
@@ -457,7 +428,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "External microphone audio channel 1",
+            "doc": QTROBOT_API_DOCS.get("microphone.external1", ""),
         },
         "microphone.led": {
             "direction": "in",
@@ -466,8 +437,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": "Respeaker microphone LED color inpur",
+            "doc": QTROBOT_API_DOCS.get("microphone.led", ""),
         },
-
     }
 }

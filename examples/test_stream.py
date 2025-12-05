@@ -18,11 +18,12 @@ def main():
     # robot = Robot.connect_zmq(node_id="QTPC")
     print("Connected to robot.")
 
+
     # joint_reader = robot.motors.stream.open_joints_reader()
     # state = joint_reader.read()
     # Logger.info(type(state))
     # Logger.info(state.position("HeadYaw"))
-    # mic = robot.microphone.stream.on_channel0(on_mic_0)
+    mic = robot.microphone.stream.on_channel0(on_mic_0)
 
     led = robot.microphone.stream.open_led_writer()    
 
@@ -33,6 +34,10 @@ def main():
     # cmd.set_joint("RightShoulderPitch", position=-80)
     # cmd.set_joint("LeftShoulderPitch", position=80)
     # Logger.info(cmd)
+
+    mic_stream = robot.microphone.stream.open_channel0_reader()
+    frame  = mic_stream.read(timeout=None) # return AudioFrameFlac
+
 
     should_stop = False
     try:
