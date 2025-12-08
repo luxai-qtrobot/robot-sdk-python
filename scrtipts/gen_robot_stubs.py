@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
+import textwrap
 
 from luxai.robot.core.config import QTROBOT_CORE_APIS
 
@@ -150,37 +151,33 @@ def generate_client_stub() -> str:
                 # robot -> SDK: reader + callback
                 if direction in ("out", None):
                     api_lines.append(
-                        f"    def open_{local_name}_reader("
-                        "self, queue_size: int | None = ..."
-                        f") -> TypedStreamReader[{frame_type_name}]:"
+                        f"    def open_{local_name}_reader(self, queue_size: int | None = ...) -> TypedStreamReader[{frame_type_name}]:"
                     )
-                    api_lines.append(
-                        f'        """Open a reader for stream topic {topic!r}. (API: {api_id})"""'
-                    )
+                    indented_doc = textwrap.indent(doc, " " * 8)  # indent all lines
+                    api_lines.append('        """')
+                    api_lines.append(indented_doc.strip("\n"))
+                    api_lines.append('        """')
                     api_lines.append("        ...")
-                    api_lines.append("")
+                    api_lines.append("")                    
 
                     api_lines.append(
-                        f"    def on_{local_name}("
-                        f"self, callback: Callable[[{frame_type_name}], None], queue_size: int | None = ..."
-                        ") -> StreamSubscription:"
+                        f"    def on_{local_name}(self, callback: Callable[[{frame_type_name}], None], queue_size: int | None = ...) -> StreamSubscription:"
                     )
-                    api_lines.append(
-                        f'        """Attach a callback to stream topic {topic!r}. (API: {api_id})"""'
-                    )
+                    api_lines.append('        """')
+                    api_lines.append(indented_doc.strip("\n"))
+                    api_lines.append('        """')                    
                     api_lines.append("        ...")
                     api_lines.append("")
 
                 # SDK -> robot: writer
                 if direction in ("in", None):
                     api_lines.append(
-                        f"    def open_{local_name}_writer("
-                        "self, queue_size: int | None = ..."
-                        f") -> TypedStreamWriter[{frame_type_name}]:"
+                        f"    def open_{local_name}_writer(self, queue_size: int | None = ...) -> TypedStreamWriter[{frame_type_name}]:"
                     )
-                    api_lines.append(
-                        f'        """Open a writer for stream topic {topic!r}. (API: {api_id})"""'
-                    )
+                    indented_doc = textwrap.indent(doc, " " * 8)  # indent all lines
+                    api_lines.append('        """')
+                    api_lines.append(indented_doc.strip("\n"))
+                    api_lines.append('        """')
                     api_lines.append("        ...")
                     api_lines.append("")
 
@@ -199,7 +196,10 @@ def generate_client_stub() -> str:
 
             doc = spec.get("doc") or f"Auto-generated API for service {spec['service_name']}."
             api_lines.append(f"    def {method_name}({params_str}) -> ActionHandle:")
-            api_lines.append(f'        """{doc} (API: {api_id})"""')
+            indented_doc = textwrap.indent(doc, " " * 8)  # indent all lines
+            api_lines.append('        """')
+            api_lines.append(indented_doc.strip("\n"))
+            api_lines.append('        """')
             api_lines.append("        ...")
             api_lines.append("")
 

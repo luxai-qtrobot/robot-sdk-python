@@ -388,11 +388,11 @@ QTROBOT_API_DOCS: Dict[str, str] = {
     "motors.joints": (
         "Joint-related streaming APIs.\n"
         "\n"
-        "Depending on your IDL configuration, this key may cover:\n"
+        "motors.joints can be used as:\n"
         "  - An output stream of joint states (JointStateFrame) from the robot.\n"
         "  - An input channel for joint commands (JointCommandFrame) to the robot.\n"
         "\n"
-        "Typical usage for JOINT STATE STREAM (direction='out', JointStateFrame):\n"
+        "Typical usage for JOINT STATE STREAM (JointStateFrame):\n"
         "\n"
         "Callback subscription:\n"
         "    def on_joints(frame: JointStateFrame) -> None:\n"
@@ -408,14 +408,11 @@ QTROBOT_API_DOCS: Dict[str, str] = {
         "\n"
         "In the reader API, read(timeout=...) raises TimeoutError if no frame arrives.\n"
         "\n"
-        "Typical usage for JOINT COMMAND INPUT (direction='in', JointCommandFrame):\n"
-        "    cmd = JointCommandFrame(value={\n"
-        "        'HeadYaw': {'position': 0.2},\n"
-        "        'HeadPitch': {'position': -0.1},\n"
-        "    })\n"
-        "    robot.motors.stream.publish_joints(cmd)\n"
-        "\n"
-        "Check your final IDL naming for separate state/command streams if you split them.\n"
+        "Typical usage for JOINT COMMAND INPUT (JointCommandFrame):\n"
+        "    joints_writer = robot.motors.stream.open_joints_writer()\n"
+        "    cmd = JointCommandFrame()\n"
+        "    cmd.set_joint('HeadYaw', position=20)\n"
+        "    joints_writer.write(cmd)\n"        
     ),
 
     "motors.state": (
@@ -560,12 +557,12 @@ QTROBOT_API_DOCS: Dict[str, str] = {
     ),
 
     "microphone.led": (
-        "Input stream controlling the ReSpeaker status LED via LedColorFrame.\n"
+        "Output stream controlling the ReSpeaker status LED via LedColorFrame.\n"
         "\n"
         "Typical usage (publishing LED color):\n"
         "    frame = LedColorFrame(r=0, g=255, b=0, a=1.0)\n"
-        "    robot.microphone.stream.publish_led(frame)\n"
-        "\n"
-        "This uses the underlying /qt_respeaker_app/status_led topic.\n"
+        "    led_writer = robot.microphone.stream.open_led_writer() \n"
+        "    led_writer.write(color)\n"
+        "\n"        
     ),
 }

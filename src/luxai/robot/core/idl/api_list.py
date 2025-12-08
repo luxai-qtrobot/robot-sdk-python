@@ -336,7 +336,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("motors.joints.out", ""),
+            "doc": QTROBOT_API_DOCS.get("motors.joints", ""),
         },
         "motors.state": {
             "direction": "out",
@@ -354,7 +354,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("motors.joints.in", ""),
+            "doc": QTROBOT_API_DOCS.get("motors.joints", ""),
         },
 
         "microphone.activity": {
