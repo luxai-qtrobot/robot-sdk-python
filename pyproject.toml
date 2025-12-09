@@ -29,7 +29,8 @@ dependencies = [
 [project.optional-dependencies]
 
 asr-azure = [
-    "torch",
+    "torch",  # for VAD
+    "torchaudio", # for VAD
     "azure-cognitiveservices-speech"
 ]
 

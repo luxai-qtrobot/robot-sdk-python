@@ -43,7 +43,7 @@ class ASRBaseNode(ServerNode):
         setup_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         self._robot = robot
-        self._stream_writer = stream_writer
+        self._stream_writer = stream_writer        
 
         self._asr_engine_lock = threading.Lock()
         self._stream_writer_lock = threading.Lock()
@@ -102,7 +102,7 @@ class ASRBaseNode(ServerNode):
                 Logger.warning(f"{self.name}: received unknown request {name}")
                 return {"status": False, "response": None}
 
-            return {"status": response is not None, "response": response}
+            return {"status": bool(response), "response": response}
 
         except Exception as e:
             Logger.warning(f"{self.name}: error in RPC '{name}': {e}")
@@ -118,7 +118,7 @@ class ASRBaseNode(ServerNode):
 
             # best-effort join
             if self._cont_recog_thread and self._cont_recog_thread.is_alive():
-                self._cont_recog_thread.join(timeout=1.0)
+                self._cont_recog_thread.join(timeout=2.0)
 
             self._cont_recog_thread = None
 
@@ -169,7 +169,7 @@ class ASRBaseNode(ServerNode):
         pass
 
     @abstractmethod
-    def configure(self, args: object | None = None) -> Any:
+    def configure(self, args: object | None = None) -> bool:
         """
         Configure the ASR backend (keys, region, languages, etc.).
         """
@@ -188,10 +188,10 @@ class ASRBaseNode(ServerNode):
     def on_asr_event(self, event: StringFrame | None) -> None:
         if event is None:
             return
-        with self._stream_writer_lock:
+        with self._stream_writer_lock:                         
             self._stream_writer.write(event.to_dict(), f"/{self.name}/event")
 
-    def on_asr_speech(self, speech: DictFrame | None) -> None:
+    def on_asr_speech(self, speech: DictFrame | None) -> None:        
         if speech is None:
             return
         with self._stream_writer_lock:
@@ -204,12 +204,10 @@ class ASRBaseNode(ServerNode):
         while not self._cont_recog_stop_event.is_set():
             try:
                 with self._asr_engine_lock:
-                    lang, speech = self.recognize_once({})
-                frame = DictFrame(value={
-                    "language": lang,
-                    "text": speech
-                })
-                self.on_asr_speech(frame)
+                    lang, speech = self.recognize_once({'timeout': 3.0})
+                if speech is not None :
+                    frame = DictFrame(value={ "language": lang, "text": speech })
+                    self.on_asr_speech(frame)
             except Exception as e:
                 Logger.warning(f"ASR {self.name}: continuous loop error: {e}")
                 # optional: small backoff to avoid tight error loop

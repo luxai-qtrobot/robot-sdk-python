@@ -204,13 +204,31 @@ class AsrStreamAPI:
         """
         ...
 
+    def open_azure_event_reader(self, queue_size: int | None = ...) -> TypedStreamReader[StringFrame]:
+        """
+        Speech recognition events from Azure ASR.
+        """
+        ...
+
+    def on_azure_event(self, callback: Callable[[StringFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Speech recognition events from Azure ASR.
+        """
+        ...
+
 
 class AsrAPI:
     """Namespace for asr RPC/stream APIs."""
 
-    def configure_azure(self, subscription: str, region: str, languages: List = ..., continuous_mode: bool = ..., blocking: bool = True) -> ActionHandle:
+    def configure_azure(self, subscription: str, region: str, languages: List = ..., silence_timeout: float = ..., continuous_mode: bool = ..., blocking: bool = True) -> ActionHandle:
         """
         configure Azure ASR
+        """
+        ...
+
+    def recognize_azure(self, blocking: bool = True) -> ActionHandle:
+        """
+        Perform one-shot recognition with Azure ASR.
         """
         ...
 

@@ -80,7 +80,7 @@ class _StreamSubscription:
                     continue                
                 self._callback(frame)
             except Exception as e:  # pragma: no cover - defensive logging
-                Logger.warning(f"Robot stream callback raised: {e}")
+                Logger.debug(f"Robot stream callback raised: {e}")
         self._reader.close()        
 
     def cancel(self) -> None:

@@ -300,13 +300,13 @@ class Robot:
         """
 
         if name not in PLUGIN_REGISTRY:
-            raise ValueError(f"Unknown plugin '{name}'. Did you spell it correctly?")
+            raise ValueError(f"Unknown plugin {name}. Did you spell it correctly?")
 
         # Case 1: user passed string
         plugin_cls = PLUGIN_REGISTRY.get(name)
         if plugin_cls is None:
             raise RuntimeError(
-                f"Plugin '{name}' is not installed.\n"
+                f"Plugin {name} is not installed.\n"
                 f"Install via: pip install luxai-robot[{name}]"
             )
 
@@ -493,7 +493,12 @@ class Robot:
                     "deprecated": bool(svc.get("deprecated", False)),
                     "experimental": bool(svc.get("experimental", False)),
                 }
-                
+                if svc.get("cancel_service_name"):
+                    self._rpc_routes[svc["cancel_service_name"]] = {
+                        "service_name": svc["cancel_service_name"],
+                        "transports": svc.get("transports", {}),
+                    }
+
         for stm in stream_services.values():
             if stm.get("local"):               
                 self._stream_routes[stm["topic"]] = {

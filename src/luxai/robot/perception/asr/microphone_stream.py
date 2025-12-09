@@ -215,7 +215,7 @@ class MicrophoneStream:
         if not self._closed:
             try:
                 # re-iitlaize buffer size if needed 
-                if self._rate != frame.sample_rate or self._num_samples != frame.num_frames: 
+                if self._rate != frame.sample_rate: 
                     self._rate = frame.sample_rate
                     self._num_samples = frame.num_frames
                     # Buffer: 60 seconds worth of chunks
@@ -224,11 +224,11 @@ class MicrophoneStream:
                     if self._vad and frame.sample_rate not in [8000, 16000]:
                         self._vad = None
                         Logger.error(f"SileroVAD: sample rate must be 16000 or 8000; Disabling VAD! (current sample rate: {frame.sample_rate})")
-                
-                chunk = frame.to_pcm()
+                                        
+                chunk = frame.to_pcm()                
                 is_voice = False
                 try:
-                    is_voice = self._vad.is_voice(chunk) if self._vad else False
+                    is_voice = self._vad.is_voice(chunk) if self._vad else False                    
                     if is_voice:
                         self._voice_event.set()
                 except Exception as e:

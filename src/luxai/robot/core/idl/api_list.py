@@ -326,14 +326,16 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "doc": QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
         },
         # =========================
-        # ASR 
+        # ASR Azure RPCs
         # =========================
         "asr.configure_azure": {
             "service_name": "/asr-azure/configure",
+            "cancel_service_name": None,
             "params": [
                 ("subscription", str),
                 ("region", str),
                 ("languages", List[str], ["en-US"]),
+                ("silence_timeout", float, 0.2),
                 ("continuous_mode", bool, False)
             ],
             "response_type": bool,
@@ -350,6 +352,25 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated_message": None,            
             "robots": ["qtrobot-v3"],
             "doc": "configure Azure ASR"#QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
+        },
+        "asr.recognize_azure": {
+            "service_name": "/asr-azure/recognize",
+            "cancel_service_name": "/asr-azure/recognize/cancel",
+            "params": [],
+            "response_type": dict,
+            "local": True,
+            "transports": {
+                "zmq": {
+                    "endpoint": "inproc://asr-azure-rpc",
+                },
+            },            
+            "extra": "asr-azure",
+            "install_hint": "pip install luxai-robot[asr-azure]",
+            "since": "0.1.0",
+            "deprecated": False,
+            "deprecated_message": None,            
+            "robots": ["qtrobot-v3"],
+            "doc":  "Perform one-shot recognition with Azure ASR.",  #QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
         },
 
     },  # end of rpc
@@ -466,8 +487,11 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_API_DOCS.get("microphone.led", ""),
         },
+        # -----------------------------------
+        #  ASR Azure streams
+        # -----------------------------------
         "asr.azure_speech": {
-            "direction": "out",  # ASR -> SDK
+            "direction": "out",
             "frame_type": "DictFrame",
             "topic": "/asr-azure/speech",
             "local": True,
@@ -477,7 +501,22 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "transports": {
                 "zmq": {
                     "endpoint": "inproc://asr-azure-stream",
-                    "default_queue_size": 10,
+                    "queue_size": 10,
+                },
+            },
+        },        
+        "asr.azure_event": {
+            "direction": "out",
+            "frame_type": "StringFrame",
+            "topic": "/asr-azure/event",
+            "local": True,
+            "extra": "asr-azure",
+            "install_hint": "pip install luxai-robot[asr-azure]",
+            "doc": "Speech recognition events from Azure ASR.",
+            "transports": {
+                "zmq": {
+                    "endpoint": "inproc://asr-azure-stream",
+                    "queue_size": 10,
                 },
             },
         },        
