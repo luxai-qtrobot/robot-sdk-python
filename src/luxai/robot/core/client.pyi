@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, TypeVar, Callable
+from typing import Any, Dict, TypeVar, Callable, List
 from luxai.robot.core.transport import Transport
 from luxai.robot.core.actions import ActionHandle
 from luxai.robot.core.frames import *
@@ -130,7 +130,27 @@ class Robot:
     ) -> Dict[str, Any]:
         ...
 
+    def enable_plugin(self, name: str) -> None:
+        """
+        Enable a plugin by name (string).
+
+        Examples:
+            robot.enable_plugin("azure-asr")
+        """
+        ...
+
+    def disable_plugin(self, name: str) -> None:
+        """
+        Disable (stop + remove) a previously enabled plugin.
+        """
+        ...
+
     # --- AUTO-GENERATED ROBOT NAMESPACES ---
+
+    @property
+    def asr(self) -> AsrAPI:
+        """Namespace view for asr APIs."""
+        ...
 
     @property
     def audio(self) -> AudioAPI:
@@ -167,6 +187,37 @@ class Robot:
         """Namespace view for speech APIs."""
         ...
 
+
+
+class AsrStreamAPI:
+    """Stream APIs for asr namespace."""
+
+    def open_azure_speech_reader(self, queue_size: int | None = ...) -> TypedStreamReader[DictFrame]:
+        """
+        Recognized speech segments from Azure ASR.
+        """
+        ...
+
+    def on_azure_speech(self, callback: Callable[[DictFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Recognized speech segments from Azure ASR.
+        """
+        ...
+
+
+class AsrAPI:
+    """Namespace for asr RPC/stream APIs."""
+
+    def configure_azure(self, subscription: str, region: str, languages: List = ..., continuous_mode: bool = ..., blocking: bool = True) -> ActionHandle:
+        """
+        configure Azure ASR
+        """
+        ...
+
+    @property
+    def stream(self) -> AsrStreamAPI:
+        """Stream namespace for asr APIs."""
+        ...
 
 
 class AudioAPI:

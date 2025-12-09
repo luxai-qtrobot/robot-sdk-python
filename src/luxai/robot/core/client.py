@@ -13,7 +13,7 @@ from .actions import ActionHandle
 from .transport import Transport, SupportsPreallocation, UnsupportedAPIError, ZmqTransport
 from .config import ( QTROBOT_CORE_APIS, SDK_VERSION, SYSTEM_DESCRIBE_SERVICE)
 from .typed_stream import TypedStreamReader, TypedStreamWriter
-
+from .plugins import PLUGIN_REGISTRY, RobotPlugin
 
 F = TypeVar("F", bound="Frame")
 
@@ -140,8 +140,14 @@ class Robot:
         # requeters are usually shared among multiple apis and need protection
         self._rpc_locks: Dict[str, threading.Lock] = {}
 
-        # ---- Handshake with robot ----
+        # active plugin instances
+        self._plugins: Dict[str, RobotPlugin] = {} 
+
+        # ---- Handshake with robot to get the correct routes for apis----
         self._handshake_with_robot()
+
+        # ---- populate local plugin routes after handshaking with robot ----
+        self._populate_local_routes()
 
         # ---- Optional preallocation of RPC requesters ----
         if isinstance(self._transport, SupportsPreallocation):
@@ -150,6 +156,14 @@ class Robot:
 
     def close(self) -> None:
         """Close the underlying transport and free resources."""
+        # Stop plugins
+        for plugin in list(self._plugins.values()):
+            try:
+                plugin.stop()
+            except Exception:
+                pass
+        self._plugins.clear()
+
         self._transport.close()
         self._rpc_locks.clear()
 
@@ -274,6 +288,54 @@ class Robot:
         with lock:
             return requester.call(rpc_req, timeout=timeout)        
             
+
+    # ---------------------------------------------------------
+    def enable_plugin(self, name: str) -> None:
+        """
+        Enable a plugin by name (string).
+
+        Examples:
+            robot.enable_plugin("azure-asr")            
+
+        """
+
+        if name not in PLUGIN_REGISTRY:
+            raise ValueError(f"Unknown plugin '{name}'. Did you spell it correctly?")
+
+        # Case 1: user passed string
+        plugin_cls = PLUGIN_REGISTRY.get(name)
+        if plugin_cls is None:
+            raise RuntimeError(
+                f"Plugin '{name}' is not installed.\n"
+                f"Install via: pip install luxai-robot[{name}]"
+            )
+
+        if name in self._plugins:
+            # ignore double enable
+            return
+
+        # Instantiate + start the plugin
+        plugin = plugin_cls()
+        plugin.start(self)
+
+        # Track it for cleanup
+        self._plugins[name] = plugin
+
+
+    # ---------------------------------------------------------
+    def disable_plugin(self, name: str) -> None:
+        """
+        Disable (stop + remove) a previously enabled plugin.
+        """
+        plugin = self._plugins.pop(name, None)
+        if plugin is None:
+            return
+
+        try:
+            plugin.stop()
+        except Exception:
+            pass
+    
 
     # ------------------------------------------------------------------
     # Internal helper for starting actions
@@ -415,6 +477,33 @@ class Robot:
             f"{len(self._rpc_routes)} RPC services, "
             f"{len(self._stream_routes)} streams."
         )
+
+    # ------------------------------------------------------------------
+    # Polulate local plugins routes
+    # ------------------------------------------------------------------
+    def _populate_local_routes(self) -> None:
+        rpc_services = QTROBOT_CORE_APIS.get("rpc", {})
+        stream_services = QTROBOT_CORE_APIS.get("stream", {})
+        
+        for svc in rpc_services.values():
+            if svc.get("local"):               
+                self._rpc_routes[svc["service_name"]] = {
+                    "service_name": svc["service_name"],
+                    "transports": svc.get("transports", {}),
+                    "deprecated": bool(svc.get("deprecated", False)),
+                    "experimental": bool(svc.get("experimental", False)),
+                }
+                
+        for stm in stream_services.values():
+            if stm.get("local"):               
+                self._stream_routes[stm["topic"]] = {
+                    "topic": stm["topic"],
+                    "direction": stm.get("direction"),
+                    "frame_type": stm.get("frame_type"),
+                    "transports": stm.get("transports", {}),
+                    "deprecated": bool(stm.get("deprecated", False)),
+                    "experimental": bool(stm.get("experimental", False)),
+                }
 
     # ------------------------------------------------------------------
     # Version parser (same as before)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, TypeVar, Callable
+from typing import Any, Dict, TypeVar, Callable, List
 from luxai.robot.core.transport import Transport
 from luxai.robot.core.actions import ActionHandle
 from luxai.robot.core.frames import *
@@ -128,6 +128,21 @@ class Robot:
         args: Dict[str, Any],
         timeout: float | None,
     ) -> Dict[str, Any]:
+        ...
+
+    def enable_plugin(self, name: str) -> None:
+        """
+        Enable a plugin by name (string).
+
+        Examples:
+            robot.enable_plugin("azure-asr")
+        """
+        ...
+
+    def disable_plugin(self, name: str) -> None:
+        """
+        Disable (stop + remove) a previously enabled plugin.
+        """
         ...
 
     # --- AUTO-GENERATED ROBOT NAMESPACES ---

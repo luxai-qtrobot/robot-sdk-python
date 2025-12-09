@@ -118,7 +118,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/qt_robot/gesture/list",
             "cancel_service_name": None,
             "params": [],
-            "response_type": list,
+            "response_type": List[str],
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,
@@ -325,6 +325,33 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
         },
+        # =========================
+        # ASR 
+        # =========================
+        "asr.configure_azure": {
+            "service_name": "/asr-azure/configure",
+            "params": [
+                ("subscription", str),
+                ("region", str),
+                ("languages", List[str], ["en-US"]),
+                ("continuous_mode", bool, False)
+            ],
+            "response_type": bool,
+            "local": True,
+            "transports": {
+                "zmq": {
+                    "endpoint": "inproc://asr-azure-rpc",
+                },
+            },            
+            "extra": "asr-azure",
+            "install_hint": "pip install luxai-robot[asr-azure]",
+            "since": "0.1.0",
+            "deprecated": False,
+            "deprecated_message": None,            
+            "robots": ["qtrobot-v3"],
+            "doc": "configure Azure ASR"#QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
+        },
+
     },  # end of rpc
 
     # STREAM SECTION
@@ -439,5 +466,20 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_API_DOCS.get("microphone.led", ""),
         },
+        "asr.azure_speech": {
+            "direction": "out",  # ASR -> SDK
+            "frame_type": "DictFrame",
+            "topic": "/asr-azure/speech",
+            "local": True,
+            "extra": "asr-azure",
+            "install_hint": "pip install luxai-robot[asr-azure]",
+            "doc": "Recognized speech segments from Azure ASR.",
+            "transports": {
+                "zmq": {
+                    "endpoint": "inproc://asr-azure-stream",
+                    "default_queue_size": 10,
+                },
+            },
+        },        
     }
 }

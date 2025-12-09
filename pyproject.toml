@@ -28,10 +28,10 @@ dependencies = [
 
 [project.optional-dependencies]
 
-# speech-azure = [
-#     "numpy",
-#     "soundfile",
-# ]
+asr-azure = [
+    "torch",
+    "azure-cognitiveservices-speech"
+]
 
 # speech-riva = [
 #     "numpy",
