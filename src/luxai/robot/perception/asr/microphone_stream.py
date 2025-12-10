@@ -146,8 +146,19 @@ class MicrophoneStream:
 
 
     def close(self):
+        if self._closed:
+            return
         self._closed = True
 
+        # Unblock wait_for_voice(...)
+        self._voice_event.set()
+
+        # Best-effort: make sure any iterator unblocks without hanging close()
+        try:
+            self.stream_buff.queue.clear()          # optional but helpful
+            self.stream_buff.put_nowait((None, False))
+        except queue.Full:
+            pass
 
     def wait_for_voice(self, timeout=None):
         if not self._vad:
@@ -164,9 +175,8 @@ class MicrophoneStream:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):        
-        self._voice_event.set()
-        self._closed = True
-        self.stream_buff.put((None, False))
+        self.close()
+
         
     def __iter__(self):
         return self
