@@ -24,7 +24,17 @@ class SileroVAD:
             Returns True if voice is detected in the given audio chunk.
     """    
     def __init__(self, confidence_threshold=0.6, rate=16000):
-        import torch
+        try:
+            import torch
+            import torchaudio
+        except ImportError:
+            Logger.error(
+                "MicrophoneStream was initialized with 'use_vad=True', but required packages are missing.\n"                
+                "Please install them using pip or follow your platform-specific instructions:\n"
+                "pip install torch\n"
+                "pip install torchaudio\n"
+            )
+
         self._torch = torch
         self.model, utils = torch.hub.load(
             repo_or_dir='snakers4/silero-vad',
@@ -90,7 +100,7 @@ class MicrophoneStream:
                  robot: Robot,
                  rate=16000,
                  num_samples=512,
-                 use_vad=True,
+                 use_vad=False,
                  silence_timeout=1.0):
 
         self._robot = robot
@@ -238,7 +248,7 @@ class MicrophoneStream:
                 chunk = frame.to_pcm()                
                 is_voice = False
                 try:
-                    is_voice = self._vad.is_voice(chunk) if self._vad else False                    
+                    is_voice = self._vad.is_voice(chunk) if self._vad is not None else False                    
                     if is_voice:
                         self._voice_event.set()
                 except Exception as e:

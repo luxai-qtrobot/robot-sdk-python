@@ -17,12 +17,12 @@ except ImportError:
 
 
 class AudioInputStreamCallback(speechsdk.audio.PullAudioInputStreamCallback):
-    def __init__(self, robot: "Robot"):        
+    def __init__(self, robot: "Robot", use_vad : bool = False):        
         super().__init__()
         # start microphone stream
         self.microphone_stream = MicrophoneStream(
             robot=robot,
-            use_vad=True, 
+            use_vad=use_vad, 
             silence_timeout=None)
         self.microphone_stream.__enter__()  # manually enter the context
         self._stream_iterator = iter(self.microphone_stream)
@@ -78,6 +78,8 @@ class ASRAzureNode(ASRBaseNode):
         self.region = args.get("region")
         self.speech_recognition_languages = args.get("languages", ["en-US"])
         self.silence_timeout = args.get("silence_timeout", 0.2)
+        self.use_vad = args.get("use_vad", False)
+
         if not self.subscription or not self.region: 
             Logger.error(f"{self.name} both 'subscription' and 'region' params are needed!")
             return False
@@ -96,7 +98,7 @@ class ASRAzureNode(ASRBaseNode):
         self.speech_config.set_property(speechsdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, str(self.silence_timeout*1000))  # set this to higher value for more pause in the speech
         self.speech_config.set_property(speechsdk.PropertyId.Conversation_Initial_Silence_Timeout, "5000")
         self.speech_config.set_property(speechsdk.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, "5000")
-        self.audio_input_stream = AudioInputStreamCallback(robot=self._robot)
+        self.audio_input_stream = AudioInputStreamCallback(robot=self._robot, use_vad=self.use_vad)
         self.audio_config = speechsdk.audio.AudioConfig(stream=speechsdk.audio.PullAudioInputStream(self.audio_input_stream))  
         
         self.speech_recognizer = speechsdk.SpeechRecognizer(speech_config=self.speech_config, 

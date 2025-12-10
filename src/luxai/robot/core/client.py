@@ -337,6 +337,15 @@ class Robot:
             pass
     
 
+
+    def __enter__(self):
+        # Optionally assert it’s not already closed
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
+    
     # ------------------------------------------------------------------
     # Internal helper for starting actions
     # ------------------------------------------------------------------

@@ -336,6 +336,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
                 ("region", str),
                 ("languages", List[str], ["en-US"]),
                 ("silence_timeout", float, 0.2),
+                ("use_vad", bool, False),
                 ("continuous_mode", bool, False)
             ],
             "response_type": bool,

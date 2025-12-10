@@ -30,26 +30,25 @@ if __name__ == "__main__":
 
     robot.enable_plugin("asr-azure")
 
-
     robot.asr.stream.on_azure_event(asr_event_callback)
-    # robot.asr.stream.on_azure_speech(asr_speech_callback)
+    robot.asr.stream.on_azure_speech(asr_speech_callback)
 
     ret = robot.asr.configure_azure(
         region="westeurope",
         subscription="ace88fb2108f45b59adc5ae52f07b8ca",
-        continuous_mode=False
-    ).result()
-    
+        continuous_mode=True,
+        use_vad=True
+    ).result()    
     print(ret)
     
 
-    h = robot.asr.recognize_azure(blocking=False)    
-    Logger.info("waitring for recognize_azure.")
-    Logger.info(h.result())
+    # h = robot.asr.recognize_azure(blocking=False)    
+    # Logger.info("waitring for recognize_azure.")
+    # Logger.info(h.result())
 
     try:
         time.sleep(30)
     except KeyboardInterrupt:
         print("Interrupted by user.")
-    finally:        
-        robot.close()
+    # finally:        
+    robot.close()

@@ -220,7 +220,7 @@ class AsrStreamAPI:
 class AsrAPI:
     """Namespace for asr RPC/stream APIs."""
 
-    def configure_azure(self, subscription: str, region: str, languages: List = ..., silence_timeout: float = ..., continuous_mode: bool = ..., blocking: bool = True) -> ActionHandle:
+    def configure_azure(self, subscription: str, region: str, languages: List = ..., silence_timeout: float = ..., use_vad: bool = ..., continuous_mode: bool = ..., blocking: bool = True) -> ActionHandle:
         """
         configure Azure ASR
         """
