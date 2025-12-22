@@ -86,8 +86,9 @@ class ZmqTransport(Transport, SupportsPreallocation):
             self._default_rpc_endpoint = f"tcp://{ip}:{info.port}"
             self._default_host = ip
 
-        # (service_name, endpoint) -> ZMQRpcRequester
-        self._requesters: Dict[Tuple[str, str], ZMQRpcRequester] = {}
+        # old: (service_name, endpoint) -> ZMQRpcRequester
+        # endpoint -> ZMQRpcRequester
+        self._requesters: Dict[str, ZMQRpcRequester] = {}
         self._stream_resources: list[object] = []   
 
         self._lock_global = threading.Lock()
@@ -99,15 +100,16 @@ class ZmqTransport(Transport, SupportsPreallocation):
 
     def _get_or_create_requester(self, service_name: str, endpoint: str) -> RpcRequester:
         """Return cached ZMQRpcRequester per (service_name, endpoint)."""
-        key = (service_name, endpoint)
-        with self._lock_global:
+        # key = (service_name, endpoint)
+        key = endpoint
+        with self._lock_global:            
             requester = self._requesters.get(key)
             if requester is not None:
                 return requester
 
             requester = ZMQRpcRequester(
                 endpoint=endpoint,
-                name=f"RpcRequester:{service_name}",
+                name=f"RpcRequester:{endpoint}",
             )
             self._requesters[key] = requester            
 
@@ -322,7 +324,7 @@ class ZmqTransport(Transport, SupportsPreallocation):
                 try:
                     requester.close()
                     Logger.debug(
-                        f"ZmqTransport: closed ZMQRpcRequester for {key[0]} at {key[1]}"
+                        f"ZmqTransport: closed ZMQRpcRequester for {key}"
                     )
                 except Exception as e:
                     Logger.warning(

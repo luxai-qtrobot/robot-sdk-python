@@ -13,19 +13,33 @@ def on_mic_0(data:AudioFrameFlac):
 
 
 def main():
+    Logger.set_level("DEBUG")
 
-    robot = Robot.connect_zmq(endpoint="tcp://192.168.3.152:50557")    
-    # robot = Robot.connect_zmq(node_id="QTPC")
-    print("Connected to robot.")
+    # robot = Robot.connect_zmq(endpoint="tcp://192.168.3.152:50557")    
+    robot = Robot.connect_zmq(node_id="QTPC")
+    Logger.info("Connected to robot.")
+
+    
+    robot.speaker.set_volume(60)
+
+
+    Logger.info("calling speech.say()...")
+    h1 = robot.speech.say("Hello. this is a test of the QT robot SDK for Python.", blocking=False)
+    time.sleep(2)
+    Logger.info("cancelling speech...")
+    h1.cancel()
+    Logger.info("speech cancelled.")
+
+
 
 
     # joint_reader = robot.motors.stream.open_joints_reader()
     # state = joint_reader.read()
     # Logger.info(type(state))
     # Logger.info(state.position("HeadYaw"))
-    mic = robot.microphone.stream.on_channel0(on_mic_0)
+    # mic = robot.microphone.stream.on_channel0(on_mic_0)
 
-    led = robot.microphone.stream.open_led_writer()    
+    # led = robot.microphone.stream.open_led_writer()    
 
     # joints = robot.motors.stream.open_joints_writer()
     # cmd = JointCommandFrame()    
@@ -35,20 +49,20 @@ def main():
     # cmd.set_joint("LeftShoulderPitch", position=80)
     # Logger.info(cmd)
 
-    mic_stream = robot.microphone.stream.open_channel0_reader()
-    frame  = mic_stream.read(timeout=None) # return AudioFrameFlac
+    # mic_stream = robot.microphone.stream.open_channel0_reader()
+    # frame  = mic_stream.read(timeout=None) # return AudioFrameFlac
 
 
     should_stop = False
     try:
         while(not should_stop):
             # joints.write(cmd)
-            color = LedColorFrame(
-                r=random.random(), 
-                g=random.random(), 
-                b=random.random()
-                )
-            led.write(color)
+            # color = LedColorFrame(
+            #     r=random.random(), 
+            #     g=random.random(), 
+            #     b=random.random()
+            #     )
+            # led.write(color)
             time.sleep(3)
     except KeyboardInterrupt:
         should_stop = True
