@@ -24,11 +24,11 @@ def asr_speech_callback(speech: DictFrame):
 if __name__ == "__main__":
     # Logger.set_level("DEBUG")
 
-    # robot = Robot.connect_zmq(endpoint="tcp://192.168.3.152:50557")    
-    robot = Robot.connect_zmq(node_id="QTPC")
+    robot = Robot.connect_zmq(endpoint="tcp://192.168.3.152:50557")    
+    # robot = Robot.connect_zmq(node_id="QTPC")
     print("Connected to robot.")
 
-    robot.enable_plugin("asr-azure")
+    robot.enable_plugin_local("asr-azure")
 
     robot.asr.stream.on_azure_event(asr_event_callback)
     robot.asr.stream.on_azure_speech(asr_speech_callback)

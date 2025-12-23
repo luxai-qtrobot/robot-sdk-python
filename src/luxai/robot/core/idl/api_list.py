@@ -325,6 +325,47 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
         },
+
+        # =========================
+        # Camera Realsense RPCs
+        # =========================
+        "camera.get_color_intrinsics": {
+            "service_name": "/camera/color/intrinsics",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": dict,            
+            "provider": "realsense-driver",
+            "since": "0.1.0",
+            "deprecated": False,
+            "deprecated_message": None,            
+            "robots": ["qtrobot-v3"],
+            "doc": "Get Camera color intrinsics parameters."
+        },
+        "camera.get_depth_intrinsics": {
+            "service_name": "/camera/depth/intrinsics",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": dict,            
+            "provider": "realsense-driver",
+            "since": "0.1.0",
+            "deprecated": False,
+            "deprecated_message": None,            
+            "robots": ["qtrobot-v3"],
+            "doc": "Get Camera depth intrinsics parameters."
+        },
+        "camera.get_depth_scale": {
+            "service_name": "/camera/depth/scale",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": dict,            
+            "provider": "realsense-driver",
+            "since": "0.1.0",
+            "deprecated": False,
+            "deprecated_message": None,            
+            "robots": ["qtrobot-v3"],
+            "doc": "Get Camera depth scale value."
+        },
+
         # =========================
         # ASR Azure RPCs
         # =========================
@@ -341,18 +382,13 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             ],
             "response_type": bool,
             "local": True,
-            "transports": {
-                "zmq": {
-                    "endpoint": "inproc://asr-azure-rpc",
-                },
-            },            
-            "extra": "asr-azure",
+            "provider": "asr-azure",
             "install_hint": "pip install luxai-robot[asr-azure]",
             "since": "0.1.0",
             "deprecated": False,
             "deprecated_message": None,            
             "robots": ["qtrobot-v3"],
-            "doc": "configure Azure ASR"#QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
+            "doc": "configure Azure ASR" #QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
         },
         "asr.recognize_azure": {
             "service_name": "/asr-azure/recognize",
@@ -360,12 +396,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [],
             "response_type": dict,
             "local": True,
-            "transports": {
-                "zmq": {
-                    "endpoint": "inproc://asr-azure-rpc",
-                },
-            },            
-            "extra": "asr-azure",
+            "provider": "asr-azure",
             "install_hint": "pip install luxai-robot[asr-azure]",
             "since": "0.1.0",
             "deprecated": False,
@@ -373,7 +404,6 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "robots": ["qtrobot-v3"],
             "doc":  "Perform one-shot recognition with Azure ASR.",  #QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
         },
-
     },  # end of rpc
 
     # STREAM SECTION
@@ -488,6 +518,72 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_API_DOCS.get("microphone.led", ""),
         },
+
+        # -----------------------------------
+        #  Reaslsense Camera streams
+        # -----------------------------------
+        "camera.color": {
+            "direction": "out",
+            "frame_type": "ImageFrameRaw",
+            "topic": "/camera/color/image",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "provider": "realsense-driver",            
+            "doc": "Camera color image streaming"
+        },
+        "camera.depth": {
+            "direction": "out",
+            "frame_type": "ImageFrameRaw",
+            "topic": "/camera/depth/image",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "provider": "realsense-driver",            
+            "doc": "Camera depth image streaming"
+        },
+        "camera.depth_aligned": {
+            "direction": "out",
+            "frame_type": "ImageFrameRaw",
+            "topic": "/camera/depth/aligned/image",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "provider": "realsense-driver",
+            "doc": "Camera aligned depth image streaming"
+        },
+        "camera.depth_color": {
+            "direction": "out",
+            "frame_type": "ImageFrameRaw",
+            "topic": "/camera/depth/color/image",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "provider": "realsense-driver",
+            "doc": "Camera colorized depth image streaming"
+        },
+        "camera.gyro": {
+            "direction": "out",
+            "frame_type": "ListFrame",
+            "topic": "/camera/gyro",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "provider": "realsense-driver",
+            "doc": "Camera gyro streaming"
+        },
+        "camera.acceleration": {
+            "direction": "out",
+            "frame_type": "ListFrame",
+            "topic": "/camera/acceleration",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "provider": "realsense-driver",
+            "doc": "Camera acceleration streaming"
+        },
+
+
         # -----------------------------------
         #  ASR Azure streams
         # -----------------------------------
@@ -496,30 +592,20 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "frame_type": "DictFrame",
             "topic": "/asr-azure/speech",
             "local": True,
-            "extra": "asr-azure",
+            "provider": "asr-azure",
             "install_hint": "pip install luxai-robot[asr-azure]",
             "doc": "Recognized speech segments from Azure ASR.",
-            "transports": {
-                "zmq": {
-                    "endpoint": "inproc://asr-azure-stream",
-                    "queue_size": 10,
-                },
-            },
         },        
         "asr.azure_event": {
             "direction": "out",
             "frame_type": "StringFrame",
             "topic": "/asr-azure/event",
             "local": True,
-            "extra": "asr-azure",
+            "provider": "asr-azure",
             "install_hint": "pip install luxai-robot[asr-azure]",
             "doc": "Speech recognition events from Azure ASR.",
-            "transports": {
-                "zmq": {
-                    "endpoint": "inproc://asr-azure-stream",
-                    "queue_size": 10,
-                },
-            },
-        },        
+        },
+
+
     }
 }

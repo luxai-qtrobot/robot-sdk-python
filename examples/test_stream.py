@@ -15,13 +15,12 @@ def on_mic_0(data:AudioFrameFlac):
 def main():
     Logger.set_level("DEBUG")
 
-    # robot = Robot.connect_zmq(endpoint="tcp://192.168.3.152:50557")    
-    robot = Robot.connect_zmq(node_id="QTPC")
+    robot = Robot.connect_zmq(endpoint="tcp://192.168.3.152:50557")    
+    # robot = Robot.connect_zmq(node_id="QTPC")
     Logger.info("Connected to robot.")
 
     
     robot.speaker.set_volume(60)
-
 
     Logger.info("calling speech.say()...")
     h1 = robot.speech.say("Hello. this is a test of the QT robot SDK for Python.", blocking=False)
@@ -29,7 +28,6 @@ def main():
     Logger.info("cancelling speech...")
     h1.cancel()
     Logger.info("speech cancelled.")
-
 
 
 

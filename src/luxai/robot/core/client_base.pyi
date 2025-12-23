@@ -130,12 +130,32 @@ class Robot:
     ) -> Dict[str, Any]:
         ...
 
-    def enable_plugin(self, name: str) -> None:
+    def enable_plugin(self, name: str, transport: Transport) -> None:
         """
-        Enable a plugin by name (string).
+        Enable a plugin by name (string) using a transport.
 
         Examples:
-            robot.enable_plugin("azure-asr")
+            robot.enable_plugin("azure-asr", transport=LocalTransport())            
+
+        """
+        ...
+
+    def enable_plugin_local(self, name: str) -> None:
+        """
+        Enable a local plugin by name (string) over Local transport.
+
+        Examples:
+            robot.enable_plugin("asr-azure")
+        """
+        ...
+
+    def enable_plugin_zmq(self, name: str, endpoint: str | None = None) -> None:
+        """
+        Enable a plugin by name (string) over ZMQ transport.
+
+        Examples:
+            robot.enable_plugin("realsense-driver") # lets discovery find the it
+            robot.enable_plugin("realsense-driver", endpoint="tcp://192.168.3.152:50655")
         """
         ...
 

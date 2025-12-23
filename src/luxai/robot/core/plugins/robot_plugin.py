@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from luxai.robot.core.transport import Transport
+
 class RobotPlugin(ABC):
     """
     Base class for all Robot SDK local plugins (ASR, vision modules, etc.).
@@ -23,7 +25,7 @@ class RobotPlugin(ABC):
 
     # ---------------------------------------------------------
     @abstractmethod
-    def start(self, robot: "Robot") -> None:
+    def start(self, robot: "Robot", transport: Transport) -> None:
         """
         Called when plugin is enabled.
         Plugin should:

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import threading
-from typing import Any, Dict, TypeVar
+from typing import Any, Dict, Tuple, TypeVar
 
 from luxai.magpie.frames import Frame
 from luxai.magpie.utils.logger import Logger
@@ -10,7 +10,7 @@ from luxai.magpie.transport.stream_reader import StreamReader
 from luxai.magpie.transport.stream_writer import StreamWriter
 
 from .actions import ActionHandle
-from .transport import Transport, SupportsPreallocation, UnsupportedAPIError, ZmqTransport
+from .transport import Transport, SupportsPreallocation, UnsupportedAPIError, ZmqTransport, LocalTransport
 from .config import ( QTROBOT_CORE_APIS, SDK_VERSION, SYSTEM_DESCRIBE_SERVICE)
 from .typed_stream import TypedStreamReader, TypedStreamWriter
 from .plugins import PLUGIN_REGISTRY, RobotPlugin
@@ -122,7 +122,7 @@ class Robot:
             transport: A concrete Transport instance.
             default_rpc_timeout: Default RPC timeout for actions (seconds).
         """
-        self._transport = transport
+        self._robot_transport = transport
         self._default_rpc_timeout = float(default_rpc_timeout) if default_rpc_timeout is not None else None
 
         # Robot capability info (may stay None if handshake fails)
@@ -132,10 +132,10 @@ class Robot:
         self._max_sdk: str | None = None
 
         # Routing maps built from SYSTEM_DESCRIPTION
-        # service_name -> { "service_name", "transports", "deprecated", "experimental" }
-        self._rpc_routes: Dict[str, Dict[str, Any]] = {}
-        # topic -> { "topic", "direction", "frame_type", "transports", "deprecated", "experimental" }
-        self._stream_routes: Dict[str, Dict[str, Any]] = {}        
+        # service_name -> { (transport instance, "service_name", "transports", "deprecated", "experimental") }
+        self._rpc_routes: Dict[str, Tuple[Transport, Dict[str, Any]]] = {}
+        # topic -> { (transport instance, "topic", "direction", "frame_type", "transports", "deprecated", "experimental") }
+        self._stream_routes: Dict[str, Tuple[Transport, Dict[str, Any]]] = {}
 
         # requeters are usually shared among multiple apis and need protection
         self._rpc_locks: Dict[str, threading.Lock] = {}
@@ -146,13 +146,14 @@ class Robot:
         # ---- Handshake with robot to get the correct routes for apis----
         self._handshake_with_robot()
 
-        # ---- populate local plugin routes after handshaking with robot ----
-        self._populate_local_routes()
-
         # ---- Optional preallocation of RPC requesters ----
-        if isinstance(self._transport, SupportsPreallocation):
+        if isinstance(self._robot_transport, SupportsPreallocation):
             if self._rpc_routes:
-                self._transport.preallocate_requesters(self._rpc_routes)
+                rpc_routes: Dict[str, Dict[str, Any]] = {
+                    route: data
+                    for route, (_transport, data) in self._rpc_routes.items()
+                }    
+                self._robot_transport.preallocate_requesters(rpc_routes)
 
     def close(self) -> None:
         """Close the underlying transport and free resources."""
@@ -164,7 +165,7 @@ class Robot:
                 pass
         self._plugins.clear()
 
-        self._transport.close()
+        self._robot_transport.close()
         self._rpc_locks.clear()
 
 
@@ -188,10 +189,11 @@ class Robot:
             UnsupportedAPIError if the topic is not known to this robot,
             or if the stream direction does not allow reading.
         """
-        route = self._stream_routes.get(topic)
-        if route is None:
+        item = self._stream_routes.get(topic)
+        if item is None:
             raise UnsupportedAPIError(f"Stream topic {topic!r} is not supported by this robot.")
 
+        transporter, route = item
         direction = route.get("direction")
         if direction not in ("out", None):
             # "out" means robot -> SDK; anything else is not readable here
@@ -201,7 +203,7 @@ class Robot:
         if not transports_meta:
             raise UnsupportedAPIError(f"Stream topic {topic!r} has no transports configured.")
 
-        stream_reader =  self._transport.get_stream_reader(
+        stream_reader = transporter.get_stream_reader(
             topic=topic,
             transports=transports_meta,
             queue_size=queue_size,
@@ -230,10 +232,11 @@ class Robot:
             UnsupportedAPIError if the topic is not known to this robot,
             or if the stream direction does not allow writing.
         """
-        route = self._stream_routes.get(topic)
-        if route is None:
+        item = self._stream_routes.get(topic)
+        if item is None:
             raise UnsupportedAPIError(f"Stream topic {topic!r} is not supported by this robot.")
 
+        transporter, route = item
         direction = route.get("direction")
         if direction not in ("in", None):
             # "in" means SDK -> robot; anything else is not writable here
@@ -243,7 +246,7 @@ class Robot:
         if not transports_meta:
             raise UnsupportedAPIError(f"Stream topic {topic!r} has no transports configured.")
 
-        stream_writer = self._transport.get_stream_writer(
+        stream_writer = transporter.get_stream_writer(
             topic=topic,
             transports=transports_meta,
             queue_size=queue_size,
@@ -272,10 +275,11 @@ class Robot:
         If there is no route for the given service_name, this API is considered
         unsupported by the robot.
         """
-        route = self._rpc_routes.get(service_name)
-        if route is None:
+        item = self._rpc_routes.get(service_name)
+        if item is None:
             raise UnsupportedAPIError(f"RPC service {service_name!r} is not supported by this robot.")
 
+        transporter, route = item
         transports_meta = route.get("transports") or {}
         if not transports_meta:
             # The description knows about the service_name but did not provide
@@ -283,19 +287,19 @@ class Robot:
             raise UnsupportedAPIError(f"RPC service {service_name!r} has no transports configured.")
 
         lock = self._rpc_locks.setdefault(service_name, threading.Lock())
-        requester = self._transport.get_requester(service_name, transports_meta)
+        requester = transporter.get_requester(service_name, transports_meta)
         rpc_req = {"name": service_name, "args": args}
         with lock:
             return requester.call(rpc_req, timeout=timeout)        
             
 
     # ---------------------------------------------------------
-    def enable_plugin(self, name: str) -> None:
+    def enable_plugin(self, name: str, transport: Transport) -> None:
         """
-        Enable a plugin by name (string).
+        Enable a plugin by name (string) using a  transport.
 
         Examples:
-            robot.enable_plugin("azure-asr")            
+            robot.enable_plugin("azure-asr", transport=LocalTransport())       
 
         """
 
@@ -313,13 +317,41 @@ class Robot:
         if name in self._plugins:
             # ignore double enable
             return
-
+        
         # Instantiate + start the plugin
         plugin = plugin_cls()
-        plugin.start(self)
+        plugin.start(self, transport)
 
         # Track it for cleanup
         self._plugins[name] = plugin
+
+
+    # ---------------------------------------------------------
+    def enable_plugin_zmq(self, name: str, endpoint: str | None = None) -> None:
+        """
+        Enable a remote plugin by name (string) over ZMQ transport.
+
+        Examples:
+            robot.enable_plugin("realsense-driver") # lets discovery find the it
+            robot.enable_plugin("realsense-driver", endpoint="tcp://192.168.3.152:50655")
+        """
+        transport = ZmqTransport(
+            endpoint=endpoint,
+            node_id=name,
+            discovery_timeout=5.0,
+        )
+        self.enable_plugin(name, transport)
+
+
+    def enable_plugin_local(self, name: str) -> None:
+        """
+        Enable a local plugin by name (string) over Local transport.
+
+        Examples:
+            robot.enable_plugin("asr-azure")
+        """
+        transport = LocalTransport()
+        self.enable_plugin(name, transport)
 
 
     # ---------------------------------------------------------
@@ -386,7 +418,7 @@ class Robot:
           - compatibility warnings
         """
         try:
-            requester = self._transport.get_requester(SYSTEM_DESCRIBE_SERVICE, None)
+            requester = self._robot_transport.get_requester(SYSTEM_DESCRIBE_SERVICE, None)
             rpc_req = {"name": SYSTEM_DESCRIBE_SERVICE, "args": {"sdk_version": SDK_VERSION}}            
             raw = requester.call(rpc_req, timeout=5.0)        
 
@@ -455,31 +487,11 @@ class Robot:
 
         # --- RPC routes ---
         self._rpc_routes.clear()
-        rpc_services = desc.get("rpc", {})
-        for service_name, meta in rpc_services.items():
-            transports_meta = meta.get("transports") or {}
-
-            self._rpc_routes[service_name] = {
-                "service_name": service_name,
-                "transports": transports_meta,
-                "deprecated": bool(meta.get("deprecated", False)),
-                "experimental": bool(meta.get("experimental", False)),
-            }
+        self._setup_rpc_routes(self._robot_transport, desc.get("rpc", {}))
 
         # --- Stream routes ---
         self._stream_routes.clear()
-        streams = desc.get("stream", {})
-        for topic, meta in streams.items():
-            transports_meta = meta.get("transports") or {}
-
-            self._stream_routes[topic] = {
-                "topic": topic,
-                "direction": meta.get("direction"),
-                "frame_type": meta.get("frame_type"),
-                "transports": transports_meta,
-                "deprecated": bool(meta.get("deprecated", False)),
-                "experimental": bool(meta.get("experimental", False)),
-            }
+        self._setup_stream_routes(self._robot_transport, desc.get("stream", {}))
 
         Logger.debug(
             f"Robot: system description applied. "
@@ -487,38 +499,37 @@ class Robot:
             f"{len(self._stream_routes)} streams."
         )
 
-    # ------------------------------------------------------------------
-    # Polulate local plugins routes
-    # ------------------------------------------------------------------
-    def _populate_local_routes(self) -> None:
-        rpc_services = QTROBOT_CORE_APIS.get("rpc", {})
-        stream_services = QTROBOT_CORE_APIS.get("stream", {})
-        
-        for svc in rpc_services.values():
-            if svc.get("local"):               
-                self._rpc_routes[svc["service_name"]] = {
-                    "service_name": svc["service_name"],
-                    "transports": svc.get("transports", {}),
-                    "deprecated": bool(svc.get("deprecated", False)),
-                    "experimental": bool(svc.get("experimental", False)),
-                }
-                if svc.get("cancel_service_name"):
-                    self._rpc_routes[svc["cancel_service_name"]] = {
-                        "service_name": svc["cancel_service_name"],
-                        "transports": svc.get("transports", {}),
-                    }
 
-        for stm in stream_services.values():
-            if stm.get("local"):               
-                self._stream_routes[stm["topic"]] = {
-                    "topic": stm["topic"],
-                    "direction": stm.get("direction"),
-                    "frame_type": stm.get("frame_type"),
-                    "transports": stm.get("transports", {}),
-                    "deprecated": bool(stm.get("deprecated", False)),
-                    "experimental": bool(stm.get("experimental", False)),
-                }
+    def _setup_rpc_routes(self, transporter: Transport, rpc_services: Dict[str, Dict[str, Any]]) -> None:
+        for service_name, meta in rpc_services.items():
+            transports_meta = meta.get("transports") or {}
+            self._rpc_routes[service_name] = (      
+                transporter, 
+                {
+                    "service_name": service_name,
+                    "transports": transports_meta,
+                    "deprecated": bool(meta.get("deprecated", False)),
+                    "experimental": bool(meta.get("experimental", False)),
+                },
+            )   
 
+
+    def _setup_stream_routes(self, transporter: Transport, streams: Dict[str, Dict[str, Any]]) -> None:
+        for topic, meta in streams.items():
+            transports_meta = meta.get("transports") or {}
+            self._stream_routes[topic] = (
+                transporter, 
+                {
+                    "topic": topic,
+                    "direction": meta.get("direction"),
+                    "frame_type": meta.get("frame_type"),
+                    "transports": transports_meta,
+                    "deprecated": bool(meta.get("deprecated", False)),
+                    "experimental": bool(meta.get("experimental", False)),
+                },
+            )
+
+    
     # ------------------------------------------------------------------
     # Version parser (same as before)
     # ------------------------------------------------------------------

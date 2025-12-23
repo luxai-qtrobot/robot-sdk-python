@@ -19,6 +19,14 @@ except ImportError:
     # Extension not installed -> plugin just won't be available.
     PLUGIN_REGISTRY["asr-azure"] = None    
 
+try:    
+    from .remote_plugin import RealsenseDriverPlugin
+    PLUGIN_REGISTRY["realsense-driver"] = RealsenseDriverPlugin
+except ImportError:    
+    # Extension not installed -> plugin just won't be available.
+    PLUGIN_REGISTRY["realsense-drivere"] = None    
+
+
 
 # In the future, you add more here:
 # try:

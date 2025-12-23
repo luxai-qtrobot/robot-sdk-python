@@ -130,12 +130,32 @@ class Robot:
     ) -> Dict[str, Any]:
         ...
 
-    def enable_plugin(self, name: str) -> None:
+    def enable_plugin(self, name: str, transport: Transport) -> None:
         """
-        Enable a plugin by name (string).
+        Enable a plugin by name (string) using a transport.
 
         Examples:
-            robot.enable_plugin("azure-asr")
+            robot.enable_plugin("azure-asr", transport=LocalTransport())            
+
+        """
+        ...
+
+    def enable_plugin_local(self, name: str) -> None:
+        """
+        Enable a local plugin by name (string) over Local transport.
+
+        Examples:
+            robot.enable_plugin("asr-azure")
+        """
+        ...
+
+    def enable_plugin_zmq(self, name: str, endpoint: str | None = None) -> None:
+        """
+        Enable a plugin by name (string) over ZMQ transport.
+
+        Examples:
+            robot.enable_plugin("realsense-driver") # lets discovery find the it
+            robot.enable_plugin("realsense-driver", endpoint="tcp://192.168.3.152:50655")
         """
         ...
 
@@ -155,6 +175,11 @@ class Robot:
     @property
     def audio(self) -> AudioAPI:
         """Namespace view for audio APIs."""
+        ...
+
+    @property
+    def camera(self) -> CameraAPI:
+        """Namespace view for camera APIs."""
         ...
 
     @property
@@ -288,6 +313,109 @@ class AudioAPI:
         Returns:
             ActionHandle: Handle for the behavior action.
         """
+        ...
+
+
+class CameraStreamAPI:
+    """Stream APIs for camera namespace."""
+
+    def open_color_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ImageFrameRaw]:
+        """
+        Camera color image streaming
+        """
+        ...
+
+    def on_color(self, callback: Callable[[ImageFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Camera color image streaming
+        """
+        ...
+
+    def open_depth_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ImageFrameRaw]:
+        """
+        Camera depth image streaming
+        """
+        ...
+
+    def on_depth(self, callback: Callable[[ImageFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Camera depth image streaming
+        """
+        ...
+
+    def open_depth_aligned_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ImageFrameRaw]:
+        """
+        Camera aligned depth image streaming
+        """
+        ...
+
+    def on_depth_aligned(self, callback: Callable[[ImageFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Camera aligned depth image streaming
+        """
+        ...
+
+    def open_depth_color_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ImageFrameRaw]:
+        """
+        Camera colorized depth image streaming
+        """
+        ...
+
+    def on_depth_color(self, callback: Callable[[ImageFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Camera colorized depth image streaming
+        """
+        ...
+
+    def open_gyro_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ListFrame]:
+        """
+        Camera gyro streaming
+        """
+        ...
+
+    def on_gyro(self, callback: Callable[[ListFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Camera gyro streaming
+        """
+        ...
+
+    def open_acceleration_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ListFrame]:
+        """
+        Camera acceleration streaming
+        """
+        ...
+
+    def on_acceleration(self, callback: Callable[[ListFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Camera acceleration streaming
+        """
+        ...
+
+
+class CameraAPI:
+    """Namespace for camera RPC/stream APIs."""
+
+    def get_color_intrinsics(self, blocking: bool = True) -> ActionHandle:
+        """
+        Get Camera color intrinsics parameters.
+        """
+        ...
+
+    def get_depth_intrinsics(self, blocking: bool = True) -> ActionHandle:
+        """
+        Get Camera depth intrinsics parameters.
+        """
+        ...
+
+    def get_depth_scale(self, blocking: bool = True) -> ActionHandle:
+        """
+        Get Camera depth scale value.
+        """
+        ...
+
+    @property
+    def stream(self) -> CameraStreamAPI:
+        """Stream namespace for camera APIs."""
         ...
 
 
