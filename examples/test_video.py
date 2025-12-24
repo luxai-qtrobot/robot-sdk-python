@@ -14,8 +14,9 @@ import time
 from luxai.magpie.frames import StringFrame, DictFrame, ListFrame
 
 
-def on_gyro_callback(frame: ListFrame):
-    Logger.info(f"Gyro frame received: {frame}")
+def on_acceleration_callback(frame: ListFrame):
+    Logger.info(f"Acceleration frame received: {frame.value}")
+
 
 if __name__ == "__main__":
     Logger.set_level("DEBUG")
@@ -36,10 +37,10 @@ if __name__ == "__main__":
     depth_scale = robot.camera.get_depth_scale().result()
     Logger.info(f"Depth scale: {depth_scale}")
 
-    # robot.camera.stream.on_gyro(on_gyro_callback)
-    camera = robot.camera.stream.open_color_reader()
-    frame = camera.read(timeout=3.0)   
-    Logger.info(frame)    
+    robot.camera.stream.on_acceleration(on_acceleration_callback)
+    # camera = robot.camera.stream.open_color_reader()
+    # frame = camera.read(timeout=3.0)   
+    # Logger.info(frame)    
 
 
     try:

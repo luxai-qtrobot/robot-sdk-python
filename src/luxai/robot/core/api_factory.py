@@ -75,9 +75,9 @@ class _StreamSubscription:
     def _run_loop(self) -> None:
         while not self._stop_event.is_set():
             try:
-                frame = self._reader.read()
+                frame = self._reader.read()                
                 if frame is None:
-                    continue                
+                    continue
                 self._callback(frame)
             except Exception as e:  # pragma: no cover - defensive logging
                 Logger.debug(f"Robot stream callback raised: {e}")

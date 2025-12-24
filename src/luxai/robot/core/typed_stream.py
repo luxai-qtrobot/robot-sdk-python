@@ -31,7 +31,10 @@ class TypedStreamReader(Generic[F]):
             TimeoutError: If no data read within the timeout.
             Exception: For transport-level failures.
         """
-        data, _ = self.stream_reader.read(timeout=timeout)
+        payload = self.stream_reader.read(timeout=timeout)
+        if payload is None:
+            return None
+        data, _ = payload
         return self._frame_type.from_dict(data=data)      
 
     def close(self) -> None:

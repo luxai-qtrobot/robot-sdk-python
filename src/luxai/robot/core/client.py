@@ -327,7 +327,9 @@ class Robot:
 
 
     # ---------------------------------------------------------
-    def enable_plugin_zmq(self, name: str, endpoint: str | None = None) -> None:
+    def enable_plugin_zmq(self, name: str, 
+                          node_id: str | None = None,
+                          endpoint: str | None = None) -> None:
         """
         Enable a remote plugin by name (string) over ZMQ transport.
 
@@ -337,7 +339,7 @@ class Robot:
         """
         transport = ZmqTransport(
             endpoint=endpoint,
-            node_id=name,
+            node_id=node_id,
             discovery_timeout=5.0,
         )
         self.enable_plugin(name, transport)
