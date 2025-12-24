@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 import textwrap
 
-from luxai.robot.core.config import QTROBOT_CORE_APIS
+from luxai.robot.core.config import QTROBOT_APIS
 
 
 # Adjust this to your project layout if needed
@@ -71,8 +71,8 @@ def generate_client_stub() -> str:
     if ROBOT_NS_MARKER not in base:
         raise RuntimeError(f"Marker '{ROBOT_NS_MARKER}' not found in {CLIENT_BASE_PYI}")
 
-    rpc_specs: Dict[str, Dict[str, Any]] = QTROBOT_CORE_APIS.get("rpc", {})
-    stream_specs: Dict[str, Dict[str, Any]] = QTROBOT_CORE_APIS.get("stream", {})
+    rpc_specs: Dict[str, Dict[str, Any]] = QTROBOT_APIS.get("rpc", {})
+    stream_specs: Dict[str, Dict[str, Any]] = QTROBOT_APIS.get("stream", {})
 
     # namespaces[ns_name] = {
     #   "rpc":    List[(method_name, spec, api_id)],

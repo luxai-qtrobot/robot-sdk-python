@@ -1,8 +1,9 @@
 
 from typing import Any, Dict
 from luxai.magpie.utils import Logger
+
 from .robot_plugin import RobotPlugin
-from luxai.robot.core.transport import Transport
+from luxai.robot.core.transport import Transport, SupportsPreallocation
 
 class RemotePlugin(RobotPlugin):
 
@@ -37,11 +38,16 @@ class RemotePlugin(RobotPlugin):
 
         desc: Dict[str, Any] = raw.get("response") or {}
 
-        # --- add plugin rpc routes ---                
-        robot._setup_rpc_routes(self._transport, desc.get("rpc", {}))
+        # --- add plugin rpc routes ---
+        rpcs = desc.get("rpc", {})
+        robot._setup_rpc_routes(self._transport, rpcs)
 
         # --- add plugin stream routes ---                
         robot._setup_stream_routes(self._transport, desc.get("stream", {}))
+                
+        # ---- Optional preallocation of RPC requesters ----
+        if isinstance(self._transport, SupportsPreallocation) and rpcs:
+            self._transport.preallocate_requesters(rpcs)
 
         Logger.debug(f"{self.plugin_name} plugin started.")
 

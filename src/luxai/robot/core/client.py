@@ -11,7 +11,7 @@ from luxai.magpie.transport.stream_writer import StreamWriter
 
 from .actions import ActionHandle
 from .transport import Transport, SupportsPreallocation, UnsupportedAPIError, ZmqTransport, LocalTransport
-from .config import ( QTROBOT_CORE_APIS, SDK_VERSION, SYSTEM_DESCRIBE_SERVICE)
+from .config import ( QTROBOT_APIS, SDK_VERSION, SYSTEM_DESCRIBE_SERVICE)
 from .typed_stream import TypedStreamReader, TypedStreamWriter
 from .plugins import PLUGIN_REGISTRY, RobotPlugin
 
@@ -154,7 +154,9 @@ class Robot:
                     for route, (_transport, data) in self._rpc_routes.items()
                 }    
                 self._robot_transport.preallocate_requesters(rpc_routes)
-
+     
+        
+    
     def close(self) -> None:
         """Close the underlying transport and free resources."""
         # Stop plugins
@@ -549,4 +551,4 @@ class Robot:
 # ----------------------------------------------------------------------
 from .api_factory import attach_core_apis  # noqa: E402
 
-attach_core_apis(Robot, QTROBOT_CORE_APIS)
+attach_core_apis(Robot, QTROBOT_APIS)

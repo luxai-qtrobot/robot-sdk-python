@@ -37,7 +37,7 @@ if __name__ == "__main__":
     depth_scale = robot.camera.get_depth_scale().result()
     Logger.info(f"Depth scale: {depth_scale}")
 
-    robot.camera.stream.on_acceleration(on_acceleration_callback)
+    # robot.camera.stream.on_acceleration(on_acceleration_callback)
     # camera = robot.camera.stream.open_color_reader()
     # frame = camera.read(timeout=3.0)   
     # Logger.info(frame)    

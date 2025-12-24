@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Type
 
-from .api_doc import QTROBOT_API_DOCS
+from .api_core_doc import QTROBOT_CORE_API_DOCS
 
 QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
     # =========================
@@ -21,7 +21,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("speech.say", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("speech.say", ""),
         },
 
         "speech.talk": {
@@ -35,7 +35,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("speech.talk", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("speech.talk", ""),
         },
 
         "speech.stop": {
@@ -47,7 +47,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("speech.stop", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("speech.stop", ""),
         },
 
         "speech.config": {
@@ -63,7 +63,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("speech.config", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("speech.config", ""),
         },
 
         # =========================
@@ -82,7 +82,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("emotion.look", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("emotion.look", ""),
         },
 
         "emotion.show": {
@@ -96,7 +96,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("emotion.show", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("emotion.show", ""),
         },
 
         "emotion.stop": {
@@ -108,7 +108,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("emotion.stop", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("emotion.stop", ""),
         },
 
         # =========================
@@ -123,7 +123,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("gesture.get_all", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.get_all", ""),
         },
 
         "gesture.play": {
@@ -138,7 +138,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("gesture.play", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.play", ""),
         },
 
         "gesture.stop": {
@@ -150,7 +150,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("gesture.stop", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.stop", ""),
         },
 
         "gesture.record": {
@@ -167,7 +167,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("gesture.record", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.record", ""),
         },
 
         "gesture.save": {
@@ -182,7 +182,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("gesture.save", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.save", ""),
         },
 
         # =========================
@@ -199,7 +199,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("motors.home", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("motors.home", ""),
         },
 
         "motors.set_mode": {
@@ -214,7 +214,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("motors.set_mode", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("motors.set_mode", ""),
         },
 
         "motors.set_velocity": {
@@ -229,7 +229,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("motors.set_velocity", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("motors.set_velocity", ""),
         },
 
         # =========================
@@ -247,7 +247,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("audio.play", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("audio.play", ""),
         },
 
         "audio.stop": {
@@ -259,7 +259,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("audio.stop", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("audio.stop", ""),
         },
 
         "audio.talk": {
@@ -274,7 +274,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("audio.talk", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("audio.talk", ""),
         },
 
         # =========================
@@ -291,7 +291,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("speaker.set_volume", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("speaker.set_volume", ""),
         },
 
         # =========================
@@ -308,7 +308,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.get_tuning", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.get_tuning", ""),
         },
 
         "microphone.set_tuning": {
@@ -323,86 +323,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
-        },
-
-        # =========================
-        # Camera Realsense RPCs
-        # =========================
-        "camera.get_color_intrinsics": {
-            "service_name": "/camera/color/intrinsics",
-            "cancel_service_name": None,
-            "params": [],
-            "response_type": dict,            
-            "provider": "realsense-driver",
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,            
-            "robots": ["qtrobot-v3"],
-            "doc": "Get Camera color intrinsics parameters."
-        },
-        "camera.get_depth_intrinsics": {
-            "service_name": "/camera/depth/intrinsics",
-            "cancel_service_name": None,
-            "params": [],
-            "response_type": dict,            
-            "provider": "realsense-driver",
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,            
-            "robots": ["qtrobot-v3"],
-            "doc": "Get Camera depth intrinsics parameters."
-        },
-        "camera.get_depth_scale": {
-            "service_name": "/camera/depth/scale",
-            "cancel_service_name": None,
-            "params": [],
-            "response_type": dict,            
-            "provider": "realsense-driver",
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,            
-            "robots": ["qtrobot-v3"],
-            "doc": "Get Camera depth scale value."
-        },
-
-        # =========================
-        # ASR Azure RPCs
-        # =========================
-        "asr.configure_azure": {
-            "service_name": "/asr-azure/configure",
-            "cancel_service_name": None,
-            "params": [
-                ("subscription", str),
-                ("region", str),
-                ("languages", List[str], ["en-US"]),
-                ("silence_timeout", float, 0.2),
-                ("use_vad", bool, False),
-                ("continuous_mode", bool, False)
-            ],
-            "response_type": bool,
-            "local": True,
-            "provider": "asr-azure",
-            "install_hint": "pip install luxai-robot[asr-azure]",
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,            
-            "robots": ["qtrobot-v3"],
-            "doc": "configure Azure ASR" #QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
-        },
-        "asr.recognize_azure": {
-            "service_name": "/asr-azure/recognize",
-            "cancel_service_name": "/asr-azure/recognize/cancel",
-            "params": [],
-            "response_type": dict,
-            "local": True,
-            "provider": "asr-azure",
-            "install_hint": "pip install luxai-robot[asr-azure]",
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,            
-            "robots": ["qtrobot-v3"],
-            "doc":  "Perform one-shot recognition with Azure ASR.",  #QTROBOT_API_DOCS.get("microphone.set_tuning", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.set_tuning", ""),
         },
     },  # end of rpc
 
@@ -415,7 +336,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("motors.joints", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("motors.joints", ""),
         },
         "motors.state": {
             "direction": "out",
@@ -424,7 +345,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("motors.state", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("motors.state", ""),
         },
         "motors.joints": {
             "direction": "in",
@@ -433,7 +354,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("motors.joints", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("motors.joints", ""),
         },
 
         "microphone.activity": {
@@ -443,7 +364,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.activity", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.activity", ""),
         },
         "microphone.direction": {
             "direction": "out",
@@ -452,7 +373,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.direction", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.direction", ""),
         },
 
         "microphone.channel0": {
@@ -462,7 +383,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.channel0", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.channel0", ""),
         },
         "microphone.channel1": {
             "direction": "out",
@@ -471,7 +392,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.channel1", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.channel1", ""),
         },
         "microphone.channel2": {
             "direction": "out",
@@ -480,7 +401,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.channel2", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.channel2", ""),
         },
         "microphone.channel3": {
             "direction": "out",
@@ -489,7 +410,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.channel3", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.channel3", ""),
         },
         "microphone.channel4": {
             "direction": "out",
@@ -498,7 +419,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.channel4", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.channel4", ""),
         },
         "microphone.external1": {
             "direction": "out",
@@ -507,7 +428,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.external1", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.external1", ""),
         },
         "microphone.led": {
             "direction": "in",
@@ -516,96 +437,8 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "experimental": False,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_API_DOCS.get("microphone.led", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.led", ""),
         },
-
-        # -----------------------------------
-        #  Reaslsense Camera streams
-        # -----------------------------------
-        "camera.color": {
-            "direction": "out",
-            "frame_type": "ImageFrameRaw",
-            "topic": "/camera/color/image",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "provider": "realsense-driver",            
-            "doc": "Camera color image streaming"
-        },
-        "camera.depth": {
-            "direction": "out",
-            "frame_type": "ImageFrameRaw",
-            "topic": "/camera/depth/image",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "provider": "realsense-driver",            
-            "doc": "Camera depth image streaming"
-        },
-        "camera.depth_aligned": {
-            "direction": "out",
-            "frame_type": "ImageFrameRaw",
-            "topic": "/camera/depth/aligned/image",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "provider": "realsense-driver",
-            "doc": "Camera aligned depth image streaming"
-        },
-        "camera.depth_color": {
-            "direction": "out",
-            "frame_type": "ImageFrameRaw",
-            "topic": "/camera/depth/color/image",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "provider": "realsense-driver",
-            "doc": "Camera colorized depth image streaming"
-        },
-        "camera.gyro": {
-            "direction": "out",
-            "frame_type": "ListFrame",
-            "topic": "/camera/gyro",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "provider": "realsense-driver",
-            "doc": "Camera gyro streaming"
-        },
-        "camera.acceleration": {
-            "direction": "out",
-            "frame_type": "ListFrame",
-            "topic": "/camera/acceleration",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "provider": "realsense-driver",
-            "doc": "Camera acceleration streaming"
-        },
-
-
-        # -----------------------------------
-        #  ASR Azure streams
-        # -----------------------------------
-        "asr.azure_speech": {
-            "direction": "out",
-            "frame_type": "DictFrame",
-            "topic": "/asr-azure/speech",
-            "local": True,
-            "provider": "asr-azure",
-            "install_hint": "pip install luxai-robot[asr-azure]",
-            "doc": "Recognized speech segments from Azure ASR.",
-        },        
-        "asr.azure_event": {
-            "direction": "out",
-            "frame_type": "StringFrame",
-            "topic": "/asr-azure/event",
-            "local": True,
-            "provider": "asr-azure",
-            "install_hint": "pip install luxai-robot[asr-azure]",
-            "doc": "Speech recognition events from Azure ASR.",
-        },
-
 
     }
 }

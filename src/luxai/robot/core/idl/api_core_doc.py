@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Type
 
-QTROBOT_API_DOCS: Dict[str, str] = {
+QTROBOT_CORE_API_DOCS: Dict[str, str] = {
     # =========================
     # RPCs – SPEECH
     # =========================
