@@ -127,7 +127,8 @@ class Robot:
 
         # Robot capability info (may stay None if handshake fails)
         self._robot_type: str | None = None
-        self._robot_version: str | None = None
+        self._robot_serial: str | None = None
+        self._sdk_version: str | None = None
         self._min_sdk: str | None = None
         self._max_sdk: str | None = None
 
@@ -444,7 +445,8 @@ class Robot:
         Expected format:
             {
                 "robot_type": "qtrobot-v3",
-                "robot_version": "1.2.3",
+                "robot_serial": "QTRD000123",
+                "sdk_version": "1.2.3",
                 "min_sdk": "0.5.0",
                 "max_sdk": "0.9.0",
 
@@ -471,7 +473,8 @@ class Robot:
         """
         # --- identity & compatibility ---
         self._robot_type = desc.get("robot_type")
-        self._robot_version = desc.get("robot_version")
+        self._robot_serial = desc.get("robot_serial")
+        self._sdk_version = desc.get("sdk_version")
         self._min_sdk = desc.get("min_sdk")
         self._max_sdk = desc.get("max_sdk")
 

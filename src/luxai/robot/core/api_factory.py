@@ -18,8 +18,7 @@ if TYPE_CHECKING:
     from .client import Robot  # for type hints only
 
 
-FRAME_TYPE_REGISTRY: dict[str, type[Frame]] = {
-    "MotorStateFrame": MotorStateFrame,
+FRAME_TYPE_REGISTRY: dict[str, type[Frame]] = {    
     "JointStateFrame": JointStateFrame,
     "JointTrajectoryFrame": JointTrajectoryFrame,
     "JointCommandFrame": JointCommandFrame,

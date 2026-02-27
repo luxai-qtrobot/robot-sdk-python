@@ -21,9 +21,10 @@ def on_acceleration_callback(frame: ListFrame):
 if __name__ == "__main__":
     Logger.set_level("DEBUG")
 
-    robot = Robot.connect_zmq(endpoint="tcp://192.168.3.152:50557")
-    # robot = Robot.connect_zmq(node_id="QTPC")
-    Logger.info("Connected to robot.")
+    # connect robot by node_id (serial number), e.g. "QTRD000310" or by endpoint (IP:port)
+    # robot = Robot.connect_zmq(node_id="QTRD000310")
+    robot = Robot.connect_zmq(endpoint="tcp://192.168.3.215:50500")
+    Logger.info(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK version: {robot._sdk_version}")
 
     robot.enable_plugin_zmq("realsense-driver", endpoint="tcp://192.168.3.152:50655")
 

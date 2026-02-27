@@ -20,11 +20,15 @@ class JointStateFrame(DictFrame):
                 "position": 0.0,
                 "velocity": 0.0,
                 "effort":   0.0,
+                "temperature": 0.0,
+                "voltage":     0.0,
             },
             "HeadPitch": {
                 "position": 0.0,
                 "velocity": 0.0,
                 "effort":   0.0,
+                "temperature": 0.0,
+                "voltage":     0.0,
             },
             ...
         }
@@ -71,6 +75,14 @@ class JointStateFrame(DictFrame):
     def effort(self, joint: str) -> float:
         """Return effort of the given joint, or raise KeyError if unknown."""
         return self._require_field(joint, "effort")
+
+    def temperature(self, joint: str) -> float:
+        """Return temperature of the given joint, or raise KeyError if unknown."""
+        return self._require_field(joint, "temperature")
+
+    def voltage(self, joint: str) -> float:
+        """Return voltage of the given joint, or raise KeyError if unknown."""
+        return self._require_field(joint, "voltage")
 
     def joint_dict(self, joint: str) -> Dict[str, float]:
         """

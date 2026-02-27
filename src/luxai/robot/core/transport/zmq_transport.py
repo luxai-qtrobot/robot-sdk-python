@@ -222,7 +222,8 @@ class ZmqTransport(Transport, SupportsPreallocation):
             bind=bind,
             delivery=delivery,
         )
-
+        if not pub.wait_connect(timeout=5.0):
+            Logger.warning(f"ZmqTransport: Failed to connect ZMQPublisher for topic {topic!r} within 5 seconds.")
         Logger.debug(
             f"ZmqTransport: created ZMQPublisher for {topic!r} at {endpoint}, "
             f"queue_size={qsize}, delivery={delivery}, bind={bind}"            

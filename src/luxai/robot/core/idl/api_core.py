@@ -1,444 +1,716 @@
-from __future__ import annotations
-
-from typing import Any, Dict, List, Type
+from typing import Any, Dict
 
 from .api_core_doc import QTROBOT_CORE_API_DOCS
 
 QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
-    # =========================
-    # SPEECH  -> qtrobot.speech.*
-    # =========================
+
+    # ===========================================================
+    # RPC APIs
+    # ===========================================================
     "rpc": {
-        # qtrobot.speech.say()
-        "speech.say": {
-            "service_name": "/qt_robot/speech/say",
-            "cancel_service_name": "/qt_robot/speech/stop",
-            "params": [
-                ("message", str),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("speech.say", ""),
-        },
 
-        "speech.talk": {
-            "service_name": "/qt_robot/behavior/talkText",
-            "cancel_service_name": "/qt_robot/speech/stop",
+        # -------------------------------------------------------
+        # MEDIA  ->  Audio Foreground
+        # -------------------------------------------------------
+        "media.play_fg_audio_file": {
+            "service_name": "/media/audio/fg/file/play",
+            "cancel_service_name": "/media/audio/fg/file/cancel",
             "params": [
-                ("message", str),
+                ("uri", str),
             ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("speech.talk", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("media.play_fg_audio_file", ""),
         },
-
-        "speech.stop": {
-            "service_name": "/qt_robot/speech/stop",
+        "media.pause_fg_audio_file": {
+            "service_name": "/media/audio/fg/file/pause",
             "cancel_service_name": None,
             "params": [],
             "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("speech.stop", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("media.pause_fg_audio_file", ""),
         },
-
-        "speech.config": {
-            "service_name": "/qt_robot/speech/config",
-            "cancel_service_name": None,
-            "params": [
-                ("language", str, None),
-                ("pitch", int, 100),
-                ("speed", int, 100),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("speech.config", ""),
-        },
-
-        # =========================
-        # EMOTION
-        # =========================
-        "emotion.look": {
-            "service_name": "/qt_robot/emotion/look",
-            "cancel_service_name": "/qt_robot/emotion/stop",
-            "params": [
-                ("eye_l", list),
-                ("eye_r", list),
-                ("duration", float, 1.0),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("emotion.look", ""),
-        },
-
-        "emotion.show": {
-            "service_name": "/qt_robot/emotion/show",
-            "cancel_service_name": "/qt_robot/emotion/stop",
-            "params": [
-                ("name", str),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("emotion.show", ""),
-        },
-
-        "emotion.stop": {
-            "service_name": "/qt_robot/emotion/stop",
+        "media.resume_fg_audio_file": {
+            "service_name": "/media/audio/fg/file/resume",
             "cancel_service_name": None,
             "params": [],
             "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("emotion.stop", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("media.resume_fg_audio_file", ""),
         },
-
-        # =========================
-        # GESTURE
-        # =========================
-        "gesture.get_all": {
-            "service_name": "/qt_robot/gesture/list",
-            "cancel_service_name": None,
-            "params": [],
-            "response_type": List[str],
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("gesture.get_all", ""),
-        },
-
-        "gesture.play": {
-            "service_name": "/qt_robot/gesture/play",
-            "cancel_service_name": "/qt_robot/gesture/stop",
-            "params": [
-                ("name", str),
-                ("speed", float, 1.0),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("gesture.play", ""),
-        },
-
-        "gesture.stop": {
-            "service_name": "/qt_robot/gesture/stop",
+        "media.cancel_fg_audio_stream": {
+            "service_name": "/media/audio/fg/stream/cancel",
             "cancel_service_name": None,
             "params": [],
             "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("gesture.stop", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("media.cancel_fg_audio_stream", ""),
         },
-
-        "gesture.record": {
-            "service_name": "/qt_robot/gesture/record",
-            "cancel_service_name": "/qt_robot/gesture/stop",
-            "params": [
-                ("parts", list),
-                ("idle_parts", bool, True),
-                ("wait", int, 0),
-                ("timeout", int, 0),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("gesture.record", ""),
-        },
-
-        "gesture.save": {
-            "service_name": "/qt_robot/gesture/save",
-            "cancel_service_name": None,
-            "params": [
-                ("name", str),
-                ("path", str),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("gesture.save", ""),
-        },
-
-        # =========================
-        # MOTORS
-        # =========================
-        "motors.home": {
-            "service_name": "/qt_robot/motors/home",
-            "cancel_service_name": None,
-            "params": [
-                ("parts", list),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("motors.home", ""),
-        },
-
-        "motors.set_mode": {
-            "service_name": "/qt_robot/motors/setControlMode",
-            "cancel_service_name": None,
-            "params": [
-                ("parts", list),
-                ("mode", int),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("motors.set_mode", ""),
-        },
-
-        "motors.set_velocity": {
-            "service_name": "/qt_robot/motors/setVelocity",
-            "cancel_service_name": None,
-            "params": [
-                ("parts", list),
-                ("velocity", int),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("motors.set_velocity", ""),
-        },
-
-        # =========================
-        # AUDIO CORE
-        # =========================
-        "audio.play": {
-            "service_name": "/qt_robot/audio/play",
-            "cancel_service_name": "/qt_robot/audio/stop",
-            "params": [
-                ("filename", str),
-                ("filepath", str),
-            ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("audio.play", ""),
-        },
-
-        "audio.stop": {
-            "service_name": "/qt_robot/audio/stop",
+        "media.pause_fg_audio_stream": {
+            "service_name": "/media/audio/fg/stream/pause",
             "cancel_service_name": None,
             "params": [],
             "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("audio.stop", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("media.pause_fg_audio_stream", ""),
         },
-
-        "audio.talk": {
-            "service_name": "/qt_robot/behavior/talkAudio",
-            "cancel_service_name": "/qt_robot/audio/stop",
+        "media.resume_fg_audio_stream": {
+            "service_name": "/media/audio/fg/stream/resume",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.resume_fg_audio_stream", ""),
+        },
+        "media.set_fg_audio_volume": {
+            "service_name": "/media/audio/fg/volume/set",
+            "cancel_service_name": None,
             "params": [
-                ("filename", str),
-                ("filepath", str),
+                ("value", float),           # volume in [0.0, 1.0]
             ],
             "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("audio.talk", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("media.set_fg_audio_volume", ""),
+        },
+        "media.get_fg_audio_volume": {
+            "service_name": "/media/audio/fg/volume/get",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": float,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.get_fg_audio_volume", ""),
         },
 
-        # =========================
+        # -------------------------------------------------------
+        # MEDIA  ->  Audio Background
+        # -------------------------------------------------------
+        "media.play_bg_audio_file": {
+            "service_name": "/media/audio/bg/file/play",
+            "cancel_service_name": "/media/audio/bg/file/cancel",
+            "params": [
+                ("uri", str),
+            ],
+            "response_type": bool,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.play_bg_audio_file", ""),
+        },
+        "media.pause_bg_audio_file": {
+            "service_name": "/media/audio/bg/file/pause",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.pause_bg_audio_file", ""),
+        },
+        "media.resume_bg_audio_file": {
+            "service_name": "/media/audio/bg/file/resume",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.resume_bg_audio_file", ""),
+        },
+        "media.cancel_bg_audio_stream": {
+            "service_name": "/media/audio/bg/stream/cancel",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.cancel_bg_audio_stream", ""),
+        },
+        "media.pause_bg_audio_stream": {
+            "service_name": "/media/audio/bg/stream/pause",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.pause_bg_audio_stream", ""),
+        },
+        "media.resume_bg_audio_stream": {
+            "service_name": "/media/audio/bg/stream/resume",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.resume_bg_audio_stream", ""),
+        },
+        "media.set_bg_audio_volume": {
+            "service_name": "/media/audio/bg/volume/set",
+            "cancel_service_name": None,
+            "params": [
+                ("value", float),           # volume in [0.0, 1.0]
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.set_bg_audio_volume", ""),
+        },
+        "media.get_bg_audio_volume": {
+            "service_name": "/media/audio/bg/volume/get",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": float,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.get_bg_audio_volume", ""),
+        },
+
+        # -------------------------------------------------------
+        # MEDIA  ->  Video Foreground
+        # -------------------------------------------------------
+        "media.play_fg_video_file": {
+            "service_name": "/media/video/fg/file/play",
+            "cancel_service_name": "/media/video/fg/file/cancel",
+            "params": [
+                ("uri", str),
+                ("speed", float, 1.0),          # optional; playback speed multiplier
+                ("with_audio", bool, False),     # optional; play embedded audio track
+            ],
+            "response_type": bool,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.play_fg_video_file", ""),
+        },
+        "media.pause_fg_video_file": {
+            "service_name": "/media/video/fg/file/pause",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.pause_fg_video_file", ""),
+        },
+        "media.resume_fg_video_file": {
+            "service_name": "/media/video/fg/file/resume",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.resume_fg_video_file", ""),
+        },
+        "media.cancel_fg_video_stream": {
+            "service_name": "/media/video/fg/stream/cancel",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.cancel_fg_video_stream", ""),
+        },
+        "media.pause_fg_video_stream": {
+            "service_name": "/media/video/fg/stream/pause",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.pause_fg_video_stream", ""),
+        },
+        "media.resume_fg_video_stream": {
+            "service_name": "/media/video/fg/stream/resume",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.resume_fg_video_stream", ""),
+        },
+        "media.set_fg_video_alpha": {
+            "service_name": "/media/video/fg/set_alpha",
+            "cancel_service_name": None,
+            "params": [
+                ("value", float),               # alpha transparency [0.0, 1.0]
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.set_fg_video_alpha", ""),
+        },
+
+        # -------------------------------------------------------
+        # MEDIA  ->  Video Background
+        # -------------------------------------------------------
+        "media.play_bg_video_file": {
+            "service_name": "/media/video/bg/file/play",
+            "cancel_service_name": "/media/video/bg/file/cancel",
+            "params": [
+                ("uri", str),
+                ("speed", float, 1.0),          # optional; playback speed multiplier
+                ("with_audio", bool, False),     # optional; play embedded audio track
+            ],
+            "response_type": bool,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.play_bg_video_file", ""),
+        },
+        "media.pause_bg_video_file": {
+            "service_name": "/media/video/bg/file/pause",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.pause_bg_video_file", ""),
+        },
+        "media.resume_bg_video_file": {
+            "service_name": "/media/video/bg/file/resume",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.resume_bg_video_file", ""),
+        },
+        "media.cancel_bg_video_stream": {
+            "service_name": "/media/video/bg/stream/cancel",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.cancel_bg_video_stream", ""),
+        },
+        "media.pause_bg_video_stream": {
+            "service_name": "/media/video/bg/stream/pause",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.pause_bg_video_stream", ""),
+        },
+        "media.resume_bg_video_stream": {
+            "service_name": "/media/video/bg/stream/resume",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.resume_bg_video_stream", ""),
+        },
+
+        # -------------------------------------------------------
         # SPEAKER
-        # =========================
+        # -------------------------------------------------------
         "speaker.set_volume": {
-            "service_name": "/qt_robot/setting/setVolume",
+            "service_name": "/speaker/volume/set",
             "cancel_service_name": None,
             "params": [
-                ("volume", int),
+                ("value", float),               # master speaker volume [0.0, 1.0]
             ],
-            "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("speaker.set_volume", ""),
         },
-
-        # =========================
-        # MICROPHONE TUNING
-        # =========================
-        "microphone.get_tuning": {
-            "service_name": "/qt_respeaker_app/tuning/get",
+        "speaker.get_volume": {
+            "service_name": "/speaker/volume/get",
             "cancel_service_name": None,
-            "params": [
-                ("param", str),
-            ],
+            "params": [],
             "response_type": float,
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.get_tuning", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("speaker.get_volume", ""),
+        },
+        "speaker.mute": {
+            "service_name": "/speaker/volume/mute",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": bool,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("speaker.mute", ""),
+        },
+        "speaker.unmute": {
+            "service_name": "/speaker/volume/unmute",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": bool,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("speaker.unmute", ""),
         },
 
-        "microphone.set_tuning": {
-            "service_name": "/qt_respeaker_app/tuning/set",
+        # -------------------------------------------------------
+        # FACE
+        # -------------------------------------------------------
+        "face.look": {
+            "service_name": "/face/look",
             "cancel_service_name": None,
             "params": [
-                ("param", str),
-                ("value", float),
+                ("l_eye", list),                # [dx, dy] pixel offset from center for left eye
+                ("r_eye", list),                # [dx, dy] pixel offset from center for right eye
+                ("duration", float, 0.0),       # optional; if >0 resets eyes to center after N seconds
             ],
             "response_type": type(None),
-            "since": "0.1.0",
-            "deprecated": False,
-            "deprecated_message": None,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.set_tuning", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("face.look", ""),
         },
-    },  # end of rpc
+        "face.show_emotion": {
+            "service_name": "/face/emotion/show",
+            "cancel_service_name": "/face/emotion/stop",
+            "params": [
+                ("emotion", str),               # emotion name or relative path (with/without .avi)
+                ("speed", float, None),         # optional; playback speed factor (default from config)
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("face.show_emotion", ""),
+        },
+        "face.list_emotions": {
+            "service_name": "/face/emotion/list",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": list,              # list of relative .avi paths (recursive scan)
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("face.list_emotions", ""),
+        },
 
-    # STREAM SECTION
+        # -------------------------------------------------------
+        # MOTOR
+        # -------------------------------------------------------
+        "motor.list": {
+            "service_name": "/motor/list",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": dict,              # {name: {part, position_min, position_max,
+                                                #   position_home, velocity_max,
+                                                #   calibration_offset, overload_threshold}}
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.list", ""),
+        },
+        "motor.set_calib": {
+            "service_name": "/motor/calib/set",
+            "cancel_service_name": None,
+            "params": [
+                ("motor", str),                 # motor name
+                ("offset", float),              # calibration offset value (degrees)
+                ("store", bool, False),         # optional; persist offset to config file
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.set_calib", ""),
+        },
+        "motor.calib_all": {
+            "service_name": "/motor/calib/all",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.calib_all", ""),
+        },
+        "motor.set_velocity": {
+            "service_name": "/motor/velocity/set",
+            "cancel_service_name": None,
+            "params": [
+                ("motor", str),                 # motor name
+                ("velocity", int),              # velocity value (0 .. velocity_max)
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.set_velocity", ""),
+        },
+        "motor.on": {
+            "service_name": "/motor/on",
+            "cancel_service_name": None,
+            "params": [
+                ("motor", str),                 # motor name to enable torque
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.on", ""),
+        },
+        "motor.off": {
+            "service_name": "/motor/off",
+            "cancel_service_name": None,
+            "params": [
+                ("motor", str),                 # motor name to disable torque
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.off", ""),
+        },
+        "motor.on_all": {
+            "service_name": "/motor/on/all",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.on_all", ""),
+        },
+        "motor.off_all": {
+            "service_name": "/motor/off/all",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.off_all", ""),
+        },
+        "motor.home": {
+            "service_name": "/motor/move/home",
+            "cancel_service_name": None,
+            "params": [
+                ("motor", str),                 # motor name to move to home position
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.home", ""),
+        },
+        "motor.home_all": {
+            "service_name": "/motor/move/home/all",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.home_all", ""),
+        },
+
+        # -------------------------------------------------------
+        # GESTURE
+        # -------------------------------------------------------
+        "gesture.record": {
+            "service_name": "/gesture/record/start",
+            "cancel_service_name": "/gesture/record/stop",
+            "params": [
+                ("motors", list),                       # list[str] of motor names to record
+                ("release_motors", bool, False),         # optional; disable torque during recording
+                ("delay_start_ms", int, 0),              # optional; delay before recording starts (ms)
+                ("timeout_ms", int, 60000),               # optional; max recording duration (ms)
+                ("refine_keyframe", bool, True),         # optional; remove redundant keyframes
+                ("keyframe_pos_eps", float, 0.75),       # optional; position epsilon for refinement (deg)
+                ("keyframe_max_gap_us", int, 100000),    # optional; max gap between keyframes (μs)
+            ],
+            "response_type": dict,                      # returns recorded trajectory keyframes dict
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.record", ""),
+        },
+        "gesture.stop_record": {
+            "service_name": "/gesture/record/stop",            
+            "params": [],
+            "response_type": bool,                      # stops recording if in progress, returns True if recording was stopped, False if no recording in progress
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.stop_record", ""),
+        },
+        "gesture.store_record": {
+            "service_name": "/gesture/record/store",
+            "cancel_service_name": None,
+            "params": [
+                ("gesture", str),                       # name/relative path to save as XML
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.store_record", ""),
+        },
+        "gesture.play": {
+            "service_name": "/gesture/play",
+            "cancel_service_name": "/gesture/cancel",
+            "params": [
+                ("keyframes", dict),                    # keyframes trajectory dict
+                ("resample", bool, True),               # optional; resample to uniform rate_hz
+                ("rate_hz", float, 100.0),              # optional; resample rate in Hz
+                ("speed_factor", float, 1.0),           # optional; playback speed multiplier
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.play", ""),
+        },
+        "gesture.play_file": {
+            "service_name": "/gesture/file/play",
+            "cancel_service_name": "/gesture/cancel",
+            "params": [
+                ("gesture", str),                       # gesture name or path (with/without .xml)
+                ("speed_factor", float, 1.0),           # optional; playback speed multiplier
+            ],
+            "response_type": bool,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.play_file", ""),
+        },
+        "gesture.list_files": {
+            "service_name": "/gesture/file/list",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": list,                      # list of available gesture file paths
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.list_files", ""),
+        },
+
+        # -------------------------------------------------------
+        # TTS
+        # -------------------------------------------------------
+        "tts.set_default_engine": {
+            "service_name": "/tts/default_engine/set",
+            "cancel_service_name": None,
+            "params": [
+                ("engine", str),                # engine id (e.g. "acapela", "azure", or custom)
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("tts.set_default_engine", ""),
+        },
+        "tts.get_default_engine": {
+            "service_name": "/tts/default_engine/get",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": str,               # current default engine id
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("tts.get_default_engine", ""),
+        },
+        "tts.list_engines": {
+            "service_name": "/tts/engines/list",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": list,              # list of available engine id strings
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("tts.list_engines", ""),
+        },
+        "tts.say_text": {
+            "service_name": "/tts/engine/say/text",
+            "cancel_service_name": "/tts/engine/cancel",
+            "params": [
+                ("engine", str),                # engine id to use
+                ("text", str),                  # plain text to synthesize
+                ("lang", str, None),            # optional; language code (e.g. "en-US")
+                ("voice", str, None),           # optional; voice id or name
+                ("rate", float, None),          # optional; speech rate multiplier
+                ("pitch", float, None),         # optional; pitch adjustment
+                ("volume", float, None),        # optional; volume level
+                ("style", str, None),           # optional; speaking style (engine-dependent)
+            ],
+            "response_type": type(None),        # blocks until audio playback completes
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("tts.say_text", ""),
+        },
+        "tts.say_ssml": {
+            "service_name": "/tts/engine/say/ssml",
+            "cancel_service_name": "/tts/engine/cancel",
+            "params": [
+                ("engine", str),                # engine id to use
+                ("ssml", str),                  # SSML markup string
+            ],
+            "response_type": type(None),        # blocks until audio playback completes
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("tts.say_ssml", ""),
+        },
+        "tts.set_config": {
+            "service_name": "/tts/engine/configure/set",
+            "cancel_service_name": None,
+            "params": [
+                ("engine", str),                # engine id
+                ("config", dict),               # engine-specific config key/value pairs
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("tts.set_config", ""),
+        },
+        "tts.get_config": {
+            "service_name": "/tts/engine/configure/get",
+            "cancel_service_name": None,
+            "params": [
+                ("engine", str),                # engine id
+            ],
+            "response_type": dict,              # current engine configuration dict
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("tts.get_config", ""),
+        },
+        "tts.get_languages": {
+            "service_name": "/tts/engine/languages/get",
+            "cancel_service_name": None,
+            "params": [
+                ("engine", str),                # engine id
+            ],
+            "response_type": list,              # list of supported language code strings
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("tts.get_languages", ""),
+        },
+        "tts.get_voices": {
+            "service_name": "/tts/engine/voices/get",
+            "cancel_service_name": None,
+            "params": [
+                ("engine", str),                # engine id
+            ],
+            "response_type": list,              # list of {id, lang, lang_name, gender,
+                                                #   is_child, is_multilingual, display_name}
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("tts.get_voices", ""),
+        },
+        "tts.supports_ssml": {
+            "service_name": "/tts/engine/supports/ssml",
+            "cancel_service_name": None,
+            "params": [
+                ("engine", str),                # engine id
+            ],
+            "response_type": bool,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("tts.supports_ssml", ""),
+        },
+    },
+
+    # ===========================================================
+    # STREAM APIs
+    # ===========================================================
     "stream": {
-        "motors.joints": {
-            "direction": "out",
-            "frame_type": "JointStateFrame",
-            "topic": "/qt_robot/joints/state",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("motors.joints", ""),
-        },
-        "motors.state": {
-            "direction": "out",
-            "frame_type": "MotorStateFrame",
-            "topic": "/qt_robot/motors/states",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("motors.state", ""),
-        },
-        "motors.joints": {
+
+        # -------------------------------------------------------
+        # MEDIA NODE  (all inbound — consumers push frames in)
+        # -------------------------------------------------------
+        "media.fg_audio_stream": {
             "direction": "in",
-            "frame_type": "JointCommandFrame",
-            "topic": "/qt_robot/joints/command",
-            "deprecated": False,
-            "experimental": False,
+            "topic": "/media/audio/fg/stream:i",
+            "frame_type": "AudioFrameRaw",
+            "delivery": "reliable",
+            "queue_size": 10,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("motors.joints", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("media.fg_audio_stream", ""),
         },
-
-        "microphone.activity": {
-            "direction": "out",
-            "frame_type": "BoolFrame",
-            "topic": "/qt_respeaker_app/is_speaking",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.activity", ""),
-        },
-        "microphone.direction": {
-            "direction": "out",
-            "frame_type": "IntFrame",
-            "topic": "/qt_respeaker_app/sound_direction",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.direction", ""),
-        },
-
-        "microphone.channel0": {
-            "direction": "out",
-            "frame_type": "AudioFrameFlac",
-            "topic": "/qt_respeaker_app/channel0",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.channel0", ""),
-        },
-        "microphone.channel1": {
-            "direction": "out",
-            "frame_type": "AudioFrameFlac",
-            "topic": "/qt_respeaker_app/channel1",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.channel1", ""),
-        },
-        "microphone.channel2": {
-            "direction": "out",
-            "frame_type": "AudioFrameFlac",
-            "topic": "/qt_respeaker_app/channel",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.channel2", ""),
-        },
-        "microphone.channel3": {
-            "direction": "out",
-            "frame_type": "AudioFrameFlac",
-            "topic": "/qt_respeaker_app/channel3",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.channel3", ""),
-        },
-        "microphone.channel4": {
-            "direction": "out",
-            "frame_type": "AudioFrameFlac",
-            "topic": "/qt_respeaker_app/channel4",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.channel4", ""),
-        },
-        "microphone.external1": {
-            "direction": "out",
-            "frame_type": "AudioFrameFlac",
-            "topic": "/qt_respeaker_app/external1",
-            "deprecated": False,
-            "experimental": False,
-            "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.external1", ""),
-        },
-        "microphone.led": {
+        "media.bg_audio_stream": {
             "direction": "in",
-            "frame_type": "LedColorFrame",
-            "topic": "/qt_respeaker_app/status_led",
-            "deprecated": False,
-            "experimental": False,
+            "topic": "/media/audio/bg/stream:i",
+            "frame_type": "AudioFrameRaw",
+            "delivery": "reliable",
+            "queue_size": 10,
             "robots": ["qtrobot-v3"],
-            "doc": QTROBOT_CORE_API_DOCS.get("microphone.led", ""),
+            "doc": QTROBOT_CORE_API_DOCS.get("media.bg_audio_stream", ""),
+        },
+        "media.fg_video_stream": {
+            "direction": "in",
+            "topic": "/media/video/fg/stream:i",
+            "frame_type": "ImageFrameRaw",
+            "delivery": "latest",
+            "queue_size": 0,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.fg_video_stream", ""),
+        },
+        "media.bg_video_stream": {
+            "direction": "in",
+            "topic": "/media/video/bg/stream:i",
+            "frame_type": "ImageFrameRaw",
+            "delivery": "latest",
+            "queue_size": 0,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("media.bg_video_stream", ""),
         },
 
-    }
+        # -------------------------------------------------------
+        # MOTOR NODE  (outbound state/error/progress; inbound commands)
+        # -------------------------------------------------------
+        "motor.joints_state": {
+            "direction": "out",
+            "topic": "/motor/joints/state/stream:o",
+            "frame_type": "JointStateFrame",      # {name: {position, velocity, effort, voltage, temprature}}
+            "delivery": "latest",
+            "queue_size": 2,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.joints_state", ""),
+        },
+        "motor.joints_error": {
+            "direction": "out",
+            "topic": "/motor/joints/error/stream:o",
+            "frame_type": "DictFrame",      # {name: {overload_limit?, voltage_limit?,
+                                            #   temperature_limit?, sensor_failure?}}
+            "delivery": "latest",
+            "queue_size": 2,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.joints_error", ""),
+        },
+        "gesture.progress": {
+            "direction": "out",
+            "topic": "/gesture/progress/stream:o",
+            "frame_type": "DictFrame",      # gesture playback progress info
+            "delivery": "latest",
+            "queue_size": 2,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("gesture.progress", ""),
+        },
+        "motor.joints_command": {
+            "direction": "in",
+            "topic": "/motor/joints/command/stream:i",
+            "frame_type": "JointCommandFrame",      # {name: {position, velocity?}} command dict
+            "delivery": "reliable",
+            "queue_size": 10,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("motor.joints_command", ""),
+        },
+    },
 }

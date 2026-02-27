@@ -173,18 +173,13 @@ class Robot:
         ...
 
     @property
-    def audio(self) -> AudioAPI:
-        """Namespace view for audio APIs."""
-        ...
-
-    @property
     def camera(self) -> CameraAPI:
         """Namespace view for camera APIs."""
         ...
 
     @property
-    def emotion(self) -> EmotionAPI:
-        """Namespace view for emotion APIs."""
+    def face(self) -> FaceAPI:
+        """Namespace view for face APIs."""
         ...
 
     @property
@@ -193,13 +188,13 @@ class Robot:
         ...
 
     @property
-    def microphone(self) -> MicrophoneAPI:
-        """Namespace view for microphone APIs."""
+    def media(self) -> MediaAPI:
+        """Namespace view for media APIs."""
         ...
 
     @property
-    def motors(self) -> MotorsAPI:
-        """Namespace view for motors APIs."""
+    def motor(self) -> MotorAPI:
+        """Namespace view for motor APIs."""
         ...
 
     @property
@@ -208,8 +203,8 @@ class Robot:
         ...
 
     @property
-    def speech(self) -> SpeechAPI:
-        """Namespace view for speech APIs."""
+    def tts(self) -> TtsAPI:
+        """Namespace view for tts APIs."""
         ...
 
 
@@ -260,59 +255,6 @@ class AsrAPI:
     @property
     def stream(self) -> AsrStreamAPI:
         """Stream namespace for asr APIs."""
-        ...
-
-
-class AudioAPI:
-    """Namespace for audio RPC/stream APIs."""
-
-    def play(self, filename: str, filepath: str, blocking: bool = True) -> ActionHandle:
-        """
-        Play an audio file through the robot's speakers.
-
-        Example:
-            robot.audio.play(filename="hello.wav", filepath="/data/sounds")
-
-        Args:
-            filename (str): Name of the audio file.
-            filepath (str): Directory or full path where the file is located.
-            blocking (bool): If True, wait until playback completes.
-
-        Returns:
-            ActionHandle: Handle for the playback action.
-        """
-        ...
-
-    def stop(self, blocking: bool = True) -> ActionHandle:
-        """
-        Stop any audio currently playing on the robot.
-
-        Example:
-            handle = robot.audio.play("music.wav", "/data/sounds", blocking=False)
-            # later...
-            robot.audio.stop()
-
-        Returns:
-            None
-        """
-        ...
-
-    def talk(self, filename: str, filepath: str, blocking: bool = True) -> ActionHandle:
-        """
-        Trigger a higher-level behavior that plays an audio file as part of a
-        scripted behavior (e.g., pre-recorded prompts).
-
-        Example:
-            robot.audio.talk(filename="prompt.wav", filepath="/data/prompts")
-
-        Args:
-            filename (str): Audio file for the behavior.
-            filepath (str): Directory or full path to the file.
-            blocking (bool): If True, wait until the behavior finishes.
-
-        Returns:
-            ActionHandle: Handle for the behavior action.
-        """
         ...
 
 
@@ -419,59 +361,72 @@ class CameraAPI:
         ...
 
 
-class EmotionAPI:
-    """Namespace for emotion RPC/stream APIs."""
+class FaceAPI:
+    """Namespace for face RPC/stream APIs."""
 
-    def look(self, eye_l: list, eye_r: list, duration: float = ..., blocking: bool = True) -> ActionHandle:
+    def look(self, l_eye: list, r_eye: list, duration: float = ..., blocking: bool = True) -> ActionHandle:
         """
-        Move the robot's eyes to the specified positions over the given duration.
+        Move (offset) the eyes on the face display.
 
-        The eye_l and eye_r arguments are lists of servo target values (int or float)
-        for the left and right eye motors.
-
-        Example (simple eye movement):
-            robot.emotion.look(
-                eye_l=[10, 20],
-                eye_r=[10, 20],
-                duration=0.5,
-            )
+        Offsets are applied relative to the configured center positions.
+        If duration > 0, eyes reset back to center after the given seconds.
 
         Args:
-            eye_l (List[int | float]): Left eye servo positions.
-            eye_r (List[int | float]): Right eye servo positions.
-            duration (float): Duration of the movement in seconds.
-
-        Returns:
-            ActionHandle: Handle for the eye movement action.
-        """
-        ...
-
-    def show(self, name: str, blocking: bool = True) -> ActionHandle:
-        """
-        Display a named facial emotion on the robot (e.g. 'happy', 'sad').
-
-        Example:
-            robot.emotion.show("happy")
-
-        Args:
-            name (str): Emotion identifier (implementation-specific list).
-
-        Returns:
-            ActionHandle: Handle representing the emotion display action.
-        """
-        ...
-
-    def stop(self, blocking: bool = True) -> ActionHandle:
-        """
-        Stop any active facial expression or eye animation.
-
-        Typical usage:
-            robot.emotion.show("surprised")
-            # later...
-            robot.emotion.stop()
+            l_eye (list): [dx, dy] offset for left eye (pixels).
+            r_eye (list): [dx, dy] offset for right eye (pixels).
+            duration (float): Optional reset delay in seconds (default 0.0).
 
         Returns:
             None
+        """
+        ...
+
+    def show_emotion(self, emotion: str, speed: float | None = None, blocking: bool = True) -> ActionHandle:
+        """
+        Play an emotion video on the face background lane.
+
+        Emotion resolves to an .avi file (emotion + '.avi' if not provided).
+        Use cancel_service_name to stop the emotion playback.
+
+        Args:
+            emotion (str): Emotion name or relative path (with/without .avi).
+            speed (float): Optional playback speed factor.
+
+        Returns:
+            bool: True if playback started, False otherwise.
+        """
+        ...
+
+    def list_emotions(self, blocking: bool = True) -> ActionHandle:
+        """
+        List available emotion video files under the emotions directory.
+
+        Scans recursively and returns relative paths for .avi/.AVI files.
+
+        Returns:
+            list: List[str] of emotion file paths.
+        """
+        ...
+
+
+class GestureStreamAPI:
+    """Stream APIs for gesture namespace."""
+
+    def open_progress_reader(self, queue_size: int | None = ...) -> TypedStreamReader[DictFrame]:
+        """
+        Outbound stream of gesture playback progress.
+
+        Publishes a DictFrame with fields:
+          percentage (float), time_us (int)
+        """
+        ...
+
+    def on_progress(self, callback: Callable[[DictFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Outbound stream of gesture playback progress.
+
+        Publishes a DictFrame with fields:
+          percentage (float), time_us (int)
         """
         ...
 
@@ -479,407 +434,457 @@ class EmotionAPI:
 class GestureAPI:
     """Namespace for gesture RPC/stream APIs."""
 
-    def get_all(self, blocking: bool = True) -> ActionHandle:
+    def record(self, motors: list, release_motors: bool = ..., delay_start_ms: int = ..., timeout_ms: int = ..., refine_keyframe: bool = ..., keyframe_pos_eps: float = ..., keyframe_max_gap_us: int = ..., blocking: bool = True) -> ActionHandle:
         """
-        Return a list of all gesture names stored on the robot.
+        Start recording a gesture trajectory for selected motors.
 
-        Example:
-            names = robot.gesture.get_all()
-            for name in names:
-                print("Gesture:", name)
+        Records time-stamped joint positions and returns a trajectory dict.
+        Use cancel_service_name to stop recording early.
+
+        Args:
+            motors (list): List[str] motor names (order preserved).
+            release_motors (bool): If True, torque is disabled during recording.
+            delay_start_ms (int): Optional delay before recording starts.
+            timeout_ms (int): Optional max duration (ms).
+            refine_keyframe (bool): If True, compress to keyframes.
+            keyframe_pos_eps (float): Keyframe compression epsilon (deg).
+            keyframe_max_gap_us (int): Max allowed gap for compression (us).
 
         Returns:
-            List[str]: Names of available gestures.
+            dict: Trajectory dict with 'meta' and 'points'.
         """
         ...
 
-    def play(self, name: str, speed: float = ..., blocking: bool = True) -> ActionHandle:
+    def stop_record(self, blocking: bool = True) -> ActionHandle:
         """
-        Play a stored gesture animation at the given speed.
-
-        Example (play at normal speed):
-            robot.gesture.play("QT/bye")
-
-        Example (play slower):
-            robot.gesture.play("QT/bye", speed=0.5)
+        Stop recording a gesture trajectory.
 
         Args:
-            name (str): Gesture name.
-            speed (float): Playback speed multiplier (1.0 = normal).
-            blocking (bool): If True, wait until completion.
+            None
 
         Returns:
-            ActionHandle: Handle for the gesture playback.
+            bool: True if recording was stopped, False if no recording in progress.
+        """
+        ...
+
+    def store_record(self, gesture: str, blocking: bool = True) -> ActionHandle:
+        """
+        Store the last recorded gesture trajectory to an XML file.
+
+        Args:
+            gesture (str): Gesture name/path (saved as <gesture>.xml).
+
+        Returns:
+            bool: True if saved successfully.
+        """
+        ...
+
+    def play(self, keyframes: dict, resample: bool = ..., rate_hz: float = ..., speed_factor: float = ..., blocking: bool = True) -> ActionHandle:
+        """
+        Play a gesture trajectory (keyframes dict).
+
+        Use cancel_service_name to stop playback.
+
+        Args:
+            keyframes (dict): Trajectory dict.
+            resample (bool): If True, resample for smooth playback.
+            rate_hz (float): Resample rate.
+            speed_factor (float): Playback speed multiplier.
+
+        Returns:
+            bool: True if playback ran (or started) successfully.
 
         Notes:
-            - A new gesture.play() call will typically interrupt an ongoing one.
+            Progress is published on the gesture.progress stream.
         """
         ...
 
-    def stop(self, blocking: bool = True) -> ActionHandle:
+    def play_file(self, gesture: str, speed_factor: float = ..., blocking: bool = True) -> ActionHandle:
         """
-        Stop any active gesture playback or gesture recording.
+        Load a gesture XML file and play it.
 
-        Example:
-            robot.gesture.play("QT/bye", blocking=False)
-            # later...
-            robot.gesture.stop()
+        Use cancel_service_name to stop playback.
+
+        Args:
+            gesture (str): Gesture name/path (with/without .xml).
+            speed_factor (float): Playback speed multiplier.
+
+        Returns:
+            bool: True if loaded and played successfully.
+        """
+        ...
+
+    def list_files(self, blocking: bool = True) -> ActionHandle:
+        """
+        List available gesture XML files under the configured gesture directory.
+
+        Returns:
+            list: List[str] of gesture file paths.
+        """
+        ...
+
+    @property
+    def stream(self) -> GestureStreamAPI:
+        """Stream namespace for gesture APIs."""
+        ...
+
+
+class MediaStreamAPI:
+    """Stream APIs for media namespace."""
+
+    def open_fg_audio_stream_writer(self, queue_size: int | None = ...) -> TypedStreamWriter[AudioFrameRaw]:
+        """
+        Inbound audio stream to the media FG audio lane.
+
+        Send AudioFrameRaw frames to this topic to play streamed audio.
+
+        Typical usage:
+            writer = robot.media.stream.open_fg_audio_stream_writer()
+            writer.write(AudioFrameRaw(...))
+
+        Notes:
+            Use media.cancel_fg_audio_stream / pause / resume to control the pipeline.
+        """
+        ...
+
+    def open_bg_audio_stream_writer(self, queue_size: int | None = ...) -> TypedStreamWriter[AudioFrameRaw]:
+        """
+        Inbound audio stream to the media BG audio lane.
+
+        Send AudioFrameRaw frames to this topic to play streamed background audio.
+
+        Notes:
+            Use media.cancel_bg_audio_stream / pause / resume to control the pipeline.
+        """
+        ...
+
+    def open_fg_video_stream_writer(self, queue_size: int | None = ...) -> TypedStreamWriter[ImageFrameRaw]:
+        """
+        Inbound video stream to the media FG video lane.
+
+        Send ImageFrameRaw frames to this topic to render streamed foreground video.
+        """
+        ...
+
+    def open_bg_video_stream_writer(self, queue_size: int | None = ...) -> TypedStreamWriter[ImageFrameRaw]:
+        """
+        Inbound video stream to the media BG video lane.
+
+        Send ImageFrameRaw frames to this topic to render streamed background video.
+        """
+        ...
+
+
+class MediaAPI:
+    """Namespace for media RPC/stream APIs."""
+
+    def play_fg_audio_file(self, uri: str, blocking: bool = True) -> ActionHandle:
+        """
+        Play an audio file on the foreground (FG) audio lane.
+
+        This plays the given URI via the media audio engine FG file player.
+        Use the cancel RPC (cancel_service_name) to stop playback.
+
+        Args:
+            uri (str): Audio file URI/path supported by the engine.
+
+        Returns:
+            bool: True if playback started successfully, False otherwise.
+        """
+        ...
+
+    def pause_fg_audio_file(self, blocking: bool = True) -> ActionHandle:
+        """
+        Pause current foreground (FG) audio file playback.
 
         Returns:
             None
         """
         ...
 
-    def record(self, parts: list, idle_parts: bool = ..., wait: int = ..., timeout: int = ..., blocking: bool = True) -> ActionHandle:
+    def resume_fg_audio_file(self, blocking: bool = True) -> ActionHandle:
         """
-        Start recording a gesture for the specified body parts.
-
-        Recording continues until gesture.stop() is called or a timeout is reached.
-
-        Example:
-            # Record a gesture on the right arm for up to 10 seconds
-            handle = robot.gesture.record(parts=["right_arm"], timeout=10)
-            # Move the arm manually...
-            handle.wait()  # or robot.gesture.stop() to end early
-
-        Args:
-            parts (List[str]): Body parts to record, e.g. ['left_arm'].
-            idle_parts (bool): If True, keep non-recorded parts idle.
-            wait (int): Delay in seconds before recording starts.
-            timeout (int): Maximum recording duration in seconds (0 = no limit).
-
-        Returns:
-            ActionHandle: Handle representing the recording action.
-        """
-        ...
-
-    def save(self, name: str, path: str, blocking: bool = True) -> ActionHandle:
-        """
-        Save the last recorded gesture under a specified name and path.
-
-        Example:
-            robot.gesture.save(name="QT/bye_custom", path="/data/gestures")
-
-        Args:
-            name (str): Gesture name.
-            path (str): Directory or file path to store the gesture.
+        Resume foreground (FG) audio file playback after pause.
 
         Returns:
             None
         """
         ...
 
-
-class MicrophoneStreamAPI:
-    """Stream APIs for microphone namespace."""
-
-    def open_activity_reader(self, queue_size: int | None = ...) -> TypedStreamReader[BoolFrame]:
+    def cancel_fg_audio_stream(self, blocking: bool = True) -> ActionHandle:
         """
-        Boolean activity detection stream (sound present or not) as BoolFrame.
+        Cancel / stop the current foreground (FG) audio stream pipeline.
 
-        Callback subscription:
-            def on_activity(frame: BoolFrame) -> None:
-                if frame.value:
-                    Logger.info("Sound detected")
-
-            sub = robot.microphone.stream.on_activity(on_activity, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_activity_reader(queue_size=10)
-            frame = reader.read(timeout=0.5)  # -> BoolFrame
-
-        TimeoutError is raised if no frame arrives before the timeout.
-        """
-        ...
-
-    def on_activity(self, callback: Callable[[BoolFrame], None], queue_size: int | None = ...) -> StreamSubscription:
-        """
-        Boolean activity detection stream (sound present or not) as BoolFrame.
-
-        Callback subscription:
-            def on_activity(frame: BoolFrame) -> None:
-                if frame.value:
-                    Logger.info("Sound detected")
-
-            sub = robot.microphone.stream.on_activity(on_activity, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_activity_reader(queue_size=10)
-            frame = reader.read(timeout=0.5)  # -> BoolFrame
-
-        TimeoutError is raised if no frame arrives before the timeout.
-        """
-        ...
-
-    def open_direction_reader(self, queue_size: int | None = ...) -> TypedStreamReader[IntFrame]:
-        """
-        Estimated sound direction stream as IntFrame (e.g. angle in degrees).
-
-        Callback subscription:
-            def on_direction(frame: IntFrame) -> None:
-                Logger.info(f"Sound from {frame.value} degrees")
-
-            sub = robot.microphone.stream.on_direction(on_direction, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_direction_reader(queue_size=10)
-            frame = reader.read(timeout=1.0)  # -> IntFrame
-        """
-        ...
-
-    def on_direction(self, callback: Callable[[IntFrame], None], queue_size: int | None = ...) -> StreamSubscription:
-        """
-        Estimated sound direction stream as IntFrame (e.g. angle in degrees).
-
-        Callback subscription:
-            def on_direction(frame: IntFrame) -> None:
-                Logger.info(f"Sound from {frame.value} degrees")
-
-            sub = robot.microphone.stream.on_direction(on_direction, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_direction_reader(queue_size=10)
-            frame = reader.read(timeout=1.0)  # -> IntFrame
-        """
-        ...
-
-    def open_channel0_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
-        """
-        Raw audio stream from microphone channel 0 as AudioFrameFlac.
-
-        Callback subscription:
-            def on_channel0(frame: AudioFrameFlac) -> None:
-                Logger.info(f"channel0: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_channel0(on_channel0, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_channel0_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-
-        read(timeout=...) raises TimeoutError on timeout.
-        """
-        ...
-
-    def on_channel0(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
-        """
-        Raw audio stream from microphone channel 0 as AudioFrameFlac.
-
-        Callback subscription:
-            def on_channel0(frame: AudioFrameFlac) -> None:
-                Logger.info(f"channel0: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_channel0(on_channel0, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_channel0_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-
-        read(timeout=...) raises TimeoutError on timeout.
-        """
-        ...
-
-    def open_channel1_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
-        """
-        Raw audio stream from microphone channel 1 as AudioFrameFlac.
-
-        Callback subscription:
-            def on_channel1(frame: AudioFrameFlac) -> None:
-                Logger.info(f"channel1: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_channel1(on_channel1, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_channel1_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-        """
-        ...
-
-    def on_channel1(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
-        """
-        Raw audio stream from microphone channel 1 as AudioFrameFlac.
-
-        Callback subscription:
-            def on_channel1(frame: AudioFrameFlac) -> None:
-                Logger.info(f"channel1: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_channel1(on_channel1, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_channel1_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-        """
-        ...
-
-    def open_channel2_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
-        """
-        Raw audio stream from microphone channel 2 as AudioFrameFlac.
-
-        Callback subscription:
-            def on_channel2(frame: AudioFrameFlac) -> None:
-                Logger.info(f"channel2: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_channel2(on_channel2, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_channel2_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-        """
-        ...
-
-    def on_channel2(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
-        """
-        Raw audio stream from microphone channel 2 as AudioFrameFlac.
-
-        Callback subscription:
-            def on_channel2(frame: AudioFrameFlac) -> None:
-                Logger.info(f"channel2: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_channel2(on_channel2, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_channel2_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-        """
-        ...
-
-    def open_channel3_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
-        """
-        Raw audio stream from microphone channel 3 as AudioFrameFlac.
-
-        Callback subscription:
-            def on_channel3(frame: AudioFrameFlac) -> None:
-                Logger.info(f"channel3: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_channel3(on_channel3, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_channel3_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-        """
-        ...
-
-    def on_channel3(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
-        """
-        Raw audio stream from microphone channel 3 as AudioFrameFlac.
-
-        Callback subscription:
-            def on_channel3(frame: AudioFrameFlac) -> None:
-                Logger.info(f"channel3: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_channel3(on_channel3, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_channel3_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-        """
-        ...
-
-    def open_channel4_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
-        """
-        Raw audio stream from microphone channel 4 as AudioFrameFlac.
-
-        Callback subscription:
-            def on_channel4(frame: AudioFrameFlac) -> None:
-                Logger.info(f"channel4: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_channel4(on_channel4, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_channel4_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-        """
-        ...
-
-    def on_channel4(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
-        """
-        Raw audio stream from microphone channel 4 as AudioFrameFlac.
-
-        Callback subscription:
-            def on_channel4(frame: AudioFrameFlac) -> None:
-                Logger.info(f"channel4: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_channel4(on_channel4, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_channel4_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-        """
-        ...
-
-    def open_external1_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameFlac]:
-        """
-        Raw audio stream from the external microphone (channel 1) as AudioFrameFlac.
-
-        Callback subscription:
-            def on_external1(frame: AudioFrameFlac) -> None:
-                Logger.info(f"external1: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_external1(on_external1, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_external1_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-        """
-        ...
-
-    def on_external1(self, callback: Callable[[AudioFrameFlac], None], queue_size: int | None = ...) -> StreamSubscription:
-        """
-        Raw audio stream from the external microphone (channel 1) as AudioFrameFlac.
-
-        Callback subscription:
-            def on_external1(frame: AudioFrameFlac) -> None:
-                Logger.info(f"external1: {len(frame.data)} bytes")
-
-            sub = robot.microphone.stream.on_external1(on_external1, queue_size=10)
-
-        Reader API:
-            reader = robot.microphone.stream.open_external1_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> AudioFrameFlac
-        """
-        ...
-
-    def open_led_writer(self, queue_size: int | None = ...) -> TypedStreamWriter[LedColorFrame]:
-        """
-        Output stream controlling the ReSpeaker status LED via LedColorFrame.
-
-        Typical usage (publishing LED color):
-            frame = LedColorFrame(r=0, g=255, b=0, a=1.0)
-            led_writer = robot.microphone.stream.open_led_writer() 
-            led_writer.write(color)
-        """
-        ...
-
-
-class MicrophoneAPI:
-    """Namespace for microphone RPC/stream APIs."""
-
-    def get_tuning(self, param: str, blocking: bool = True) -> ActionHandle:
-        """
-        Get a tuning parameter value from the microphone front-end.
-
-        Example:
-            gain = robot.microphone.get_tuning("gain")
-            print("Current gain:", gain)
-
-        Args:
-            param (str): Parameter name, e.g. 'gain', 'noise_suppression'.
+        This is for streamed audio frames (not file playback).
 
         Returns:
-            float: Current parameter value.
+            None
         """
         ...
 
-    def set_tuning(self, param: str, value: float, blocking: bool = True) -> ActionHandle:
+    def pause_fg_audio_stream(self, blocking: bool = True) -> ActionHandle:
         """
-        Set a tuning parameter value on the microphone front-end.
+        Pause foreground (FG) audio stream processing.
 
-        Example:
-            robot.microphone.set_tuning("gain", 0.8)
+        This is for streamed audio frames (not file playback).
+
+        Returns:
+            None
+        """
+        ...
+
+    def resume_fg_audio_stream(self, blocking: bool = True) -> ActionHandle:
+        """
+        Resume foreground (FG) audio stream processing.
+
+        This is for streamed audio frames (not file playback).
+
+        Returns:
+            None
+        """
+        ...
+
+    def set_fg_audio_volume(self, value: float, blocking: bool = True) -> ActionHandle:
+        """
+        Set foreground (FG) audio lane volume.
 
         Args:
-            param (str): Parameter name.
-            value (float): New parameter value.
+            value (float): Volume in range [0.0, 1.0].
+
+        Returns:
+            None
+        """
+        ...
+
+    def get_fg_audio_volume(self, blocking: bool = True) -> ActionHandle:
+        """
+        Get foreground (FG) audio lane volume.
+
+        Returns:
+            float: Volume in range [0.0, 1.0].
+        """
+        ...
+
+    def play_bg_audio_file(self, uri: str, blocking: bool = True) -> ActionHandle:
+        """
+        Play an audio file on the background (BG) audio lane.
+
+        Args:
+            uri (str): Audio file URI/path supported by the engine.
+
+        Returns:
+            bool: True if playback started successfully, False otherwise.
+        """
+        ...
+
+    def pause_bg_audio_file(self, blocking: bool = True) -> ActionHandle:
+        """
+        Pause current background (BG) audio file playback.
+
+        Returns:
+            None
+        """
+        ...
+
+    def resume_bg_audio_file(self, blocking: bool = True) -> ActionHandle:
+        """
+        Resume background (BG) audio file playback after pause.
+
+        Returns:
+            None
+        """
+        ...
+
+    def cancel_bg_audio_stream(self, blocking: bool = True) -> ActionHandle:
+        """
+        Cancel / stop the current background (BG) audio stream pipeline.
+
+        This is for streamed audio frames (not file playback).
+
+        Returns:
+            None
+        """
+        ...
+
+    def pause_bg_audio_stream(self, blocking: bool = True) -> ActionHandle:
+        """
+        Pause background (BG) audio stream processing.
+
+        This is for streamed audio frames (not file playback).
+
+        Returns:
+            None
+        """
+        ...
+
+    def resume_bg_audio_stream(self, blocking: bool = True) -> ActionHandle:
+        """
+        Resume background (BG) audio stream processing.
+
+        This is for streamed audio frames (not file playback).
+
+        Returns:
+            None
+        """
+        ...
+
+    def set_bg_audio_volume(self, value: float, blocking: bool = True) -> ActionHandle:
+        """
+        Set background (BG) audio lane volume.
+
+        Args:
+            value (float): Volume in range [0.0, 1.0].
+
+        Returns:
+            None
+        """
+        ...
+
+    def get_bg_audio_volume(self, blocking: bool = True) -> ActionHandle:
+        """
+        Get background (BG) audio lane volume.
+
+        Returns:
+            float: Volume in range [0.0, 1.0].
+        """
+        ...
+
+    def play_fg_video_file(self, uri: str, speed: float = ..., with_audio: bool = ..., blocking: bool = True) -> ActionHandle:
+        """
+        Play a video file on the foreground (FG) video lane.
+
+        Args:
+            uri (str): Video file URI/path supported by the engine.
+            speed (float): Playback speed factor (default 1.0).
+            with_audio (bool): If True, play embedded audio track (default False).
+
+        Returns:
+            bool: True if playback started successfully, False otherwise.
+        """
+        ...
+
+    def pause_fg_video_file(self, blocking: bool = True) -> ActionHandle:
+        """
+        Pause current foreground (FG) video file playback.
+
+        Returns:
+            None
+        """
+        ...
+
+    def resume_fg_video_file(self, blocking: bool = True) -> ActionHandle:
+        """
+        Resume foreground (FG) video file playback after pause.
+
+        Returns:
+            None
+        """
+        ...
+
+    def cancel_fg_video_stream(self, blocking: bool = True) -> ActionHandle:
+        """
+        Cancel / stop the current foreground (FG) video stream pipeline.
+
+        This is for streamed video frames (not file playback).
+
+        Returns:
+            None
+        """
+        ...
+
+    def pause_fg_video_stream(self, blocking: bool = True) -> ActionHandle:
+        """
+        Pause foreground (FG) video stream processing.
+
+        This is for streamed video frames (not file playback).
+
+        Returns:
+            None
+        """
+        ...
+
+    def resume_fg_video_stream(self, blocking: bool = True) -> ActionHandle:
+        """
+        Resume foreground (FG) video stream processing.
+
+        This is for streamed video frames (not file playback).
+
+        Returns:
+            None
+        """
+        ...
+
+    def set_fg_video_alpha(self, value: float, blocking: bool = True) -> ActionHandle:
+        """
+        Set foreground (FG) video alpha (transparency).
+
+        Args:
+            value (float): Alpha in range [0.0, 1.0].
+
+        Returns:
+            None
+        """
+        ...
+
+    def play_bg_video_file(self, uri: str, speed: float = ..., with_audio: bool = ..., blocking: bool = True) -> ActionHandle:
+        """
+        Play a video file on the background (BG) video lane.
+
+        Args:
+            uri (str): Video file URI/path supported by the engine.
+            speed (float): Playback speed factor (default 1.0).
+            with_audio (bool): If True, play embedded audio track (default False).
+
+        Returns:
+            bool: True if playback started successfully, False otherwise.
+        """
+        ...
+
+    def pause_bg_video_file(self, blocking: bool = True) -> ActionHandle:
+        """
+        Pause current background (BG) video file playback.
+
+        Returns:
+            None
+        """
+        ...
+
+    def resume_bg_video_file(self, blocking: bool = True) -> ActionHandle:
+        """
+        Resume background (BG) video file playback after pause.
+
+        Returns:
+            None
+        """
+        ...
+
+    def cancel_bg_video_stream(self, blocking: bool = True) -> ActionHandle:
+        """
+        Cancel / stop the current background (BG) video stream pipeline.
+
+        This is for streamed video frames (not file playback).
+
+        Returns:
+            None
+        """
+        ...
+
+    def pause_bg_video_stream(self, blocking: bool = True) -> ActionHandle:
+        """
+        Pause background (BG) video stream processing.
+
+        This is for streamed video frames (not file playback).
+
+        Returns:
+            None
+        """
+        ...
+
+    def resume_bg_video_stream(self, blocking: bool = True) -> ActionHandle:
+        """
+        Resume background (BG) video stream processing.
+
+        This is for streamed video frames (not file playback).
 
         Returns:
             None
@@ -887,264 +892,365 @@ class MicrophoneAPI:
         ...
 
     @property
-    def stream(self) -> MicrophoneStreamAPI:
-        """Stream namespace for microphone APIs."""
+    def stream(self) -> MediaStreamAPI:
+        """Stream namespace for media APIs."""
         ...
 
 
-class MotorsStreamAPI:
-    """Stream APIs for motors namespace."""
+class MotorStreamAPI:
+    """Stream APIs for motor namespace."""
 
-    def open_joints_writer(self, queue_size: int | None = ...) -> TypedStreamWriter[JointCommandFrame]:
+    def open_joints_state_reader(self, queue_size: int | None = ...) -> TypedStreamReader[JointStateFrame]:
         """
-        Joint-related streaming APIs.
+        Outbound stream of joint states.
 
-        motors.joints can be used as:
-          - An output stream of joint states (JointStateFrame) from the robot.
-          - An input channel for joint commands (JointCommandFrame) to the robot.
+        Frame payload is a DictFrame mapping motor_name -> state dict:
+          {position, velocity, effort, voltage, temprature}
 
-        Typical usage for JOINT STATE STREAM (JointStateFrame):
-
-        Callback subscription:
-            def on_joints(frame: JointStateFrame) -> None:
-                # frame.value is your joint_state dict
-                Logger.info(frame.value)
-
-            sub = robot.motors.stream.on_joints(on_joints, queue_size=10)
-            # Later: sub.cancel() to unsubscribe
-
-        Reader API:
-            reader = robot.motors.stream.open_joints_reader(queue_size=10)
-            frame = reader.read(timeout=None)  # -> JointStateFrame
-
-        In the reader API, read(timeout=...) raises TimeoutError if no frame arrives.
-
-        Typical usage for JOINT COMMAND INPUT (JointCommandFrame):
-            joints_writer = robot.motors.stream.open_joints_writer()
-            cmd = JointCommandFrame()
-            cmd.set_joint('HeadYaw', position=20)
-            joints_writer.write(cmd)
+        Typical usage:
+            sub = robot.motor.stream.on_joints_state(callback)
+            reader = robot.motor.stream.open_joints_state_reader()
         """
         ...
 
-    def open_state_reader(self, queue_size: int | None = ...) -> TypedStreamReader[MotorStateFrame]:
+    def on_joints_state(self, callback: Callable[[JointStateFrame], None], queue_size: int | None = ...) -> StreamSubscription:
         """
-        Stream of motor diagnostic state (temperature, voltage) as MotorStateFrame.
+        Outbound stream of joint states.
 
-        Callback subscription:
-            def on_state(frame: MotorStateFrame) -> None:
-                Logger.info(frame.value)
+        Frame payload is a DictFrame mapping motor_name -> state dict:
+          {position, velocity, effort, voltage, temprature}
 
-            sub = robot.motors.stream.on_state(on_state, queue_size=10)
-
-        Reader API:
-            reader = robot.motors.stream.open_state_reader(queue_size=10)
-            frame = reader.read(timeout=1.0)  # -> MotorStateFrame
-
-        read(timeout=...) raises TimeoutError if no frame arrives in time.
+        Typical usage:
+            sub = robot.motor.stream.on_joints_state(callback)
+            reader = robot.motor.stream.open_joints_state_reader()
         """
         ...
 
-    def on_state(self, callback: Callable[[MotorStateFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+    def open_joints_error_reader(self, queue_size: int | None = ...) -> TypedStreamReader[DictFrame]:
         """
-        Stream of motor diagnostic state (temperature, voltage) as MotorStateFrame.
+        Outbound stream of motor error flags (when present).
 
-        Callback subscription:
-            def on_state(frame: MotorStateFrame) -> None:
-                Logger.info(frame.value)
+        Frame payload is a DictFrame mapping motor_name -> error flags:
+          {overload_limit?, voltage_limit?, temperature_limit?, sensor_failure?}
+        """
+        ...
 
-            sub = robot.motors.stream.on_state(on_state, queue_size=10)
+    def on_joints_error(self, callback: Callable[[DictFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Outbound stream of motor error flags (when present).
 
-        Reader API:
-            reader = robot.motors.stream.open_state_reader(queue_size=10)
-            frame = reader.read(timeout=1.0)  # -> MotorStateFrame
+        Frame payload is a DictFrame mapping motor_name -> error flags:
+          {overload_limit?, voltage_limit?, temperature_limit?, sensor_failure?}
+        """
+        ...
 
-        read(timeout=...) raises TimeoutError if no frame arrives in time.
+    def open_joints_command_writer(self, queue_size: int | None = ...) -> TypedStreamWriter[JointCommandFrame]:
+        """
+        Inbound stream of joint commands.
+
+        Send DictFrame mapping motor_name -> command dict:
+          {'position': float, 'velocity': float(optional)}
+
+        Typical usage:
+            writer = robot.motor.stream.open_joints_command_writer()
+            writer.write(DictFrame({...}))
         """
         ...
 
 
-class MotorsAPI:
-    """Namespace for motors RPC/stream APIs."""
+class MotorAPI:
+    """Namespace for motor RPC/stream APIs."""
 
-    def home(self, parts: list, blocking: bool = True) -> ActionHandle:
+    def list(self, blocking: bool = True) -> ActionHandle:
         """
-        Move one or more motor groups to their home (reference) positions.
-
-        Example:
-            # Home the head motors
-            robot.motors.home(["head"])
-
-        Args:
-            parts (List[str]): Motor groups to home, e.g. ['head', 'right_arm'].
-            blocking (bool): If True, wait until homing completes.
+        List configured motors and their parameters.
 
         Returns:
-            ActionHandle: Handle for the homing action.
+            dict: {motor_name: {part, position_min, position_max, position_home,
+                  velocity_max, calibration_offset, overload_threshold, ...}}
         """
         ...
 
-    def set_mode(self, parts: list, mode: int, blocking: bool = True) -> ActionHandle:
+    def set_calib(self, motor: str, offset: float, store: bool = ..., blocking: bool = True) -> ActionHandle:
         """
-        Set the control mode for the given motor groups.
-
-        Typical modes are:
-            0 = ON (torque enabled)
-            1 = OFF (torque disabled)
-            2 = BRAKE
-
-        Example:
-            # Enable torque on both arms
-            robot.motors.set_mode(["left_arm", "right_arm"], mode=0)
+        Set calibration offset for a motor.
 
         Args:
-            parts (List[str]): Motor groups to configure.
-            mode (int): Control mode constant (implementation-specific mapping).
+            motor (str): Motor name.
+            offset (float): Offset in degrees.
+            store (bool): If True, persist to config (default False).
 
         Returns:
-            None
+            bool: True on success.
         """
         ...
 
-    def set_velocity(self, parts: list, velocity: int, blocking: bool = True) -> ActionHandle:
+    def calib_all(self, blocking: bool = True) -> ActionHandle:
         """
-        Set the default movement velocity for one or more motor groups.
-        This velocity is typically used as a scaling factor for future motion.
-
-        Example:
-            # Slow movements on the head
-            robot.motors.set_velocity(["head"], velocity=50)
-
-        Args:
-            parts (List[str]): Motor groups to affect.
-            velocity (int): Velocity scalar (e.g. 0–255, implementation-specific).
+        Run manual calibration procedure for all motors (writes offsets and stores them).
 
         Returns:
-            None
+            bool: True on success.
+        """
+        ...
+
+    def set_velocity(self, motor: str, velocity: int, blocking: bool = True) -> ActionHandle:
+        """
+        Set default velocity for a motor (deg/s).
+
+        Args:
+            motor (str): Motor name.
+            velocity (int): Velocity value; clamped/validated against motor max.
+
+        Returns:
+            bool: True on success.
+        """
+        ...
+
+    def on(self, motor: str, blocking: bool = True) -> ActionHandle:
+        """
+        Enable torque for a motor.
+
+        Args:
+            motor (str): Motor name.
+
+        Returns:
+            bool: True on success.
+        """
+        ...
+
+    def off(self, motor: str, blocking: bool = True) -> ActionHandle:
+        """
+        Disable torque for a motor.
+
+        Args:
+            motor (str): Motor name.
+
+        Returns:
+            bool: True on success.
+        """
+        ...
+
+    def on_all(self, blocking: bool = True) -> ActionHandle:
+        """
+        Enable torque for all motors.
+
+        Returns:
+            bool: True
+        """
+        ...
+
+    def off_all(self, blocking: bool = True) -> ActionHandle:
+        """
+        Disable torque for all motors.
+
+        Returns:
+            bool: True
+        """
+        ...
+
+    def home(self, motor: str, blocking: bool = True) -> ActionHandle:
+        """
+        Move a motor to its configured home position.
+
+        Args:
+            motor (str): Motor name.
+
+        Returns:
+            bool: True on success.
+        """
+        ...
+
+    def home_all(self, blocking: bool = True) -> ActionHandle:
+        """
+        Move all motors to their configured home positions.
+
+        Returns:
+            bool: True
         """
         ...
 
     @property
-    def stream(self) -> MotorsStreamAPI:
-        """Stream namespace for motors APIs."""
+    def stream(self) -> MotorStreamAPI:
+        """Stream namespace for motor APIs."""
         ...
 
 
 class SpeakerAPI:
     """Namespace for speaker RPC/stream APIs."""
 
-    def set_volume(self, volume: int, blocking: bool = True) -> ActionHandle:
+    def set_volume(self, value: float, blocking: bool = True) -> ActionHandle:
         """
-        Set the master speaker output volume (0–100).
-        This affects both speech and audio playback.
-
-        Example:
-            robot.speaker.set_volume(80)
+        Set the master speaker volume.
 
         Args:
-            volume (int): Volume percentage (0 = mute, 100 = max).
+            value (float): Volume in range [0.0, 1.0].
+
+        Returns:
+            bool: True if mixer control succeeded, False otherwise.
+        """
+        ...
+
+    def get_volume(self, blocking: bool = True) -> ActionHandle:
+        """
+        Get the master speaker volume.
+
+        Returns:
+            float: Volume in range [0.0, 1.0].
+        """
+        ...
+
+    def mute(self, blocking: bool = True) -> ActionHandle:
+        """
+        Mute the speaker output.
+
+        Returns:
+            bool: True if succeeded, False otherwise.
+        """
+        ...
+
+    def unmute(self, blocking: bool = True) -> ActionHandle:
+        """
+        Unmute the speaker output.
+
+        Returns:
+            bool: True if succeeded, False otherwise.
+        """
+        ...
+
+
+class TtsAPI:
+    """Namespace for tts RPC/stream APIs."""
+
+    def set_default_engine(self, engine: str, blocking: bool = True) -> ActionHandle:
+        """
+        Set the default TTS engine id.
+
+        Args:
+            engine (str): Engine id (e.g. 'acapela', 'azure', or custom).
 
         Returns:
             None
         """
         ...
 
-
-class SpeechAPI:
-    """Namespace for speech RPC/stream APIs."""
-
-    def say(self, message: str, blocking: bool = True) -> ActionHandle:
+    def get_default_engine(self, blocking: bool = True) -> ActionHandle:
         """
-        Speak the given text using the robot's Text-to-Speech engine.
-
-        This RPC can run in blocking or non-blocking mode. In the default case
-        (blocking=True), the call waits until the speech action finishes and
-        returns a completed ActionHandle. With blocking=False, the method
-        returns immediately with a running ActionHandle that you can manage.
-
-        Blocking example:
-            # Wait until speech finishes, then continue
-            robot.speech.say("Hello!")
-
-        Non-blocking example:
-            handle = robot.speech.say("Hello!", blocking=False)
-            # do other work...
-            handle.wait()            # or handle.result(), handle.cancel()
-
-        Args:
-            message (str): Text to synthesize.
-            blocking (bool): If True, wait for completion before returning.
+        Get the current default TTS engine id.
 
         Returns:
-            ActionHandle: Handle representing the speech action.
+            str: Default engine id.
+        """
+        ...
+
+    def list_engines(self, blocking: bool = True) -> ActionHandle:
+        """
+        List loaded/available TTS engine ids.
+
+        Returns:
+            list: List[str] of engine ids.
+        """
+        ...
+
+    def say_text(self, engine: str, text: str, lang: str | None = None, voice: str | None = None, rate: float | None = None, pitch: float | None = None, volume: float | None = None, style: str | None = None, blocking: bool = True) -> ActionHandle:
+        """
+        Synthesize and play plain text using a selected TTS engine.
+
+        This call blocks until playback finishes (current implementation).
+        Use cancel_service_name to interrupt playback.
+
+        Args:
+            engine (str): Engine id to use.
+            text (str): Text to synthesize.
+            lang (str): Optional language code.
+            voice (str): Optional voice id/name.
+            rate (float): Optional speaking rate.
+            pitch (float): Optional pitch.
+            volume (float): Optional volume.
+            style (str): Optional style (engine dependent).
+
+        Returns:
+            bool: True on success.
 
         Notes:
-            - Speech configuration (language, pitch, speed) is controlled via
-              speech.config().
-            - A new speech.say() or speech.talk() call will typically interrupt
-              any ongoing speech.
+            Visemes may be scheduled to the FaceNode if connected.
         """
         ...
 
-    def talk(self, message: str, blocking: bool = True) -> ActionHandle:
+    def say_ssml(self, engine: str, ssml: str, blocking: bool = True) -> ActionHandle:
         """
-        Trigger a behavior-level speaking action using the given text.
-        Compared to speech.say(), this may involve additional behavior logic
-        such as coordinated gestures or timing.
+        Synthesize and play SSML using a selected TTS engine.
 
-        Blocking example:
-            robot.speech.talk("Welcome to the session.")
-
-        Non-blocking example:
-            handle = robot.speech.talk("Welcome!", blocking=False)
-            # do other work...
-            if not handle.done():
-                handle.cancel()
+        This call blocks until playback finishes (current implementation).
+        Use cancel_service_name to interrupt playback.
 
         Args:
-            message (str): Text for the high-level talk behavior.
-            blocking (bool): If True, wait for completion before returning.
+            engine (str): Engine id to use.
+            ssml (str): SSML markup.
 
         Returns:
-            ActionHandle: Handle representing the behavior-level speech action.
+            bool: True on success.
         """
         ...
 
-    def stop(self, blocking: bool = True) -> ActionHandle:
+    def set_config(self, engine: str, config: dict, blocking: bool = True) -> ActionHandle:
         """
-        Request cancellation of any ongoing speech or talk action.
-
-        Use this when you want to interrupt speech.say() or speech.talk()
-        before it finishes.
-
-        Example:
-            handle = robot.speech.say("This is a long sentence...", blocking=False)
-            # ... decide to interrupt
-            robot.speech.stop()
-            # handle.result() will then raise ActionCancelledError
-
-        Returns:
-            None
-        """
-        ...
-
-    def config(self, language: str | None = None, pitch: int = ..., speed: int = ..., blocking: bool = True) -> ActionHandle:
-        """
-        Configure the TTS engine used by speech.say() and speech.talk().
-
-        Any parameter set to None leaves the existing value unchanged.
-
-        Example:
-            # Switch to US English and slightly faster speech
-            robot.speech.config(language="en-US", pitch=100, speed=120)
+        Set engine-specific configuration parameters.
 
         Args:
-            language (str | None): Language code, e.g. 'en-US', or None to keep current.
-            pitch (int): Pitch level (backend-specific range).
-            speed (int): Speaking speed (backend-specific range).
+            engine (str): Engine id.
+            config (dict): Key/value config map.
 
         Returns:
-            None
+            bool: True if engine accepted configuration.
+        """
+        ...
+
+    def get_config(self, engine: str, blocking: bool = True) -> ActionHandle:
+        """
+        Get engine-specific configuration parameters.
+
+        Args:
+            engine (str): Engine id.
+
+        Returns:
+            dict: Current engine configuration map.
+        """
+        ...
+
+    def get_languages(self, engine: str, blocking: bool = True) -> ActionHandle:
+        """
+        Get supported language codes for a TTS engine.
+
+        Args:
+            engine (str): Engine id.
+
+        Returns:
+            list: List[str] language codes.
+        """
+        ...
+
+    def get_voices(self, engine: str, blocking: bool = True) -> ActionHandle:
+        """
+        Get supported voices for a TTS engine.
+
+        Args:
+            engine (str): Engine id.
+
+        Returns:
+            list: List[dict] voice info dicts (id, lang, gender, display_name, ...).
+        """
+        ...
+
+    def supports_ssml(self, engine: str, blocking: bool = True) -> ActionHandle:
+        """
+        Check whether the selected TTS engine supports SSML.
+
+        Args:
+            engine (str): Engine id.
+
+        Returns:
+            bool: True if SSML is supported.
         """
         ...
 

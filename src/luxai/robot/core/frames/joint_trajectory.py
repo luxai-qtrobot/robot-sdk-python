@@ -164,6 +164,10 @@ class JointCommandFrame(DictFrame):
 
     value: Dict[str, Dict[str, float]] = field(default_factory=dict)
 
+    def __post_init__(self):
+        super().__post_init__()
+        self.name = "DictFrame"  # JointCommandFrame is meta helper frame and the underlying wire frame must be DictFrame!
+
     # ----------------------------------------------------------------------
     # Internal helper to normalize joint fields
     # ----------------------------------------------------------------------
