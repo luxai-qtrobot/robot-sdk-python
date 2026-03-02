@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
     # fg_audio_volume(robot)
     # bg_audio_volume(robot)
-    # play_fg_audio_file(robot)
+    play_fg_audio_file(robot)
     # pause_resume_fg_audio_file(robot)
     # play_fg_online_audio_file(robot)
     # play_fg_online_radio(robot)
