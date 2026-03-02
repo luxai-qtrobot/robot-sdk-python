@@ -136,10 +136,10 @@ if __name__ == "__main__":
     robot = Robot.connect_zmq(endpoint="tcp://192.168.3.215:50500")
     Logger.info(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK version: {robot._sdk_version}")
 
+    fg_video_stream(robot)
     # fg_video_alpha(robot)
     # play_bg_video_file(robot)
-    # pause_resume_bg_video_file(robot)    
-    # fg_video_stream(robot)
+    # pause_resume_bg_video_file(robot)        
 
     try:
         while True:
