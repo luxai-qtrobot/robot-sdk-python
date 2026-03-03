@@ -4,8 +4,8 @@ from luxai.robot.core import Robot
 
 
 def list_emotions(robot: Robot):
-    # List all available emotion files on the robot
-    emotions = robot.face.list_emotions().result()
+    # List all available emotion files on the robot    
+    emotions = robot.face.list_emotions()
     Logger.info(f"Available emotions ({len(emotions)}):")
     for e in emotions:
         Logger.info(f"  {e}")
@@ -20,13 +20,13 @@ def show_emotion(robot: Robot):
     # Play an emotion at a different speed
     Logger.info("Showing 'QT/surprise' emotion at 2x speed...")
     ret = robot.face.show_emotion("QT/surprise", speed=2.0)
-    Logger.info(f"Done. Return value: {ret.result()}")
+    Logger.info(f"Done. Return value: {ret}")
 
 
 def show_emotion_cancel(robot: Robot):
     # Play a long emotion and cancel it after 2 seconds
     Logger.info("Showing 'QT/breathing_exercise' emotion, will cancel after 2 seconds...")
-    h = robot.face.show_emotion("QT/breathing_exercise", blocking=False)
+    h = robot.face.show_emotion_async("QT/breathing_exercise")
     time.sleep(3)
     h.cancel()
     Logger.info("Emotion cancelled.")

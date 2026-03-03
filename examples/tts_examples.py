@@ -5,12 +5,12 @@ from luxai.robot.core import Robot
 
 def list_engines(robot: Robot):
     # List all loaded/available TTS engine ids
-    engines = robot.tts.list_engines().result()
-    Logger.info(f"Available TTS engines: {engines}")
+    engines = robot.tts.list_engines()
+    Logger.info(f"Available TTS engines: {engines}")    
 
 def get_set_default_engine(robot: Robot):
     # Get the current default engine
-    engine = robot.tts.get_default_engine().result()
+    engine = robot.tts.get_default_engine()
     Logger.info(f"Current default TTS engine: {engine}")
 
     # Switch the default engine to 'acapela'
@@ -21,7 +21,8 @@ def get_set_default_engine(robot: Robot):
 def say_text(robot: Robot):
     # Say a simple phrase using the acapela engine
     Logger.info("Saying text with acapela engine...")
-    robot.tts.say_text("acapela", "Hello, This is spoken with the default settings.")
+    ret = robot.tts.say_text("acapela", "Hello, This is spoken with the default settings.")
+    Logger.info(f"Return {ret}")
 
     # Say text with rate and pitch adjustments
     Logger.info("Saying text with rate and pitch adjustments...")
@@ -38,7 +39,7 @@ def say_text(robot: Robot):
 def say_text_cancel(robot: Robot):
     # Start a long utterance in non-blocking mode and cancel it after 2 seconds
     Logger.info("Starting speech (will cancel after 2 seconds)...")
-    h = robot.tts.say_text("acapela", "This is a very long sentence. That will be interrupted before it finishes after one second.", blocking=False)
+    h = robot.tts.say_text_async("acapela", "This is a very long sentence. That will be interrupted before it finishes after one second.")
     time.sleep(2)
     h.cancel()
     Logger.info("Speech cancelled.")
@@ -59,24 +60,24 @@ def say_ssml_azure(robot: Robot):
     )
     Logger.info("Saying SSML with azure engine...")
     ret = robot.tts.say_ssml("azure", ssml)
-    Logger.info(f"Done. {ret.result()}")
+    Logger.info(f"Return {ret}")
 
 
 def check_ssml_support(robot: Robot):
     # Check whether each engine supports SSML
-    engines = robot.tts.list_engines().result()
+    engines = robot.tts.list_engines()
     for engine in engines:
-        supported = robot.tts.supports_ssml(engine).result()
+        supported = robot.tts.supports_ssml(engine)
         Logger.info(f"  {engine}: SSML supported = {supported}")
 
 
 def get_languages_and_voices(robot: Robot):
     # List supported languages for the acapela engine
-    langs = robot.tts.get_languages("acapela").result()
+    langs = robot.tts.get_languages("acapela")
     Logger.info(f"acapela languages: {langs}")
 
     # List available voices for the acapela engine
-    voices = robot.tts.get_voices("acapela").result()
+    voices = robot.tts.get_voices("acapela")
     Logger.info(f"acapela voices ({len(voices)}):")
     for v in voices:
         Logger.info(f"  {v}")
@@ -84,13 +85,13 @@ def get_languages_and_voices(robot: Robot):
 
 def engine_config(robot: Robot):
     # Read the current config for the acapela engine
-    cfg = robot.tts.get_config("acapela").result()
+    cfg = robot.tts.get_config("acapela")
     Logger.info(f"acapela config: {cfg}")
 
     # Update the acapela engine with a subscription key and region
     Logger.info("Configuring acapela engine with pitch and rate adjustments...")
-    ret = robot.tts.set_config("acapela", {"pitch": 1.0, "rate": 0.8})
-    Logger.info(f"Config updated. Result: {ret.result()}")
+    robot.tts.set_config("acapela", {"pitch": 1.0, "rate": 0.8})
+    Logger.info("Config updated.")
 
 
 if __name__ == "__main__":
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     # say_text(robot)
     # say_text_cancel(robot)
     # check_ssml_support(robot)
-    # say_ssml_azure(robot)    
+    # say_ssml_azure(robot)
 
     try:
         while True:

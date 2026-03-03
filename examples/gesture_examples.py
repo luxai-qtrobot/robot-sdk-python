@@ -5,28 +5,27 @@ from luxai.robot.core import Robot, wait_all_actions, wait_any_action
 
 def list_gestures(robot: Robot):
     #list available gestures
-    gestures = robot.gesture.list_files().result()
+    gestures = robot.gesture.list_files()
     Logger.info(f"Available gestures: {gestures}")
 
 
 def play_gesture(robot: Robot):
     # Play/cancel playing a gesture
     Logger.info("Playing gesture 'bye' press <Enter> to cancel...")
-    h = robot.gesture.play_file("QT/bye", blocking=False)
+    h = robot.gesture.play_file_async("QT/bye")
     input()
     h.cancel()
     Logger.info("gesture canceld. puting robot to rest pose...")
     robot.motor.home_all()
-    
+
 def record_gesture(robot: Robot):
-    # record a gesture 
+    # record a gesture
     Logger.info("Please move the robot's right arm to record a gesture, recording will start in 2 seconds and last for maximum 20 seconds...")
-    h = robot.gesture.record(
+    h = robot.gesture.record_async(
         motors=["RightShoulderPitch", "RightShoulderRoll", "RightElbowRoll"],
         release_motors = True,
         delay_start_ms = 2000,
         timeout_ms = 20000,
-        blocking=False
         )
     Logger.info("Recording... (press <Enter> to stop recording)")
     input()
@@ -40,15 +39,15 @@ def record_gesture(robot: Robot):
     Logger.info("Playback Done. Do you want to save the recorded gesture? (y/n)")
     if input().lower() == 'y':
         name = input("Enter gesture name: ")
-        ret = robot.gesture.store_record(name)
-        Logger.info(f"Gesture '{name}' stored: {ret.result()}")
+        robot.gesture.store_record(name)
+        Logger.info(f"Gesture '{name}' stored.")
 
 
 if __name__ == "__main__":
     # Logger.set_level("DEBUG")
 
     # connect ro bot by node_id (serial number), e.g. "QTRD000310" or by endpoint (IP:port), e.g. "tcp://
-    # robot = Robot.connect_zmq(node_id="QTRD000310") 
+    # robot = Robot.connect_zmq(node_id="QTRD000310")
     robot = Robot.connect_zmq(endpoint="tcp://192.168.3.215:50500")
     Logger.info(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK version: {robot._sdk_version}")
 

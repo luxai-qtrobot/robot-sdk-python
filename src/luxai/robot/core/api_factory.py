@@ -106,50 +106,60 @@ def _split_namespace(api_key: str) -> tuple[str | None, str]:
     return None, api_key
 
 
-def create_rpc_method(api_key: str, spec: Dict[str, Any]):
+def create_rpc_methods(api_key: str, spec: Dict[str, Any]) -> Dict[str, Callable]:
     """
-    Create a Robot instance method for an RPC API defined in the IDL.
+    Create Robot instance method(s) for an RPC API defined in the IDL.
 
-    api_key example: "speech.say"
+    api_key example: "gesture.list_files"
+
+    Always generates a synchronous blocking method (e.g. list_files()) that
+    calls the RPC directly on the calling thread and returns the unwrapped value.
+
+    Also generates an async variant (e.g. list_files_async()) that returns an
+    :class:`ActionHandle` for non-blocking use, when either:
+      - ``cancel_service_name`` is not None (default rule), or
+      - ``spec["async_variant"]`` is explicitly True.
+
+    The async variant is suppressed when ``spec["async_variant"]`` is False.
 
     spec keys (simplified):
-        - service_name: str  (e.g. "/qt_robot/speech/say")
+        - service_name: str  (e.g. "/gesture/file/list")
         - cancel_service_name: Optional[str]
         - params: List[(name, type) or (name, type, default)]
         - response_type: type
-        - since: Optional[str]
-        - deprecated: bool
-        - deprecated_message: Optional[str]
-        - robots: Optional[List[str]]
+        - async_variant: Optional[bool]  (override; None means use default rule)
         - doc: Optional[str]
     """
     service_name: str = spec["service_name"]
     cancel_service_name: str | None = spec.get("cancel_service_name")
+    response_type = spec.get("response_type", Any)
 
     ns, leaf = _split_namespace(api_key)
-    # Under-the-hood Robot attribute name, e.g. "speech_say"
     if ns:
         method_attr_name = f"{ns}_{leaf}"
-        qualname = f"Robot.{ns}.{leaf}"
+        qualname_base = f"Robot.{ns}.{leaf}"
     else:
         method_attr_name = leaf
-        qualname = f"Robot.{leaf}"
+        qualname_base = f"Robot.{leaf}"
 
-    # Build signature: (self, <params...>, *, blocking=True)
-    params = [
-        inspect.Parameter(
-            "self",
-            inspect.Parameter.POSITIONAL_OR_KEYWORD,
-        )
-    ]
+    # Decide whether to generate the async variant.
+    # Default rule: generate if cancel_service_name is present.
+    # Override: spec["async_variant"] = True/False takes precedence.
+    async_variant_override = spec.get("async_variant")
+    if async_variant_override is None:
+        generate_async = cancel_service_name is not None
+    else:
+        generate_async = bool(async_variant_override)
 
+    # Build the shared RPC parameter list (reused for both variants).
+    rpc_params = []
     for entry in spec.get("params", []):
         if len(entry) == 2:
             pname, ptype = entry
             default = inspect.Parameter.empty
         else:
             pname, ptype, default = entry
-        params.append(
+        rpc_params.append(
             inspect.Parameter(
                 pname,
                 inspect.Parameter.POSITIONAL_OR_KEYWORD,
@@ -158,50 +168,66 @@ def create_rpc_method(api_key: str, spec: Dict[str, Any]):
             )
         )
 
-    params.append(
-        inspect.Parameter(
-            "blocking",
-            inspect.Parameter.KEYWORD_ONLY,
-            default=True,
-            annotation=bool,
-        )
+    doc = spec.get("doc") or f"Auto-generated RPC API for service {service_name}."
+    methods: Dict[str, Callable] = {}
+
+    # ------------------------------------------------------------------ #
+    # Synchronous variant: blocks on the calling thread, returns value    #
+    # ------------------------------------------------------------------ #
+    sig_sync = inspect.Signature(
+        [inspect.Parameter("self", inspect.Parameter.POSITIONAL_OR_KEYWORD)] + rpc_params,
+        return_annotation=response_type,
     )
 
-    signature = inspect.Signature(params)
-
-    def api_func(*args, **kwargs) -> ActionHandle:
-        bound = signature.bind(*args, **kwargs)
+    def sync_func(*args, **kwargs):
+        bound = sig_sync.bind(*args, **kwargs)
         bound.apply_defaults()
+        self_ = bound.arguments["self"]
+        rpc_args: Dict[str, Any] = {
+            name: value
+            for name, value in bound.arguments.items()
+            if name != "self" and value is not None
+        }
+        return self_._call_rpc_sync(service_name, rpc_args)
 
-        self = bound.arguments["self"]
-        blocking: bool = bound.arguments["blocking"]
+    sync_func.__name__ = method_attr_name
+    sync_func.__qualname__ = qualname_base
+    sync_func.__doc__ = doc
+    sync_func.__signature__ = sig_sync
+    methods[method_attr_name] = sync_func
 
-        # Build RPC args: skip self and blocking; skip None values
-        rpc_args: Dict[str, Any] = {}
-        for name, value in bound.arguments.items():
-            if name in ("self", "blocking"):
-                continue
-            if value is None:
-                continue
-            rpc_args[name] = value
-
-        # Delegate to Robot._start_action (which uses ActionHandle + rpc_call)
-        return self._start_action(
-            service_name=service_name,
-            args=rpc_args,
-            cancel_service_name=cancel_service_name,
-            timeout=None,  # internal default timeout inside Robot
-            blocking=blocking,
+    # ------------------------------------------------------------------ #
+    # Async variant (optional): returns ActionHandle immediately          #
+    # ------------------------------------------------------------------ #
+    if generate_async:
+        async_attr_name = f"{method_attr_name}_async"
+        sig_async = inspect.Signature(
+            [inspect.Parameter("self", inspect.Parameter.POSITIONAL_OR_KEYWORD)] + rpc_params,
+            return_annotation=ActionHandle,
         )
 
-    api_func.__name__ = method_attr_name
-    api_func.__qualname__ = qualname
+        def async_func(*args, **kwargs):
+            bound = sig_async.bind(*args, **kwargs)
+            bound.apply_defaults()
+            self_ = bound.arguments["self"]
+            rpc_args: Dict[str, Any] = {
+                name: value
+                for name, value in bound.arguments.items()
+                if name != "self" and value is not None
+            }
+            return self_._start_action(
+                service_name=service_name,
+                args=rpc_args,
+                cancel_service_name=cancel_service_name,
+            )
 
-    doc = spec.get("doc") or f"Auto-generated RPC API for service {service_name}."
-    api_func.__doc__ = doc
-    api_func.__signature__ = signature
+        async_func.__name__ = async_attr_name
+        async_func.__qualname__ = f"{qualname_base}_async"
+        async_func.__doc__ = doc
+        async_func.__signature__ = sig_async
+        methods[async_attr_name] = async_func
 
-    return method_attr_name, api_func
+    return methods
 
 
 # ---------------------------------------------------------------------------
@@ -446,8 +472,8 @@ def attach_core_apis(Robot_cls: type["Robot"], api_specs: Dict[str, Dict[str, An
         if ns:
             namespaces.add(ns)
 
-        attr_name, func = create_rpc_method(api_key, spec)
-        setattr(Robot_cls, attr_name, func)
+        for attr_name, func in create_rpc_methods(api_key, spec).items():
+            setattr(Robot_cls, attr_name, func)
 
     # ---- Attach stream methods ----
     for api_key, spec in stream_specs.items():

@@ -9,7 +9,7 @@ from luxai.magpie.utils.logger import Logger
 from luxai.magpie.transport.stream_reader import StreamReader
 from luxai.magpie.transport.stream_writer import StreamWriter
 
-from .actions import ActionHandle
+from .actions import ActionHandle, ActionError
 from .transport import Transport, SupportsPreallocation, UnsupportedAPIError, ZmqTransport, LocalTransport
 from .config import ( QTROBOT_APIS, SDK_VERSION, SYSTEM_DESCRIBE_SERVICE)
 from .typed_stream import TypedStreamReader, TypedStreamWriter
@@ -384,8 +384,28 @@ class Robot:
 
     
     # ------------------------------------------------------------------
-    # Internal helper for starting actions
+    # Internal helpers used by auto-generated RPC APIs
     # ------------------------------------------------------------------
+    def _call_rpc_sync(
+        self,
+        service_name: str,
+        args: Dict[str, Any],
+        timeout: float | None = None,
+    ) -> Any:
+        """
+        Execute an RPC call on the calling thread and return the unwrapped value.
+
+        Used by the synchronous (blocking) API variant generated for every RPC.
+        Raises ActionError if the robot reports failure.
+        """
+        effective_timeout = timeout if timeout is not None else self._default_rpc_timeout
+        raw = self.rpc_call(service_name, args, timeout=effective_timeout)
+        if not raw.get("status", False):
+            raise ActionError(
+                f"Robot reported failure for {service_name!r}: {raw.get('response')!r}"
+            )
+        return raw.get("response")
+
     def _start_action(
         self,
         service_name: str,
@@ -393,23 +413,20 @@ class Robot:
         *,
         cancel_service_name: str | None = None,
         timeout: float | None = None,
-        blocking: bool = False,
     ) -> ActionHandle:
         """
-        Central place where all auto-generated RPC APIs ultimately end up.
+        Start an RPC call on a background thread and return an ActionHandle.
+
+        Used by the async (_async) API variant for long-running / cancellable RPCs.
         """
         effective_timeout = timeout if timeout is not None else self._default_rpc_timeout
-
-        handle = ActionHandle(
+        return ActionHandle(
             service_name=service_name,
             args=args,
             timeout=effective_timeout,
             cancel_service_name=cancel_service_name,
             rpc_call=self.rpc_call,
         )
-        if blocking:
-            handle.wait()
-        return handle
 
 
     # ------------------------------------------------------------------

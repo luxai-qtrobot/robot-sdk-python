@@ -7,7 +7,7 @@ from luxai.robot.core import Robot
 
 def get_int_tuning(robot: Robot):
     # Read all readable Respeaker (internal mic array) tuning parameters
-    params = robot.microphone.get_int_tuning().result()
+    params = robot.microphone.get_int_tuning()
     Logger.info("Internal mic tuning parameters:")
     for name, value in params.items():
         Logger.info(f"  {name}: {value}")
@@ -16,11 +16,11 @@ def get_int_tuning(robot: Robot):
 def set_int_tuning(robot: Robot):
     # Enable AGC (automatic gain control) on the internal mic array
     Logger.info("Setting AGCONOFF to 1 (AGC enabled)...")
-    ok = robot.microphone.set_int_tuning(name="AGCONOFF", value=1.0).result()
+    ok = robot.microphone.set_int_tuning(name="AGCONOFF", value=1.0)
     Logger.info(f"set_int_tuning result: {ok}")
 
     # Confirm the change was applied
-    params = robot.microphone.get_int_tuning().result()
+    params = robot.microphone.get_int_tuning()
     Logger.info(f"AGCONOFF after set: {params.get('AGCONOFF')}")
 
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     robot = Robot.connect_zmq(endpoint="tcp://192.168.3.215:50500")
     Logger.info(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK version: {robot._sdk_version}")
 
-    # int_mic_events_callback(robot)
+    int_mic_events_callback(robot)
     # get_int_tuning(robot)
     # set_int_tuning(robot)
     # record_int_audio_ch0_to_wav(robot, duration_s=5.0, output_path="recording.wav")

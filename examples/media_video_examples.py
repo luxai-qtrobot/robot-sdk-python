@@ -28,11 +28,11 @@ def play_bg_video_file(robot: Robot):
     # Play a video file on the BG lane and wait for it to finish
     Logger.info("Playing BG video file (blocking)...")
     ret = robot.media.play_bg_video_file(video_file_on_robot)
-    Logger.info(f"Done. Result: {ret.result()}")
+    Logger.info(f"Done. Result: {ret}")
 
     # Play a file non-blocking, then cancel it after 5 seconds
     Logger.info("Playing BG video file (non-blocking, will cancel after 2 seconds)...")
-    h = robot.media.play_bg_video_file(video_file_on_robot, blocking=False)
+    h = robot.media.play_bg_video_file_async(video_file_on_robot)
     time.sleep(2)
     h.cancel()
     Logger.info("BG video file playback cancelled.")
@@ -42,7 +42,7 @@ def pause_resume_bg_video_file(robot: Robot):
     video_file_on_robot = "/home/qtrobot/robot/data/emotions/QT/kiss.avi"
     # Play a file, pause it, wait, then resume
     Logger.info("Playing BG video file...")
-    play_handler = robot.media.play_bg_video_file(video_file_on_robot, blocking=False)
+    play_handler = robot.media.play_bg_video_file_async(video_file_on_robot)
     time.sleep(2)
 
     Logger.info("Pausing BG video...")
@@ -120,7 +120,7 @@ def fg_video_stream(robot: Robot):
         # Smooth heartbeat pulse (0 → 1 → 0)
         alpha = 0.5 * (1 + math.sin(2 * math.pi * freq * t))
         alpha = alpha ** 2  # makes it feel more like a "beat"
-        robot.media.set_fg_video_alpha(alpha, blocking=False)
+        robot.media.set_fg_video_alpha(alpha)
         time.sleep(frame_interval)
 
     robot.media.set_fg_video_alpha(1.0)

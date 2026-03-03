@@ -6,7 +6,7 @@ from luxai.robot.core.frames import JointStateFrame, JointCommandFrame
 
 def list_motors(robot: Robot):
     # List all configured motors and their parameters
-    motors = robot.motor.list().result()
+    motors = robot.motor.list()
     for name, info in motors.items():
         Logger.info(f"  {name}: {info}")
 
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     list_motors(robot)
     # torque_control(robot)
-    # home_motors(robot)
+    home_motors(robot)
     # set_motor_velocity(robot)    
     # joint_state_stream(robot)
     # joint_command_stream(robot)

@@ -191,17 +191,36 @@ def generate_client_stub() -> str:
         for method_name, spec, api_id in rpc_list:
             param_entries = spec.get("params", [])
             rendered_params = [_render_param(e) for e in param_entries]
-            rendered_params.append("blocking: bool = True")
             params_str = ", ".join(["self"] + rendered_params)
 
+            response_type_str = _render_type(spec.get("response_type", type(None)))
             doc = spec.get("doc") or f"Auto-generated API for service {spec['service_name']}."
-            api_lines.append(f"    def {method_name}({params_str}) -> ActionHandle:")
-            indented_doc = textwrap.indent(doc, " " * 8)  # indent all lines
+            indented_doc = textwrap.indent(doc, " " * 8)
+
+            # Sync method — blocks on calling thread, returns unwrapped value
+            api_lines.append(f"    def {method_name}({params_str}) -> {response_type_str}:")
             api_lines.append('        """')
             api_lines.append(indented_doc.strip("\n"))
             api_lines.append('        """')
             api_lines.append("        ...")
             api_lines.append("")
+
+            # Async method — only generated when cancel_service_name is set
+            # or async_variant=True override is present in the spec
+            cancel_service_name = spec.get("cancel_service_name")
+            async_variant_override = spec.get("async_variant")
+            if async_variant_override is None:
+                generate_async = cancel_service_name is not None
+            else:
+                generate_async = bool(async_variant_override)
+
+            if generate_async:
+                api_lines.append(f"    def {method_name}_async({params_str}) -> ActionHandle:")
+                api_lines.append('        """')
+                api_lines.append(indented_doc.strip("\n"))
+                api_lines.append('        """')
+                api_lines.append("        ...")
+                api_lines.append("")
 
         if stream_list:
             api_lines.append("    @property")

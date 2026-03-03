@@ -17,7 +17,15 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,            
             "robots": ["qtrobot-v3"],
-            "doc": "Get Camera color intrinsics parameters."
+            "doc": (
+                "Get color camera intrinsic parameters.\n"
+                "\n"
+                "Returns:\n"
+                "    dict: Intrinsics dict (fx, fy, ppx, ppy, width, height, model, coeffs).\n"
+                "\n"
+                "Example:\n"
+                "    intr = robot.camera.get_color_intrinsics()\n"
+            )
         },
         "camera.get_depth_intrinsics": {
             "service_name": "/camera/depth/intrinsics",
@@ -29,7 +37,15 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,            
             "robots": ["qtrobot-v3"],
-            "doc": "Get Camera depth intrinsics parameters."
+            "doc": (
+                "Get depth camera intrinsic parameters.\n"
+                "\n"
+                "Returns:\n"
+                "    dict: Intrinsics dict (fx, fy, ppx, ppy, width, height, model, coeffs).\n"
+                "\n"
+                "Example:\n"
+                "    intr = robot.camera.get_depth_intrinsics()\n"
+            )
         },
         "camera.get_depth_scale": {
             "service_name": "/camera/depth/scale",
@@ -41,7 +57,16 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,            
             "robots": ["qtrobot-v3"],
-            "doc": "Get Camera depth scale value."
+            "doc": (
+                "Get the depth scale factor (metres per depth unit).\n"
+                "\n"
+                "Returns:\n"
+                "    dict: {'scale': float} where scale converts raw depth units to metres.\n"
+                "\n"
+                "Example:\n"
+                "    info = robot.camera.get_depth_scale()\n"
+                "    scale = info['scale']\n"
+            )
         },
 
         # =========================
@@ -66,7 +91,31 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,            
             "robots": ["qtrobot-v3"],
-            "doc": "configure Azure ASR"
+            "doc": (
+                "Configure the Azure ASR engine with credentials and recognition settings.\n"
+                "\n"
+                "Must be called once before using ``recognize_azure()`` or subscribing\n"
+                "to the ``asr.azure_speech`` / ``asr.azure_event`` streams.\n"
+                "\n"
+                "Args:\n"
+                "    subscription (str): Azure Speech subscription key.\n"
+                "    region (str): Azure Speech region (e.g. 'westeurope').\n"
+                "    languages (list): Language codes to recognise (default ['en-US']).\n"
+                "    silence_timeout (float): Silence end-of-speech threshold in seconds (default 0.2).\n"
+                "    use_vad (bool): Enable voice-activity detection (default False).\n"
+                "    continuous_mode (bool): Enable continuous recognition mode (default False).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True if configured successfully.\n"
+                "\n"
+                "Example:\n"
+                "    ok = robot.asr.configure_azure(\n"
+                "        subscription='<key>',\n"
+                "        region='westeurope',\n"
+                "        continuous_mode=True,\n"
+                "        use_vad=True,\n"
+                "    )\n"
+            )
         },
         "asr.recognize_azure": {
             "service_name": "/asr-azure/recognize",
@@ -80,7 +129,26 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "deprecated": False,
             "deprecated_message": None,            
             "robots": ["qtrobot-v3"],
-            "doc":  "Perform one-shot recognition with Azure ASR.",
+            "doc": (
+                "Perform a single speech recognition with the Azure ASR engine.\n"
+                "\n"
+                "Blocks until a complete utterance is recognised and returns the result.\n"
+                "For non-blocking use, call ``recognize_azure_async()`` which returns an\n"
+                ":class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.\n"
+                "\n"
+                "Returns:\n"
+                "    dict: Recognition result with fields such as 'text', 'confidence', etc.\n"
+                "\n"
+                "Examples:\n"
+                "    # Blocking\n"
+                "    result = robot.asr.recognize_azure()\n"
+                "    print(result.get('text'))\n"
+                "\n"
+                "    # Non-blocking\n"
+                "    h = robot.asr.recognize_azure_async()\n"
+                "    result = h.result()\n"
+                "    print(result.get('text'))\n"
+            ),
         },
     },  # end of rpc
 
@@ -97,7 +165,15 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "experimental": False,
             "robots": ["qtrobot-v3"],
             "provider": "realsense-driver",            
-            "doc": "Camera color image streaming"
+            "doc": (
+                "Outbound color image stream from the RealSense camera.\n"
+                "\n"
+                "Frame type is ImageFrameRaw (BGR, width x height x 3).\n"
+                "\n"
+                "Typical usage:\n"
+                "    reader = robot.camera.stream.open_color_reader()\n"
+                "    frame = reader.read(timeout=3.0)\n"
+            )
         },
         "camera.depth": {
             "direction": "out",
@@ -107,7 +183,15 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "experimental": False,
             "robots": ["qtrobot-v3"],
             "provider": "realsense-driver",            
-            "doc": "Camera depth image streaming"
+            "doc": (
+                "Outbound depth image stream from the RealSense camera.\n"
+                "\n"
+                "Frame type is ImageFrameRaw (16-bit depth, width x height).\n"
+                "\n"
+                "Typical usage:\n"
+                "    reader = robot.camera.stream.open_depth_reader()\n"
+                "    frame = reader.read(timeout=3.0)\n"
+            )
         },
         "camera.depth_aligned": {
             "direction": "out",
@@ -117,7 +201,15 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "experimental": False,
             "robots": ["qtrobot-v3"],
             "provider": "realsense-driver",
-            "doc": "Camera aligned depth image streaming"
+            "doc": (
+                "Outbound depth image aligned to the color frame from the RealSense camera.\n"
+                "\n"
+                "Frame type is ImageFrameRaw (16-bit depth, same resolution as color).\n"
+                "\n"
+                "Typical usage:\n"
+                "    reader = robot.camera.stream.open_depth_aligned_reader()\n"
+                "    frame = reader.read(timeout=3.0)\n"
+            )
         },
         "camera.depth_color": {
             "direction": "out",
@@ -127,7 +219,15 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "experimental": False,
             "robots": ["qtrobot-v3"],
             "provider": "realsense-driver",
-            "doc": "Camera colorized depth image streaming"
+            "doc": (
+                "Outbound false-colour depth image stream from the RealSense camera.\n"
+                "\n"
+                "Frame type is ImageFrameRaw (BGR, colourised for visualisation).\n"
+                "\n"
+                "Typical usage:\n"
+                "    reader = robot.camera.stream.open_depth_color_reader()\n"
+                "    frame = reader.read(timeout=3.0)\n"
+            )
         },
         "camera.gyro": {
             "direction": "out",
@@ -137,7 +237,16 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "experimental": False,
             "robots": ["qtrobot-v3"],
             "provider": "realsense-driver",
-            "doc": "Camera gyro streaming"
+            "doc": (
+                "Outbound gyroscope stream from the RealSense IMU.\n"
+                "\n"
+                "Frame type is ListFrame: [x, y, z] angular velocity (rad/s).\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_gyro(frame):\n"
+                "        print(frame.value)  # [x, y, z]\n"
+                "    sub = robot.camera.stream.on_gyro(on_gyro)\n"
+            )
         },
         "camera.acceleration": {
             "direction": "out",
@@ -147,7 +256,16 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "experimental": False,
             "robots": ["qtrobot-v3"],
             "provider": "realsense-driver",
-            "doc": "Camera acceleration streaming"
+            "doc": (
+                "Outbound accelerometer stream from the RealSense IMU.\n"
+                "\n"
+                "Frame type is ListFrame: [x, y, z] linear acceleration (m/s²).\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_accel(frame):\n"
+                "        print(frame.value)  # [x, y, z]\n"
+                "    sub = robot.camera.stream.on_acceleration(on_accel)\n"
+            )
         },
 
 
@@ -161,7 +279,17 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "local": True,
             "provider": "asr-azure",
             "install_hint": "pip install luxai-robot[asr-azure]",
-            "doc": "Recognized speech segments from Azure ASR.",
+            "doc": (
+                "Outbound stream of recognised speech segments from Azure ASR.\n"
+                "\n"
+                "Published in both one-shot (``recognize_azure()``) and continuous modes.\n"
+                "Frame type is DictFrame with fields: 'text', 'confidence', 'language', etc.\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_speech(frame):\n"
+                "        print(frame.value.get('text'))\n"
+                "    sub = robot.asr.stream.on_azure_speech(on_speech)\n"
+            ),
         },        
         "asr.azure_event": {
             "direction": "out",
@@ -170,7 +298,17 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             "local": True,
             "provider": "asr-azure",
             "install_hint": "pip install luxai-robot[asr-azure]",
-            "doc": "Speech recognition events from Azure ASR.",
+            "doc": (
+                "Outbound stream of speech recognition lifecycle events from Azure ASR.\n"
+                "\n"
+                "Frame type is StringFrame. Possible values include:\n"
+                "  'recognizing', 'recognized', 'canceled', 'session_started', 'session_stopped'.\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_event(frame):\n"
+                "        print(frame.value)  # e.g. 'recognized'\n"
+                "    sub = robot.asr.stream.on_azure_event(on_event)\n"
+            ),
         },
 
     }

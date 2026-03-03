@@ -20,24 +20,23 @@ if __name__ == "__main__":
     # robot = Robot.connect_zmq(node_id="QTRD000310")
     robot = Robot.connect_zmq(endpoint="tcp://192.168.3.215:50500")
     Logger.info(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK version: {robot._sdk_version}")
-
-
+    
     robot.enable_plugin_local("asr-azure")
     ret = robot.asr.configure_azure(
         region="",              # add you azure speech region e.g. westeurope
         subscription="",        # add you azure speech subscription
         continuous_mode=True,
         use_vad=True
-    ).result()    
+    )
     Logger.info(f"configure_azure return {ret}")
 
     # use callback     
     robot.asr.stream.on_azure_event(asr_event_callback)
     robot.asr.stream.on_azure_speech(asr_speech_callback)
 
-    # use single call
-    # h = robot.asr.recognize_azure(blocking=False)    
-    # Logger.info("waitring for recognize_azure.")
+    # use single call (non-blocking)
+    # h = robot.asr.recognize_azure_async()
+    # Logger.info("waiting for recognize_azure...")
     # Logger.info(h.result())
 
     try:

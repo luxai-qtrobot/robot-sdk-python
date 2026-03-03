@@ -5,7 +5,7 @@ from luxai.robot.core import Robot
 
 def get_volume(robot: Robot):
     # Read the current master volume level
-    vol = robot.speaker.get_volume().result()
+    vol = robot.speaker.get_volume()
     Logger.info(f"Current speaker volume: {vol:.2f}")
 
 
@@ -14,14 +14,14 @@ def set_volume(robot: Robot):
     Logger.info("Setting volume to 0.8...")
     robot.speaker.set_volume(0.8)
 
-    vol = robot.speaker.get_volume().result()
+    vol = robot.speaker.get_volume()
     Logger.info(f"Volume after set: {vol:.2f}")
 
     # Reduce to 40%
     Logger.info("Setting volume to 0.7...")
     robot.speaker.set_volume(0.7)
 
-    vol = robot.speaker.get_volume().result()
+    vol = robot.speaker.get_volume()
     Logger.info(f"Volume after set: {vol:.2f}")
 
 
