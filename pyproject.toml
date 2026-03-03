@@ -14,7 +14,7 @@ authors = [
 keywords = ["messaging", "luxai","qtrobot", "robot", "sdk", "api", "robotics"]
 classifiers = [
     "Development Status :: 4 - Beta", 
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",   
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
     "Operating System :: OS Independent",
@@ -23,7 +23,7 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
-    "luxai-magpie[discovery,audio]",
+    "luxai-magpie[discovery]",
 ]
 
 [project.optional-dependencies]
