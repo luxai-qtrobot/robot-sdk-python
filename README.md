@@ -3,7 +3,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/luxai-robot)](https://pypi.org/project/luxai-robot/)
 [![Python](https://img.shields.io/pypi/pyversions/luxai-robot)](https://pypi.org/project/luxai-robot/)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](LICENSE)
-![Test Status](https://github.com/luxai-qtrobot/robot-sdk-python/actions/workflows/python-tests.yml/badge.svg)
+![Test Status](https://github.com/luxai-qtrobot/robot-sdk-python/actions/workflows/python-tests.yml/badge.svg?branch=main)
 
 A Python SDK for communicating with [LuxAI](https://luxai.com) robots. It provides a clean, transport-agnostic API for controlling robot hardware — speech synthesis, face animations, gestures, motors, audio/video playback, camera, and microphone — from any Python environment over a network connection.
 
