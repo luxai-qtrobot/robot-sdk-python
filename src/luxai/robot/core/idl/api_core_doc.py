@@ -643,4 +643,114 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "    writer = robot.motor.stream.open_joints_command_writer()\n"
         "    writer.write(DictFrame({...}))\n"
     ),
+    # =========================
+    # RPCs — MICROPHONE
+    # =========================
+
+    "microphone.get_int_tuning": (
+        "Get all readable Respeaker (internal mic array) tuning parameters.\n"
+        "\n"
+        "Returns a dictionary containing every readable parameter exposed by the\n"
+        "Respeaker controller (keys are parameter names, values are numeric).\n"
+        "\n"
+        "Example:\n"
+        "    params = robot.microphone.get_int_tuning()\n"
+        "    print(params.get('AECNORM'))\n"
+        "\n"
+        "Returns:\n"
+        "    dict: Mapping {param_name: value} for all readable params.\n"
+        "\n"
+        "Notes:\n"
+        "    - If the Respeaker device is not open/available, the node may return\n"
+        "      an empty dict (implementation-dependent).\n"
+    ),
+
+    "microphone.set_int_tuning": (
+        "Set a Respeaker (internal mic array) tuning parameter.\n"
+        "\n"
+        "Sets a single numeric parameter on the Respeaker controller.\n"
+        "\n"
+        "Example:\n"
+        "    ok = robot.microphone.set_int_tuning(name='AECNORM', value=1.0)\n"
+        "    if not ok:\n"
+        "        print('failed to set tuning')\n"
+        "\n"
+        "Args:\n"
+        "    name (str): Parameter name (e.g. 'AECNORM', 'AGCONOFF', ...).\n"
+        "    value (float): Value to set.\n"
+        "    store (bool): Optional. Present in the API, but currently the node\n"
+        "        does not persist this value (it only applies at runtime).\n"
+        "\n"
+        "Returns:\n"
+        "    bool: True if the parameter was set successfully.\n"
+        "\n"
+        "Notes:\n"
+        "    - Persistence is currently handled via config (microphone.tunning.*)\n"
+        "      applied at startup in applyInitialTuning().\n"
+    ),
+
+    # =========================
+    # STREAMS — MICROPHONE
+    # =========================
+    
+    "microphone.int_audio_ch0": (
+        "Internal microphone audio stream channel 0 (mono).\n"
+        "\n"
+        "AudioFrameRaw stream published by MicrophoneNode.\n"
+        "Channel mapping is node-defined; currently ch0 is intended to be the\n"
+        "'processed/asr' channel if exposed by the ALSA device.\n"
+        "\n"
+        "Typical usage:\n"
+        "    def on_audio(frame):\n"
+        "        # frame is AudioFrameRaw\n"
+        "        pass\n"
+        "    sub = robot.microphone.stream.on_int_audio_ch0(on_audio, queue_size=10)\n"
+    ),
+    "microphone.int_audio_ch1": (
+        "Internal microphone audio stream channel 1 (mono).\n"
+        "\n"
+        "AudioFrameRaw stream published by MicrophoneNode.\n"
+        "Typically corresponds to physical mic 1 (raw), depending on ALSA layout.\n"
+    ),
+    "microphone.int_audio_ch2": (
+        "Internal microphone audio stream channel 2 (mono).\n"
+        "\n"
+        "AudioFrameRaw stream published by MicrophoneNode.\n"
+    ),
+    "microphone.int_audio_ch3": (
+        "Internal microphone audio stream channel 3 (mono).\n"
+        "\n"
+        "AudioFrameRaw stream published by MicrophoneNode.\n"
+    ),
+    "microphone.int_audio_ch4": (
+        "Internal microphone audio stream channel 4 (mono).\n"
+        "\n"
+        "AudioFrameRaw stream published by MicrophoneNode.\n"
+    ),
+    "microphone.int_event": (
+        "Internal microphone event stream (VAD + direction).\n"
+        "\n"
+        "Publishes DictFrame events when voice activity is detected.\n"
+        "Payload fields:\n"
+        "    activity (bool): True when VAD is active.\n"
+        "    direction (int): Estimated direction-of-arrival in degrees (device-dependent).\n"
+        "\n"
+        "Typical usage:\n"
+        "    def on_evt(frame):\n"
+        "        evt = frame.value\n"
+        "        if evt.get('activity'):\n"
+        "            print('DOA:', evt.get('direction'))\n"
+        "    sub = robot.microphone.stream.on_int_event(on_evt, queue_size=2)\n"
+        "\n"
+        "Notes:\n"
+        "    - Stream delivery is 'latest' (you may drop events if your consumer is slow).\n"
+    ),
+    "microphone.ext_audio_ch0": (
+        "External microphone audio stream channel 0 (mono).\n"
+        "\n"
+        "AudioFrameRaw stream published only if microphone.external.enabled is True.\n"
+        "\n"
+        "Typical usage:\n"
+        "    sub = robot.microphone.stream.on_ext_audio_ch0(cb, queue_size=10)\n"
+    ),    
 }

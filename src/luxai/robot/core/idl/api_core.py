@@ -625,6 +625,28 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("tts.supports_ssml", ""),
         },
+        # -------------------------------------------------------
+        # Microphone
+        # -------------------------------------------------------
+        "microphone.get_int_tuning": {
+            "service_name": "/microphone/int/tunning/get",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": dict,   # { "AECNORM": 1.0, "VOICEACTIVITY": 0, ... } (all readable params)
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.get_int_tuning", ""),
+        },
+        "microphone.set_int_tuning": {
+            "service_name": "/microphone/int/tunning/set",
+            "cancel_service_name": None,
+            "params": [
+                ("name", str),           # respeaker param name (e.g. "AECNORM")
+                ("value", float),        # numeric value
+            ],
+            "response_type": bool,  # True if set() succeeded
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.set_int_tuning", ""),
+        },
     },
 
     # ===========================================================
@@ -712,5 +734,71 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("motor.joints_command", ""),
         },
+        # ----------------------------------------------------------------
+        # Microphone (outpund audio streams and microphone events streams)
+        # ----------------------------------------------------------------        
+        "microphone.int_audio_ch0": {
+            "direction": "out",
+            "topic": "/mic/int/audio/ch0/stream:o",
+            "frame_type": "AudioFrameRaw",
+            "delivery": "reliable",
+            "queue_size": 10,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.int_audio_ch0", ""),
+        },
+        "microphone.int_audio_ch1": {
+            "direction": "out",
+            "topic": "/mic/int/audio/ch1/stream:o",
+            "frame_type": "AudioFrameRaw",
+            "delivery": "reliable",
+            "queue_size": 10,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.int_audio_ch1", ""),
+        },
+        "microphone.int_audio_ch2": {
+            "direction": "out",
+            "topic": "/mic/int/audio/ch2/stream:o",
+            "frame_type": "AudioFrameRaw",
+            "delivery": "reliable",
+            "queue_size": 10,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.int_audio_ch2", ""),
+        },
+        "microphone.int_audio_ch3": {
+            "direction": "out",
+            "topic": "/mic/int/audio/ch3/stream:o",
+            "frame_type": "AudioFrameRaw",
+            "delivery": "reliable",
+            "queue_size": 10,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.int_audio_ch3", ""),
+        },
+        "microphone.int_audio_ch4": {
+            "direction": "out",
+            "topic": "/mic/int/audio/ch4/stream:o",
+            "frame_type": "AudioFrameRaw",
+            "delivery": "reliable",
+            "queue_size": 10,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.int_audio_ch4", ""),
+        },
+        "microphone.int_event": {
+            "direction": "out",
+            "topic": "/mic/int/event/stream:o",
+            "frame_type": "DictFrame",   # {"activity": bool, "direction": int}
+            "delivery": "latest",
+            "queue_size": 2,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.int_event", ""),
+        },
+        "microphone.ext_audio_ch0": {
+            "direction": "out",
+            "topic": "/mic/ext/audio/ch0/stream:o",
+            "frame_type": "AudioFrameRaw",
+            "delivery": "reliable",
+            "queue_size": 10,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get("microphone.ext_audio_ch0", ""),
+        },        
     },
 }

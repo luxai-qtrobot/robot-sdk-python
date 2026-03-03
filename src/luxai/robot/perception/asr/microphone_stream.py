@@ -8,8 +8,7 @@ import time
 import numpy as np
 
 from luxai.magpie.utils import Logger
-from luxai.magpie.frames import AudioFrameFlac
-
+from luxai.magpie.frames import AudioFrameRaw
 
 if TYPE_CHECKING:
     from luxai.robot.core import Robot
@@ -117,7 +116,7 @@ class MicrophoneStream:
         max_chunks = math.ceil(60 / (num_samples / rate))
         self.stream_buff = queue.Queue(maxsize=max_chunks)
 
-        self._robot.microphone.stream.on_channel0(self._callback_audio_stream, queue_size=10)
+        self._robot.microphone.stream.on_int_audio_ch0(self._callback_audio_stream, queue_size=10)
 
     def get_channels(self):
         """
@@ -231,7 +230,7 @@ class MicrophoneStream:
         return chunk
   
 
-    def _callback_audio_stream(self, frame:AudioFrameFlac):
+    def _callback_audio_stream(self, frame:AudioFrameRaw):
         if not self._closed:
             try:
                 # re-iitlaize buffer size if needed 
@@ -245,7 +244,7 @@ class MicrophoneStream:
                         self._vad = None
                         Logger.error(f"SileroVAD: sample rate must be 16000 or 8000; Disabling VAD! (current sample rate: {frame.sample_rate})")
                                         
-                chunk = frame.to_pcm()                
+                chunk = frame.data               
                 is_voice = False
                 try:
                     is_voice = self._vad.is_voice(chunk) if self._vad is not None else False                    

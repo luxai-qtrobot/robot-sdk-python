@@ -193,6 +193,11 @@ class Robot:
         ...
 
     @property
+    def microphone(self) -> MicrophoneAPI:
+        """Namespace view for microphone APIs."""
+        ...
+
+    @property
     def motor(self) -> MotorAPI:
         """Namespace view for motor APIs."""
         ...
@@ -894,6 +899,227 @@ class MediaAPI:
     @property
     def stream(self) -> MediaStreamAPI:
         """Stream namespace for media APIs."""
+        ...
+
+
+class MicrophoneStreamAPI:
+    """Stream APIs for microphone namespace."""
+
+    def open_int_audio_ch0_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameRaw]:
+        """
+        Internal microphone audio stream channel 0 (mono).
+
+        AudioFrameRaw stream published by MicrophoneNode.
+        Channel mapping is node-defined; currently ch0 is intended to be the
+        'processed/asr' channel if exposed by the ALSA device.
+
+        Typical usage:
+            def on_audio(frame):
+                # frame is AudioFrameRaw
+                pass
+            sub = robot.microphone.stream.on_int_audio_ch0(on_audio, queue_size=10)
+        """
+        ...
+
+    def on_int_audio_ch0(self, callback: Callable[[AudioFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Internal microphone audio stream channel 0 (mono).
+
+        AudioFrameRaw stream published by MicrophoneNode.
+        Channel mapping is node-defined; currently ch0 is intended to be the
+        'processed/asr' channel if exposed by the ALSA device.
+
+        Typical usage:
+            def on_audio(frame):
+                # frame is AudioFrameRaw
+                pass
+            sub = robot.microphone.stream.on_int_audio_ch0(on_audio, queue_size=10)
+        """
+        ...
+
+    def open_int_audio_ch1_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameRaw]:
+        """
+        Internal microphone audio stream channel 1 (mono).
+
+        AudioFrameRaw stream published by MicrophoneNode.
+        Typically corresponds to physical mic 1 (raw), depending on ALSA layout.
+        """
+        ...
+
+    def on_int_audio_ch1(self, callback: Callable[[AudioFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Internal microphone audio stream channel 1 (mono).
+
+        AudioFrameRaw stream published by MicrophoneNode.
+        Typically corresponds to physical mic 1 (raw), depending on ALSA layout.
+        """
+        ...
+
+    def open_int_audio_ch2_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameRaw]:
+        """
+        Internal microphone audio stream channel 2 (mono).
+
+        AudioFrameRaw stream published by MicrophoneNode.
+        """
+        ...
+
+    def on_int_audio_ch2(self, callback: Callable[[AudioFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Internal microphone audio stream channel 2 (mono).
+
+        AudioFrameRaw stream published by MicrophoneNode.
+        """
+        ...
+
+    def open_int_audio_ch3_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameRaw]:
+        """
+        Internal microphone audio stream channel 3 (mono).
+
+        AudioFrameRaw stream published by MicrophoneNode.
+        """
+        ...
+
+    def on_int_audio_ch3(self, callback: Callable[[AudioFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Internal microphone audio stream channel 3 (mono).
+
+        AudioFrameRaw stream published by MicrophoneNode.
+        """
+        ...
+
+    def open_int_audio_ch4_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameRaw]:
+        """
+        Internal microphone audio stream channel 4 (mono).
+
+        AudioFrameRaw stream published by MicrophoneNode.
+        """
+        ...
+
+    def on_int_audio_ch4(self, callback: Callable[[AudioFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Internal microphone audio stream channel 4 (mono).
+
+        AudioFrameRaw stream published by MicrophoneNode.
+        """
+        ...
+
+    def open_int_event_reader(self, queue_size: int | None = ...) -> TypedStreamReader[DictFrame]:
+        """
+        Internal microphone event stream (VAD + direction).
+
+        Publishes DictFrame events when voice activity is detected.
+        Payload fields:
+            activity (bool): True when VAD is active.
+            direction (int): Estimated direction-of-arrival in degrees (device-dependent).
+
+        Typical usage:
+            def on_evt(frame):
+                evt = frame.value
+                if evt.get('activity'):
+                    print('DOA:', evt.get('direction'))
+            sub = robot.microphone.stream.on_int_event(on_evt, queue_size=2)
+
+        Notes:
+            - Stream delivery is 'latest' (you may drop events if your consumer is slow).
+        """
+        ...
+
+    def on_int_event(self, callback: Callable[[DictFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Internal microphone event stream (VAD + direction).
+
+        Publishes DictFrame events when voice activity is detected.
+        Payload fields:
+            activity (bool): True when VAD is active.
+            direction (int): Estimated direction-of-arrival in degrees (device-dependent).
+
+        Typical usage:
+            def on_evt(frame):
+                evt = frame.value
+                if evt.get('activity'):
+                    print('DOA:', evt.get('direction'))
+            sub = robot.microphone.stream.on_int_event(on_evt, queue_size=2)
+
+        Notes:
+            - Stream delivery is 'latest' (you may drop events if your consumer is slow).
+        """
+        ...
+
+    def open_ext_audio_ch0_reader(self, queue_size: int | None = ...) -> TypedStreamReader[AudioFrameRaw]:
+        """
+        External microphone audio stream channel 0 (mono).
+
+        AudioFrameRaw stream published only if microphone.external.enabled is True.
+
+        Typical usage:
+            sub = robot.microphone.stream.on_ext_audio_ch0(cb, queue_size=10)
+        """
+        ...
+
+    def on_ext_audio_ch0(self, callback: Callable[[AudioFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        External microphone audio stream channel 0 (mono).
+
+        AudioFrameRaw stream published only if microphone.external.enabled is True.
+
+        Typical usage:
+            sub = robot.microphone.stream.on_ext_audio_ch0(cb, queue_size=10)
+        """
+        ...
+
+
+class MicrophoneAPI:
+    """Namespace for microphone RPC/stream APIs."""
+
+    def get_int_tuning(self, blocking: bool = True) -> ActionHandle:
+        """
+        Get all readable Respeaker (internal mic array) tuning parameters.
+
+        Returns a dictionary containing every readable parameter exposed by the
+        Respeaker controller (keys are parameter names, values are numeric).
+
+        Example:
+            params = robot.microphone.get_int_tuning()
+            print(params.get('AECNORM'))
+
+        Returns:
+            dict: Mapping {param_name: value} for all readable params.
+
+        Notes:
+            - If the Respeaker device is not open/available, the node may return
+              an empty dict (implementation-dependent).
+        """
+        ...
+
+    def set_int_tuning(self, name: str, value: float, blocking: bool = True) -> ActionHandle:
+        """
+        Set a Respeaker (internal mic array) tuning parameter.
+
+        Sets a single numeric parameter on the Respeaker controller.
+
+        Example:
+            ok = robot.microphone.set_int_tuning(name='AECNORM', value=1.0)
+            if not ok:
+                print('failed to set tuning')
+
+        Args:
+            name (str): Parameter name (e.g. 'AECNORM', 'AGCONOFF', ...).
+            value (float): Value to set.
+            store (bool): Optional. Present in the API, but currently the node
+                does not persist this value (it only applies at runtime).
+
+        Returns:
+            bool: True if the parameter was set successfully.
+
+        Notes:
+            - Persistence is currently handled via config (microphone.tunning.*)
+              applied at startup in applyInitialTuning().
+        """
+        ...
+
+    @property
+    def stream(self) -> MicrophoneStreamAPI:
+        """Stream namespace for microphone APIs."""
         ...
 
 
