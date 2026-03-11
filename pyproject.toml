@@ -9,12 +9,13 @@ readme = "README.md"
 requires-python = ">=3.7.3"
 license = { file = "LICENSE" }
 authors = [
-    { name = "LuxAI S.A." }
+    { name = "LuxAI S.A.", email = "ali.paikan@luxai.com" }
 ]
 keywords = ["messaging", "luxai","qtrobot", "robot", "sdk", "api", "robotics"]
 classifiers = [
-    "Development Status :: 4 - Beta", 
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",   
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
     "Operating System :: OS Independent",
@@ -57,6 +58,7 @@ dev = [
 "Homepage" = "https://github.com/luxai-robot/robot-sdk-python"
 "Source" = "https://github.com/luxai-robot/robot-sdk-python"
 "Bug Tracker" = "https://github.com/luxai-robot/robot-sdk-python/issues"
+"Changelog" = "https://github.com/luxai-robot/robot-sdk-python/releases"
 
 
 # [project.scripts]
