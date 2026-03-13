@@ -365,9 +365,11 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/motor/calib/set",
             "cancel_service_name": None,
             "params": [
-                ("motor", str),                 # motor name
-                ("offset", float),              # calibration offset value (degrees)
-                ("store", bool, False),         # optional; persist offset to config file
+                ("motor", str),                      # motor name
+                ("offset", float, None),             # optional; calibration offset value (degrees)
+                ("overload_threshold", int, None), # optional; calibration overload_threshold value (degrees)
+                ("velocity_max", int, None),       # optional; calibration velocity_max value (degrees)
+                ("store", bool, False),              # optional; persist offset to config file
             ],
             "response_type": type(None),
             "robots": ["qtrobot-v3"],
@@ -548,9 +550,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
         "tts.say_text": {
             "service_name": "/tts/engine/say/text",
             "cancel_service_name": "/tts/engine/cancel",
-            "params": [
-                ("engine", str),                # engine id to use
+            "params": [                
                 ("text", str),                  # plain text to synthesize
+                ("engine", str, None),          # optional; engine id to use 
                 ("lang", str, None),            # optional; language code (e.g. "en-US")
                 ("voice", str, None),           # optional; voice id or name
                 ("rate", float, None),          # optional; speech rate multiplier
@@ -565,9 +567,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
         "tts.say_ssml": {
             "service_name": "/tts/engine/say/ssml",
             "cancel_service_name": "/tts/engine/cancel",
-            "params": [
-                ("engine", str),                # engine id to use
+            "params": [                
                 ("ssml", str),                  # SSML markup string
+                ("engine", str, None),          # optional; engine id to use 
             ],
             "response_type": type(None),        # blocks until audio playback completes
             "robots": ["qtrobot-v3"],
@@ -577,8 +579,8 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/tts/engine/configure/set",
             "cancel_service_name": None,
             "params": [
-                ("engine", str),                # engine id
                 ("config", dict),               # engine-specific config key/value pairs
+                ("engine", str, None),          # optional; engine id (uses default if omitted)
             ],
             "response_type": type(None),
             "robots": ["qtrobot-v3"],
@@ -588,7 +590,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/tts/engine/configure/get",
             "cancel_service_name": None,
             "params": [
-                ("engine", str),                # engine id
+                ("engine", str, None),          # optional; engine id (uses default if omitted)
             ],
             "response_type": dict,              # current engine configuration dict
             "robots": ["qtrobot-v3"],
@@ -598,7 +600,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/tts/engine/languages/get",
             "cancel_service_name": None,
             "params": [
-                ("engine", str),                # engine id
+                ("engine", str, None),          # optional; engine id (uses default if omitted)
             ],
             "response_type": list,              # list of supported language code strings
             "robots": ["qtrobot-v3"],
@@ -608,7 +610,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/tts/engine/voices/get",
             "cancel_service_name": None,
             "params": [
-                ("engine", str),                # engine id
+                ("engine", str, None),          # optional; engine id (uses default if omitted)
             ],
             "response_type": list,              # list of {id, lang, lang_name, gender,
                                                 #   is_child, is_multilingual, display_name}
@@ -619,7 +621,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/tts/engine/supports/ssml",
             "cancel_service_name": None,
             "params": [
-                ("engine", str),                # engine id
+                ("engine", str, None),          # optional; engine id (uses default if omitted)
             ],
             "response_type": bool,
             "robots": ["qtrobot-v3"],

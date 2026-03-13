@@ -85,7 +85,7 @@ The SDK exposes two categories of APIs, accessible through namespace views on th
 
 ```python
 # Blocks until the robot finishes speaking; returns None
-robot.tts.say_text("acapela", "Hello world!")
+robot.tts.say_text("Hello world!")
 
 # Returns a list immediately after the robot responds
 engines = robot.tts.list_engines()
@@ -95,7 +95,7 @@ engines = robot.tts.list_engines()
 
 ```python
 # Returns immediately — the robot speaks in the background
-h = robot.tts.say_text_async("acapela", "This is a long sentence...")
+h = robot.tts.say_text_async("This is a long sentence...")
 time.sleep(1)
 h.cancel()   # stop early
 ```
@@ -160,7 +160,7 @@ h.cancel()
 ```python
 from luxai.robot.core import wait_all_actions, wait_any_action
 
-h1 = robot.tts.say_text_async("acapela", "Playing audio at the same time.")
+h1 = robot.tts.say_text_async("Playing audio at the same time.")
 h2 = robot.media.play_fg_audio_file_async("/path/to/file.wav")
 
 wait_all_actions([h1, h2])   # wait for both to finish
@@ -182,34 +182,37 @@ robot.tts.<method>(...)
 | `list_engines()` | `list[str]` | All loaded TTS engine IDs |
 | `get_default_engine()` | `str` | Current default engine ID |
 | `set_default_engine(engine)` | — | Set the default engine |
-| `get_languages(engine)` | `list[str]` | Supported language codes |
-| `get_voices(engine)` | `list[dict]` | Available voices |
-| `supports_ssml(engine)` | `bool` | Whether the engine accepts SSML |
-| `get_config(engine)` | `dict` | Current engine configuration |
-| `set_config(engine, config)` | — | Update engine configuration |
-| `say_text(engine, text, *, lang, voice, rate, pitch, volume, style)` | — | Speak plain text (blocking) |
-| `say_text_async(engine, text, ...)` | `ActionHandle` | Speak plain text (non-blocking) |
-| `say_ssml(engine, ssml)` | — | Speak SSML markup (blocking) |
-| `say_ssml_async(engine, ssml)` | `ActionHandle` | Speak SSML markup (non-blocking) |
+| `get_languages(engine*)` | `list[str]` | Supported language codes |
+| `get_voices(engine*)` | `list[dict]` | Available voices |
+| `supports_ssml(engine*)` | `bool` | Whether the engine accepts SSML |
+| `get_config(engine*)` | `dict` | Current engine configuration |
+| `set_config(config, engine*)` | — | Update engine configuration |
+| `say_text(text, engine*, *, lang, voice, rate, pitch, volume, style)` | — | Speak plain text (blocking) |
+| `say_text_async(text, engine*, ...)` | `ActionHandle` | Speak plain text (non-blocking) |
+| `say_ssml(ssml, engine*)` | — | Speak SSML markup (blocking) |
+| `say_ssml_async(ssml, engine*)` | `ActionHandle` | Speak SSML markup (non-blocking) |
+
+> `engine*` — optional; uses the default engine when omitted.
 
 **Examples:**
 
 ```python
 # List engines and voices
-engines = robot.tts.list_engines()         # e.g. ['acapela', 'azure']
-voices  = robot.tts.get_voices("acapela")
+engines = robot.tts.list_engines()                      # e.g. ['acapela', 'azure']
+voices  = robot.tts.get_voices()                        # uses default engine
+voices  = robot.tts.get_voices(engine="acapela")        # explicit engine
 
-# Speak synchronously
-robot.tts.say_text("acapela", "Hello!")
-robot.tts.say_text("acapela", "Slower and higher.", rate=0.8, pitch=1.2)
+# Speak synchronously (engine is optional — uses default if omitted)
+robot.tts.say_text("Hello!")
+robot.tts.say_text("Slower and higher.", engine="acapela", rate=0.8, pitch=1.2)
 
 # Speak asynchronously and cancel mid-sentence
-h = robot.tts.say_text_async("acapela", "This is a very long sentence that will be cut short.")
+h = robot.tts.say_text_async("This is a very long sentence that will be cut short.")
 time.sleep(1)
 h.cancel()
 
 # SSML (Azure example)
-robot.tts.say_ssml("azure", '<speak version="1.0" ...> ... </speak>')
+robot.tts.say_ssml('<speak version="1.0" ...> ... </speak>', engine="azure")
 ```
 
 ---

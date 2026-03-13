@@ -20,26 +20,26 @@ def get_set_default_engine(robot: Robot):
 
 def say_text(robot: Robot):
     # Say a simple phrase using the acapela engine
-    Logger.info("Saying text with acapela engine...")
-    ret = robot.tts.say_text("acapela", "Hello, This is spoken with the default settings.")
+    Logger.info("Saying text with defualt engine...")
+    ret = robot.tts.say_text("Hello, This is spoken with the default settings.")
     Logger.info(f"Return {ret}")
 
     # Say text with rate and pitch adjustments
     Logger.info("Saying text with rate and pitch adjustments...")
-    robot.tts.say_text("acapela", "This is spoken slower at a higher pitch.", rate=0.85, pitch=1.2)
+    robot.tts.say_text("This is spoken slower at a higher pitch.", engine="acapela", rate=0.85, pitch=1.2)
 
     # Say text with explicit language and voice parameters
     Logger.info("Saying text with voice override...")
-    robot.tts.say_text("acapela", "This is spoken with the Rosie voice.", voice="Rosie")
+    robot.tts.say_text("This is spoken with the Rosie voice.", engine="acapela", voice="Rosie")
 
     # Say text with inline SSML tags to adjust speed mid-utterance
-    robot.tts.say_text("acapela", "I will speak with different speed.  \\rspd=130\\ for example now I'm speaking faster. \\rspd=70\\ And now I'm speaking slower.")
+    robot.tts.say_text("I will speak with different speed.  \\rspd=130\\ for example now I'm speaking faster. \\rspd=70\\ And now I'm speaking slower.", engine="acapela")
 
 
 def say_text_cancel(robot: Robot):
     # Start a long utterance in non-blocking mode and cancel it after 2 seconds
     Logger.info("Starting speech (will cancel after 2 seconds)...")
-    h = robot.tts.say_text_async("acapela", "This is a very long sentence. That will be interrupted before it finishes after one second.")
+    h = robot.tts.say_text_async("This is a very long sentence. That will be interrupted before it finishes after one second.", engine="acapela")
     time.sleep(2)
     h.cancel()
     Logger.info("Speech cancelled.")
@@ -59,7 +59,7 @@ def say_ssml_azure(robot: Robot):
         '</speak>'
     )
     Logger.info("Saying SSML with azure engine...")
-    ret = robot.tts.say_ssml("azure", ssml)
+    ret = robot.tts.say_ssml(ssml, engine="azure")
     Logger.info(f"Return {ret}")
 
 
@@ -67,17 +67,17 @@ def check_ssml_support(robot: Robot):
     # Check whether each engine supports SSML
     engines = robot.tts.list_engines()
     for engine in engines:
-        supported = robot.tts.supports_ssml(engine)
+        supported = robot.tts.supports_ssml(engine=engine)
         Logger.info(f"  {engine}: SSML supported = {supported}")
 
 
 def get_languages_and_voices(robot: Robot):
     # List supported languages for the acapela engine
-    langs = robot.tts.get_languages("acapela")
+    langs = robot.tts.get_languages(engine="acapela")
     Logger.info(f"acapela languages: {langs}")
 
     # List available voices for the acapela engine
-    voices = robot.tts.get_voices("acapela")
+    voices = robot.tts.get_voices(engine="acapela")
     Logger.info(f"acapela voices ({len(voices)}):")
     for v in voices:
         Logger.info(f"  {v}")
@@ -85,12 +85,12 @@ def get_languages_and_voices(robot: Robot):
 
 def engine_config(robot: Robot):
     # Read the current config for the acapela engine
-    cfg = robot.tts.get_config("acapela")
+    cfg = robot.tts.get_config(engine="acapela")
     Logger.info(f"acapela config: {cfg}")
 
     # Update the acapela engine with a subscription key and region
     Logger.info("Configuring acapela engine with pitch and rate adjustments...")
-    robot.tts.set_config("acapela", {"pitch": 1.0, "rate": 0.8})
+    robot.tts.set_config({"pitch": 1.0, "rate": 0.8}, engine="acapela")
     Logger.info("Config updated.")
 
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     # connect robot by node_id (serial number), e.g. "QTRD000123" or by endpoint (IP:port)
     # robot = Robot.connect_zmq(node_id="QTRD000123")
-    robot = Robot.connect_zmq(endpoint="tcp://192.168.3.215:50500")
+    robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
     Logger.info(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK version: {robot._sdk_version}")
 
     list_engines(robot)

@@ -219,25 +219,57 @@ class AsrStreamAPI:
 
     def open_azure_speech_reader(self, queue_size: int | None = ...) -> TypedStreamReader[DictFrame]:
         """
-        Recognized speech segments from Azure ASR.
+        Outbound stream of recognised speech segments from Azure ASR.
+
+        Published in both one-shot (``recognize_azure()``) and continuous modes.
+        Frame type is DictFrame with fields: 'text', 'confidence', 'language', etc.
+
+        Typical usage:
+            def on_speech(frame):
+                print(frame.value.get('text'))
+            sub = robot.asr.stream.on_azure_speech(on_speech)
         """
         ...
 
     def on_azure_speech(self, callback: Callable[[DictFrame], None], queue_size: int | None = ...) -> StreamSubscription:
         """
-        Recognized speech segments from Azure ASR.
+        Outbound stream of recognised speech segments from Azure ASR.
+
+        Published in both one-shot (``recognize_azure()``) and continuous modes.
+        Frame type is DictFrame with fields: 'text', 'confidence', 'language', etc.
+
+        Typical usage:
+            def on_speech(frame):
+                print(frame.value.get('text'))
+            sub = robot.asr.stream.on_azure_speech(on_speech)
         """
         ...
 
     def open_azure_event_reader(self, queue_size: int | None = ...) -> TypedStreamReader[StringFrame]:
         """
-        Speech recognition events from Azure ASR.
+        Outbound stream of speech recognition lifecycle events from Azure ASR.
+
+        Frame type is StringFrame. Possible values include:
+          'recognizing', 'recognized', 'canceled', 'session_started', 'session_stopped'.
+
+        Typical usage:
+            def on_event(frame):
+                print(frame.value)  # e.g. 'recognized'
+            sub = robot.asr.stream.on_azure_event(on_event)
         """
         ...
 
     def on_azure_event(self, callback: Callable[[StringFrame], None], queue_size: int | None = ...) -> StreamSubscription:
         """
-        Speech recognition events from Azure ASR.
+        Outbound stream of speech recognition lifecycle events from Azure ASR.
+
+        Frame type is StringFrame. Possible values include:
+          'recognizing', 'recognized', 'canceled', 'session_started', 'session_stopped'.
+
+        Typical usage:
+            def on_event(frame):
+                print(frame.value)  # e.g. 'recognized'
+            sub = robot.asr.stream.on_azure_event(on_event)
         """
         ...
 
@@ -247,19 +279,75 @@ class AsrAPI:
 
     def configure_azure(self, subscription: str, region: str, languages: List = ..., silence_timeout: float = ..., use_vad: bool = ..., continuous_mode: bool = ...) -> bool:
         """
-        configure Azure ASR
+        Configure the Azure ASR engine with credentials and recognition settings.
+
+        Must be called once before using ``recognize_azure()`` or subscribing
+        to the ``asr.azure_speech`` / ``asr.azure_event`` streams.
+
+        Args:
+            subscription (str): Azure Speech subscription key.
+            region (str): Azure Speech region (e.g. 'westeurope').
+            languages (list): Language codes to recognise (default ['en-US']).
+            silence_timeout (float): Silence end-of-speech threshold in seconds (default 0.2).
+            use_vad (bool): Enable voice-activity detection (default False).
+            continuous_mode (bool): Enable continuous recognition mode (default False).
+
+        Returns:
+            bool: True if configured successfully.
+
+        Example:
+            ok = robot.asr.configure_azure(
+                subscription='<key>',
+                region='westeurope',
+                continuous_mode=True,
+                use_vad=True,
+            )
         """
         ...
 
     def recognize_azure(self) -> dict:
         """
-        Perform one-shot recognition with Azure ASR.
+        Perform a single speech recognition with the Azure ASR engine.
+
+        Blocks until a complete utterance is recognised and returns the result.
+        For non-blocking use, call ``recognize_azure_async()`` which returns an
+        :class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.
+
+        Returns:
+            dict: Recognition result with fields such as 'text', 'confidence', etc.
+
+        Examples:
+            # Blocking
+            result = robot.asr.recognize_azure()
+            print(result.get('text'))
+
+            # Non-blocking
+            h = robot.asr.recognize_azure_async()
+            result = h.result()
+            print(result.get('text'))
         """
         ...
 
     def recognize_azure_async(self) -> ActionHandle:
         """
-        Perform one-shot recognition with Azure ASR.
+        Perform a single speech recognition with the Azure ASR engine.
+
+        Blocks until a complete utterance is recognised and returns the result.
+        For non-blocking use, call ``recognize_azure_async()`` which returns an
+        :class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.
+
+        Returns:
+            dict: Recognition result with fields such as 'text', 'confidence', etc.
+
+        Examples:
+            # Blocking
+            result = robot.asr.recognize_azure()
+            print(result.get('text'))
+
+            # Non-blocking
+            h = robot.asr.recognize_azure_async()
+            result = h.result()
+            print(result.get('text'))
         """
         ...
 
@@ -274,73 +362,149 @@ class CameraStreamAPI:
 
     def open_color_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ImageFrameRaw]:
         """
-        Camera color image streaming
+        Outbound color image stream from the RealSense camera.
+
+        Frame type is ImageFrameRaw (BGR, width x height x 3).
+
+        Typical usage:
+            reader = robot.camera.stream.open_color_reader()
+            frame = reader.read(timeout=3.0)
         """
         ...
 
     def on_color(self, callback: Callable[[ImageFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
         """
-        Camera color image streaming
+        Outbound color image stream from the RealSense camera.
+
+        Frame type is ImageFrameRaw (BGR, width x height x 3).
+
+        Typical usage:
+            reader = robot.camera.stream.open_color_reader()
+            frame = reader.read(timeout=3.0)
         """
         ...
 
     def open_depth_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ImageFrameRaw]:
         """
-        Camera depth image streaming
+        Outbound depth image stream from the RealSense camera.
+
+        Frame type is ImageFrameRaw (16-bit depth, width x height).
+
+        Typical usage:
+            reader = robot.camera.stream.open_depth_reader()
+            frame = reader.read(timeout=3.0)
         """
         ...
 
     def on_depth(self, callback: Callable[[ImageFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
         """
-        Camera depth image streaming
+        Outbound depth image stream from the RealSense camera.
+
+        Frame type is ImageFrameRaw (16-bit depth, width x height).
+
+        Typical usage:
+            reader = robot.camera.stream.open_depth_reader()
+            frame = reader.read(timeout=3.0)
         """
         ...
 
     def open_depth_aligned_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ImageFrameRaw]:
         """
-        Camera aligned depth image streaming
+        Outbound depth image aligned to the color frame from the RealSense camera.
+
+        Frame type is ImageFrameRaw (16-bit depth, same resolution as color).
+
+        Typical usage:
+            reader = robot.camera.stream.open_depth_aligned_reader()
+            frame = reader.read(timeout=3.0)
         """
         ...
 
     def on_depth_aligned(self, callback: Callable[[ImageFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
         """
-        Camera aligned depth image streaming
+        Outbound depth image aligned to the color frame from the RealSense camera.
+
+        Frame type is ImageFrameRaw (16-bit depth, same resolution as color).
+
+        Typical usage:
+            reader = robot.camera.stream.open_depth_aligned_reader()
+            frame = reader.read(timeout=3.0)
         """
         ...
 
     def open_depth_color_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ImageFrameRaw]:
         """
-        Camera colorized depth image streaming
+        Outbound false-colour depth image stream from the RealSense camera.
+
+        Frame type is ImageFrameRaw (BGR, colourised for visualisation).
+
+        Typical usage:
+            reader = robot.camera.stream.open_depth_color_reader()
+            frame = reader.read(timeout=3.0)
         """
         ...
 
     def on_depth_color(self, callback: Callable[[ImageFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
         """
-        Camera colorized depth image streaming
+        Outbound false-colour depth image stream from the RealSense camera.
+
+        Frame type is ImageFrameRaw (BGR, colourised for visualisation).
+
+        Typical usage:
+            reader = robot.camera.stream.open_depth_color_reader()
+            frame = reader.read(timeout=3.0)
         """
         ...
 
     def open_gyro_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ListFrame]:
         """
-        Camera gyro streaming
+        Outbound gyroscope stream from the RealSense IMU.
+
+        Frame type is ListFrame: [x, y, z] angular velocity (rad/s).
+
+        Typical usage:
+            def on_gyro(frame):
+                print(frame.value)  # [x, y, z]
+            sub = robot.camera.stream.on_gyro(on_gyro)
         """
         ...
 
     def on_gyro(self, callback: Callable[[ListFrame], None], queue_size: int | None = ...) -> StreamSubscription:
         """
-        Camera gyro streaming
+        Outbound gyroscope stream from the RealSense IMU.
+
+        Frame type is ListFrame: [x, y, z] angular velocity (rad/s).
+
+        Typical usage:
+            def on_gyro(frame):
+                print(frame.value)  # [x, y, z]
+            sub = robot.camera.stream.on_gyro(on_gyro)
         """
         ...
 
     def open_acceleration_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ListFrame]:
         """
-        Camera acceleration streaming
+        Outbound accelerometer stream from the RealSense IMU.
+
+        Frame type is ListFrame: [x, y, z] linear acceleration (m/s²).
+
+        Typical usage:
+            def on_accel(frame):
+                print(frame.value)  # [x, y, z]
+            sub = robot.camera.stream.on_acceleration(on_accel)
         """
         ...
 
     def on_acceleration(self, callback: Callable[[ListFrame], None], queue_size: int | None = ...) -> StreamSubscription:
         """
-        Camera acceleration streaming
+        Outbound accelerometer stream from the RealSense IMU.
+
+        Frame type is ListFrame: [x, y, z] linear acceleration (m/s²).
+
+        Typical usage:
+            def on_accel(frame):
+                print(frame.value)  # [x, y, z]
+            sub = robot.camera.stream.on_acceleration(on_accel)
         """
         ...
 
@@ -350,19 +514,38 @@ class CameraAPI:
 
     def get_color_intrinsics(self) -> dict:
         """
-        Get Camera color intrinsics parameters.
+        Get color camera intrinsic parameters.
+
+        Returns:
+            dict: Intrinsics dict (fx, fy, ppx, ppy, width, height, model, coeffs).
+
+        Example:
+            intr = robot.camera.get_color_intrinsics()
         """
         ...
 
     def get_depth_intrinsics(self) -> dict:
         """
-        Get Camera depth intrinsics parameters.
+        Get depth camera intrinsic parameters.
+
+        Returns:
+            dict: Intrinsics dict (fx, fy, ppx, ppy, width, height, model, coeffs).
+
+        Example:
+            intr = robot.camera.get_depth_intrinsics()
         """
         ...
 
     def get_depth_scale(self) -> dict:
         """
-        Get Camera depth scale value.
+        Get the depth scale factor (metres per depth unit).
+
+        Returns:
+            dict: {'scale': float} where scale converts raw depth units to metres.
+
+        Example:
+            info = robot.camera.get_depth_scale()
+            scale = info['scale']
         """
         ...
 
@@ -1607,20 +1790,23 @@ class MotorAPI:
         """
         ...
 
-    def set_calib(self, motor: str, offset: float, store: bool = ...) -> None:
+    def set_calib(self, motor: str, offset: float | None = None, overload_threshold: int | None = None, velocity_max: int | None = None, store: bool = ...) -> None:
         """
-        Set calibration offset for a motor.
+        Set calibration parameters for a motor.
 
         Args:
             motor (str): Motor name.
-            offset (float): Offset in degrees.
-            store (bool): If True, persist to config (default False).
+            offset (float): Optional calibration offset in degrees.
+            overload_threshold (int): Optional overload threshold value.
+            velocity_max (int): Optional maximum velocity value.
+            store (bool): If True, persist changes to config (default False).
 
         Returns:
             bool: True on success.
 
         Example:
             robot.motor.set_calib('HeadYaw', offset=2.5, store=True)
+            robot.motor.set_calib('HeadYaw', overload_threshold=80.0, velocity_max=100.0)
         """
         ...
 
@@ -1833,7 +2019,7 @@ class TtsAPI:
         """
         ...
 
-    def say_text(self, engine: str, text: str, lang: str | None = None, voice: str | None = None, rate: float | None = None, pitch: float | None = None, volume: float | None = None, style: str | None = None) -> None:
+    def say_text(self, text: str, engine: str | None = None, lang: str | None = None, voice: str | None = None, rate: float | None = None, pitch: float | None = None, volume: float | None = None, style: str | None = None) -> None:
         """
         Synthesize and play plain text using a selected TTS engine.
 
@@ -1842,8 +2028,8 @@ class TtsAPI:
         :class:`ActionHandle` — call ``.cancel()`` on it to interrupt speech.
 
         Args:
-            engine (str): Engine id to use.
             text (str): Text to synthesize.
+            engine (str): Optional engine id to use (uses default if omitted).
             lang (str): Optional language code (e.g. 'en-US').
             voice (str): Optional voice id/name.
             rate (float): Optional speaking rate multiplier.
@@ -1858,18 +2044,18 @@ class TtsAPI:
             Visemes may be scheduled to the FaceNode if connected.
 
         Examples:
-            # Blocking
-            robot.tts.say_text('acapela', 'Hello world!')
-            robot.tts.say_text('acapela', 'Slower speech', rate=0.8, pitch=1.1)
+            # Blocking — uses default engine
+            robot.tts.say_text('Hello world!')
+            robot.tts.say_text('Slower speech', engine='acapela', rate=0.8, pitch=1.1)
 
             # Non-blocking — cancel after 2 seconds
-            h = robot.tts.say_text_async('acapela', 'This is a very long sentence...')
+            h = robot.tts.say_text_async('This is a very long sentence...')
             time.sleep(2)
             h.cancel()
         """
         ...
 
-    def say_text_async(self, engine: str, text: str, lang: str | None = None, voice: str | None = None, rate: float | None = None, pitch: float | None = None, volume: float | None = None, style: str | None = None) -> ActionHandle:
+    def say_text_async(self, text: str, engine: str | None = None, lang: str | None = None, voice: str | None = None, rate: float | None = None, pitch: float | None = None, volume: float | None = None, style: str | None = None) -> ActionHandle:
         """
         Synthesize and play plain text using a selected TTS engine.
 
@@ -1878,8 +2064,8 @@ class TtsAPI:
         :class:`ActionHandle` — call ``.cancel()`` on it to interrupt speech.
 
         Args:
-            engine (str): Engine id to use.
             text (str): Text to synthesize.
+            engine (str): Optional engine id to use (uses default if omitted).
             lang (str): Optional language code (e.g. 'en-US').
             voice (str): Optional voice id/name.
             rate (float): Optional speaking rate multiplier.
@@ -1894,18 +2080,18 @@ class TtsAPI:
             Visemes may be scheduled to the FaceNode if connected.
 
         Examples:
-            # Blocking
-            robot.tts.say_text('acapela', 'Hello world!')
-            robot.tts.say_text('acapela', 'Slower speech', rate=0.8, pitch=1.1)
+            # Blocking — uses default engine
+            robot.tts.say_text('Hello world!')
+            robot.tts.say_text('Slower speech', engine='acapela', rate=0.8, pitch=1.1)
 
             # Non-blocking — cancel after 2 seconds
-            h = robot.tts.say_text_async('acapela', 'This is a very long sentence...')
+            h = robot.tts.say_text_async('This is a very long sentence...')
             time.sleep(2)
             h.cancel()
         """
         ...
 
-    def say_ssml(self, engine: str, ssml: str) -> None:
+    def say_ssml(self, ssml: str, engine: str | None = None) -> None:
         """
         Synthesize and play SSML markup using a selected TTS engine.
 
@@ -1914,18 +2100,19 @@ class TtsAPI:
         :class:`ActionHandle` — call ``.cancel()`` on it to interrupt speech.
 
         Args:
-            engine (str): Engine id to use.
             ssml (str): SSML markup string.
+            engine (str): Optional engine id to use (uses default if omitted).
 
         Returns:
             bool: True on success.
 
         Example:
-            robot.tts.say_ssml('azure', '<speak>Hello!</speak>')
+            robot.tts.say_ssml('<speak>Hello!</speak>')
+            robot.tts.say_ssml('<speak>Hello!</speak>', engine='azure')
         """
         ...
 
-    def say_ssml_async(self, engine: str, ssml: str) -> ActionHandle:
+    def say_ssml_async(self, ssml: str, engine: str | None = None) -> ActionHandle:
         """
         Synthesize and play SSML markup using a selected TTS engine.
 
@@ -1934,93 +2121,100 @@ class TtsAPI:
         :class:`ActionHandle` — call ``.cancel()`` on it to interrupt speech.
 
         Args:
-            engine (str): Engine id to use.
             ssml (str): SSML markup string.
+            engine (str): Optional engine id to use (uses default if omitted).
 
         Returns:
             bool: True on success.
 
         Example:
-            robot.tts.say_ssml('azure', '<speak>Hello!</speak>')
+            robot.tts.say_ssml('<speak>Hello!</speak>')
+            robot.tts.say_ssml('<speak>Hello!</speak>', engine='azure')
         """
         ...
 
-    def set_config(self, engine: str, config: dict) -> None:
+    def set_config(self, config: dict, engine: str | None = None) -> None:
         """
         Set engine-specific configuration parameters.
 
         Args:
-            engine (str): Engine id.
             config (dict): Key/value config map.
+            engine (str): Optional engine id (uses default if omitted).
 
         Returns:
             bool: True if engine accepted configuration.
 
         Example:
-            robot.tts.set_config('acapela', {'pitch': 1.0, 'rate': 0.8})
+            robot.tts.set_config(config={'pitch': 1.0, 'rate': 0.8})
+            robot.tts.set_config(engine='acapela', config={'pitch': 1.0, 'rate': 0.8})
         """
         ...
 
-    def get_config(self, engine: str) -> dict:
+    def get_config(self, engine: str | None = None) -> dict:
         """
         Get engine-specific configuration parameters.
 
         Args:
-            engine (str): Engine id.
+            engine (str): Optional engine id (uses default if omitted).
 
         Returns:
             dict: Current engine configuration map.
 
         Example:
-            cfg = robot.tts.get_config('acapela')
+            cfg = robot.tts.get_config()
+            cfg = robot.tts.get_config(engine='acapela')
         """
         ...
 
-    def get_languages(self, engine: str) -> list:
+    def get_languages(self, engine: str | None = None) -> list:
         """
         Get supported language codes for a TTS engine.
 
         Args:
-            engine (str): Engine id.
+            engine (str): Optional engine id (uses default if omitted).
 
         Returns:
             list: List[str] language codes.
 
         Example:
-            langs = robot.tts.get_languages('acapela')
+            langs = robot.tts.get_languages()
+            langs = robot.tts.get_languages(engine='acapela')
         """
         ...
 
-    def get_voices(self, engine: str) -> list:
+    def get_voices(self, engine: str | None = None) -> list:
         """
         Get supported voices for a TTS engine.
 
         Args:
-            engine (str): Engine id.
+            engine (str): Optional engine id (uses default if omitted).
 
         Returns:
             list: List[dict] voice info dicts (id, lang, gender, display_name, ...).
 
         Example:
-            voices = robot.tts.get_voices('acapela')
+            voices = robot.tts.get_voices()
+            voices = robot.tts.get_voices(engine='acapela')
             for v in voices:
                 print(v['display_name'], v['lang'])
         """
         ...
 
-    def supports_ssml(self, engine: str) -> bool:
+    def supports_ssml(self, engine: str | None = None) -> bool:
         """
         Check whether a TTS engine supports SSML.
 
         Args:
-            engine (str): Engine id.
+            engine (str): Optional engine id (uses default if omitted).
 
         Returns:
             bool: True if SSML is supported.
 
         Example:
-            if robot.tts.supports_ssml('azure'):
-                robot.tts.say_ssml('azure', '<speak>Hello!</speak>')
+            if robot.tts.supports_ssml():
+                robot.tts.say_ssml('<speak>Hello!</speak>')
+            if robot.tts.supports_ssml(engine='azure'):
+                robot.tts.say_ssml('<speak>Hello!</speak>', engine='azure')
         """
         ...
 

@@ -444,13 +444,11 @@ class Robot:
             rpc_req = {"name": SYSTEM_DESCRIBE_SERVICE, "args": {"sdk_version": SDK_VERSION}}            
             raw = requester.call(rpc_req, timeout=5.0)        
 
-        except Exception as e:
-            Logger.debug(f"Robot: system describe RPC failed: {e}")
-            return
+        except Exception as e:            
+            raise RuntimeError(f"Robot: system describe RPC failed: {e}")            
 
         if not isinstance(raw, dict) or not raw.get("status"):
-            Logger.warning("Robot: system describe returned invalid payload or status=False.")
-            return
+            raise RuntimeError("Robot: system describe returned invalid payload or status=False.")            
 
         desc: Dict[str, Any] = raw.get("response") or {}
         self._apply_system_description(desc)
