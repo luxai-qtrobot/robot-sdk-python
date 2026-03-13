@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     # connect robot by node_id (serial number), e.g. "QTRD000123" or by endpoint (IP:port)
     # robot = Robot.connect_zmq(node_id="QTRD000123")
-    robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
+    robot = Robot.connect_zmq(endpoint="tcp://192.168.3.215:50500")
     Logger.info(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK version: {robot._sdk_version}")
 
     list_engines(robot)
