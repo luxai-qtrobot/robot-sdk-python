@@ -35,10 +35,11 @@ asr-azure = [
     "azure-cognitiveservices-speech"
 ]
 
-# speech-riva = [
-#     "numpy",
-#     "soundfile",
-# ]
+asr-riva = [
+    "torch",  # for VAD
+    "torchaudio",  # for VAD
+    "nvidia-riva-client"
+]
 
 dev = [
     "pytest",

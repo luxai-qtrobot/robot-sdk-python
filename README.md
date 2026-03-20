@@ -32,6 +32,7 @@ A Python SDK for communicating with [LuxAI](https://luxai.com) robots. It provid
 - [Plugin System](#plugin-system)
   - [Camera (RealSense)](#camera-realsense)
   - [ASR — Azure Speech](#asr--azure-speech)
+  - [ASR — Nvidia Riva](#asr--nvidia-riva)
 - [Examples](#examples)
 - [License](#license)
 
@@ -48,6 +49,7 @@ pip install luxai-robot
 | Extra | Installs |
 |---|---|
 | `luxai-robot[asr-azure]` | Azure Cognitive Services Speech SDK + PyTorch VAD |
+| `luxai-robot[asr-riva]` | Nvidia Riva client SDK + PyTorch VAD |
 
 Python **≥ 3.7.3** is required.
 
@@ -668,6 +670,62 @@ print(result)
 
 ---
 
+### ASR — Nvidia Riva
+
+Requires the `asr-riva` plugin and the `luxai-robot[asr-riva]` extras to be installed, plus a running [Nvidia Riva](https://developer.nvidia.com/riva) ASR Docker server.
+
+```bash
+pip install "luxai-robot[asr-riva]"
+```
+
+```python
+robot.enable_plugin_local("asr-riva")
+```
+
+**RPC methods:**
+
+| Method | Returns | Description |
+|---|---|---|
+| `asr.configure_riva(*, server, language, use_vad, continuous_mode, ...)` | `bool` | Configure Riva server address and recognition settings |
+| `asr.recognize_riva()` | `dict` | Single recognition (blocking) |
+| `asr.recognize_riva_async()` | `ActionHandle[dict]` | Single recognition (non-blocking) |
+
+**Stream methods:**
+
+| Method | Description |
+|---|---|
+| `asr.stream.on_riva_event(callback)` | Subscribe to recognition lifecycle events |
+| `asr.stream.on_riva_speech(callback)` | Subscribe to recognized speech results |
+
+**Example:**
+
+```python
+from luxai.magpie.frames import StringFrame, DictFrame
+
+robot.enable_plugin_local("asr-riva")
+robot.asr.configure_riva(
+    server="localhost:50051",   # Riva ASR Docker server address
+    language="en-US",
+    continuous_mode=True,
+    use_vad=True,
+)
+
+def on_event(frame: StringFrame):
+    print("ASR event:", frame.value)
+
+def on_speech(frame: DictFrame):
+    print("Recognized:", frame.value)
+
+robot.asr.stream.on_riva_event(on_event)
+robot.asr.stream.on_riva_speech(on_speech)
+
+# Or use a single blocking recognition
+result = robot.asr.recognize_riva()
+print(result)
+```
+
+---
+
 ## Examples
 
 Ready-to-run examples are in the [`examples/`](examples/) directory:
@@ -684,6 +742,7 @@ Ready-to-run examples are in the [`examples/`](examples/) directory:
 | [`microphone_example.py`](examples/microphone_example.py) | Record to WAV, VAD events, DSP tuning |
 | [`camera_example.py`](examples/camera_example.py) | Camera intrinsics, color stream (RealSense plugin) |
 | [`asr_azure_example.py`](examples/asr_azure_example.py) | Continuous speech recognition (Azure plugin) |
+| [`asr_riva_example.py`](examples/asr_riva_example.py) | Continuous speech recognition (Nvidia Riva plugin) |
 
 Each example connects to the robot, demonstrates a set of APIs, and exits cleanly on `Ctrl+C`.
 

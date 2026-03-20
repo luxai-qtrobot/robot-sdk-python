@@ -19,12 +19,19 @@ except ImportError:
     # Extension not installed -> plugin just won't be available.
     PLUGIN_REGISTRY["asr-azure"] = None    
 
-try:    
+try:
+    # Riva ASR plugin (optional extra: luxai-robot[asr-riva])
+    from .asr_riva_plugin import ASRRivaPlugin
+    PLUGIN_REGISTRY["asr-riva"] = ASRRivaPlugin
+except ImportError:
+    PLUGIN_REGISTRY["asr-riva"] = None
+
+try:
     from .remote_plugin import RealsenseDriverPlugin
     PLUGIN_REGISTRY["realsense-driver"] = RealsenseDriverPlugin
-except ImportError:    
+except ImportError:
     # Extension not installed -> plugin just won't be available.
-    PLUGIN_REGISTRY["realsense-drivere"] = None    
+    PLUGIN_REGISTRY["realsense-drivere"] = None
 
 
 
@@ -37,5 +44,6 @@ except ImportError:
 
 __all__ = [
     "PLUGIN_REGISTRY",
-    "RobotPlugin"
+    "RobotPlugin",
+    "ASRRivaPlugin",
 ]

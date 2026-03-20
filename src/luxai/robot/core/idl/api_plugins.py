@@ -150,6 +150,91 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
                 "    print(result.get('text'))\n"
             ),
         },
+        # =========================
+        # ASR Riva RPCs
+        # =========================
+        "asr.configure_riva": {
+            "service_name": "/asr-riva/configure",
+            "cancel_service_name": None,
+            "params": [
+                ("server", str, "localhost:50051"),
+                ("language", str, "en-US"),
+                ("use_ssl", bool, False),
+                ("ssl_cert", str, None),
+                ("profanity_filter", bool, False),
+                ("automatic_punctuation", bool, True),
+                ("use_vad", bool, False),
+                ("continuous_mode", bool, False),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "asr-riva",
+            "install_hint": "pip install luxai-robot[asr-riva]",
+            "since": "0.5.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Configure the Nvidia Riva ASR engine with server address and recognition settings.\n"
+                "\n"
+                "Must be called once before using ``recognize_riva()`` or subscribing\n"
+                "to the ``asr.riva_speech`` / ``asr.riva_event`` streams.\n"
+                "\n"
+                "Args:\n"
+                "    server (str): Riva server address (default 'localhost:50051').\n"
+                "    language (str): BCP-47 language code (default 'en-US').\n"
+                "    use_ssl (bool): Use SSL/TLS for the gRPC connection (default False).\n"
+                "    ssl_cert (str): Path to SSL certificate file (default None).\n"
+                "    profanity_filter (bool): Enable profanity filtering (default False).\n"
+                "    automatic_punctuation (bool): Enable automatic punctuation (default True).\n"
+                "    use_vad (bool): Enable client-side voice-activity detection (default False).\n"
+                "    continuous_mode (bool): Enable continuous recognition mode (default False).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True if configured successfully.\n"
+                "\n"
+                "Example:\n"
+                "    ok = robot.asr.configure_riva(\n"
+                "        server='localhost:50051',\n"
+                "        language='en-US',\n"
+                "        continuous_mode=True,\n"
+                "        use_vad=True,\n"
+                "    )\n"
+            ),
+        },
+        "asr.recognize_riva": {
+            "service_name": "/asr-riva/recognize",
+            "cancel_service_name": "/asr-riva/recognize/cancel",
+            "params": [],
+            "response_type": dict,
+            "local": True,
+            "provider": "asr-riva",
+            "install_hint": "pip install luxai-robot[asr-riva]",
+            "since": "0.5.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Perform a single speech recognition with the Nvidia Riva ASR engine.\n"
+                "\n"
+                "Blocks until a complete utterance is recognised and returns the result.\n"
+                "For non-blocking use, call ``recognize_riva_async()`` which returns an\n"
+                ":class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.\n"
+                "\n"
+                "Returns:\n"
+                "    dict: Recognition result with fields 'text' and 'language'.\n"
+                "\n"
+                "Examples:\n"
+                "    # Blocking\n"
+                "    result = robot.asr.recognize_riva()\n"
+                "    print(result.get('text'))\n"
+                "\n"
+                "    # Non-blocking\n"
+                "    h = robot.asr.recognize_riva_async()\n"
+                "    result = h.result()\n"
+                "    print(result.get('text'))\n"
+            ),
+        },
     },  # end of rpc
 
     # STREAM SECTION
@@ -308,6 +393,48 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
                 "    def on_event(frame):\n"
                 "        print(frame.value)  # e.g. 'recognized'\n"
                 "    sub = robot.asr.stream.on_azure_event(on_event)\n"
+            ),
+        },
+
+        # -----------------------------------
+        #  ASR Riva streams
+        # -----------------------------------
+        "asr.riva_speech": {
+            "direction": "out",
+            "frame_type": "DictFrame",
+            "topic": "/asr-riva/speech",
+            "local": True,
+            "provider": "asr-riva",
+            "install_hint": "pip install luxai-robot[asr-riva]",
+            "doc": (
+                "Outbound stream of recognised speech segments from Nvidia Riva ASR.\n"
+                "\n"
+                "Published in both one-shot (``recognize_riva()``) and continuous modes.\n"
+                "Frame type is DictFrame with fields: 'text' and 'language'.\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_speech(frame):\n"
+                "        print(frame.value.get('text'))\n"
+                "    sub = robot.asr.stream.on_riva_speech(on_speech)\n"
+            ),
+        },
+        "asr.riva_event": {
+            "direction": "out",
+            "frame_type": "StringFrame",
+            "topic": "/asr-riva/event",
+            "local": True,
+            "provider": "asr-riva",
+            "install_hint": "pip install luxai-robot[asr-riva]",
+            "doc": (
+                "Outbound stream of speech recognition lifecycle events from Nvidia Riva ASR.\n"
+                "\n"
+                "Frame type is StringFrame. Possible values:\n"
+                "  'STARTED', 'RECOGNIZING', 'RECOGNIZED', 'STOPPED', 'CANCELED'.\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_event(frame):\n"
+                "        print(frame.value)  # e.g. 'RECOGNIZED'\n"
+                "    sub = robot.asr.stream.on_riva_event(on_event)\n"
             ),
         },
 

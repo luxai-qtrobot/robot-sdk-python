@@ -273,6 +273,62 @@ class AsrStreamAPI:
         """
         ...
 
+    def open_riva_speech_reader(self, queue_size: int | None = ...) -> TypedStreamReader[DictFrame]:
+        """
+        Outbound stream of recognised speech segments from Nvidia Riva ASR.
+
+        Published in both one-shot (``recognize_riva()``) and continuous modes.
+        Frame type is DictFrame with fields: 'text' and 'language'.
+
+        Typical usage:
+            def on_speech(frame):
+                print(frame.value.get('text'))
+            sub = robot.asr.stream.on_riva_speech(on_speech)
+        """
+        ...
+
+    def on_riva_speech(self, callback: Callable[[DictFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Outbound stream of recognised speech segments from Nvidia Riva ASR.
+
+        Published in both one-shot (``recognize_riva()``) and continuous modes.
+        Frame type is DictFrame with fields: 'text' and 'language'.
+
+        Typical usage:
+            def on_speech(frame):
+                print(frame.value.get('text'))
+            sub = robot.asr.stream.on_riva_speech(on_speech)
+        """
+        ...
+
+    def open_riva_event_reader(self, queue_size: int | None = ...) -> TypedStreamReader[StringFrame]:
+        """
+        Outbound stream of speech recognition lifecycle events from Nvidia Riva ASR.
+
+        Frame type is StringFrame. Possible values:
+          'STARTED', 'RECOGNIZING', 'RECOGNIZED', 'STOPPED', 'CANCELED'.
+
+        Typical usage:
+            def on_event(frame):
+                print(frame.value)  # e.g. 'RECOGNIZED'
+            sub = robot.asr.stream.on_riva_event(on_event)
+        """
+        ...
+
+    def on_riva_event(self, callback: Callable[[StringFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Outbound stream of speech recognition lifecycle events from Nvidia Riva ASR.
+
+        Frame type is StringFrame. Possible values:
+          'STARTED', 'RECOGNIZING', 'RECOGNIZED', 'STOPPED', 'CANCELED'.
+
+        Typical usage:
+            def on_event(frame):
+                print(frame.value)  # e.g. 'RECOGNIZED'
+            sub = robot.asr.stream.on_riva_event(on_event)
+        """
+        ...
+
 
 class AsrAPI:
     """Namespace for asr RPC/stream APIs."""
@@ -346,6 +402,82 @@ class AsrAPI:
 
             # Non-blocking
             h = robot.asr.recognize_azure_async()
+            result = h.result()
+            print(result.get('text'))
+        """
+        ...
+
+    def configure_riva(self, server: str = ..., language: str = ..., use_ssl: bool = ..., ssl_cert: str | None = None, profanity_filter: bool = ..., automatic_punctuation: bool = ..., use_vad: bool = ..., continuous_mode: bool = ...) -> bool:
+        """
+        Configure the Nvidia Riva ASR engine with server address and recognition settings.
+
+        Must be called once before using ``recognize_riva()`` or subscribing
+        to the ``asr.riva_speech`` / ``asr.riva_event`` streams.
+
+        Args:
+            server (str): Riva server address (default 'localhost:50051').
+            language (str): BCP-47 language code (default 'en-US').
+            use_ssl (bool): Use SSL/TLS for the gRPC connection (default False).
+            ssl_cert (str): Path to SSL certificate file (default None).
+            profanity_filter (bool): Enable profanity filtering (default False).
+            automatic_punctuation (bool): Enable automatic punctuation (default True).
+            use_vad (bool): Enable client-side voice-activity detection (default False).
+            continuous_mode (bool): Enable continuous recognition mode (default False).
+
+        Returns:
+            bool: True if configured successfully.
+
+        Example:
+            ok = robot.asr.configure_riva(
+                server='localhost:50051',
+                language='en-US',
+                continuous_mode=True,
+                use_vad=True,
+            )
+        """
+        ...
+
+    def recognize_riva(self) -> dict:
+        """
+        Perform a single speech recognition with the Nvidia Riva ASR engine.
+
+        Blocks until a complete utterance is recognised and returns the result.
+        For non-blocking use, call ``recognize_riva_async()`` which returns an
+        :class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.
+
+        Returns:
+            dict: Recognition result with fields 'text' and 'language'.
+
+        Examples:
+            # Blocking
+            result = robot.asr.recognize_riva()
+            print(result.get('text'))
+
+            # Non-blocking
+            h = robot.asr.recognize_riva_async()
+            result = h.result()
+            print(result.get('text'))
+        """
+        ...
+
+    def recognize_riva_async(self) -> ActionHandle:
+        """
+        Perform a single speech recognition with the Nvidia Riva ASR engine.
+
+        Blocks until a complete utterance is recognised and returns the result.
+        For non-blocking use, call ``recognize_riva_async()`` which returns an
+        :class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.
+
+        Returns:
+            dict: Recognition result with fields 'text' and 'language'.
+
+        Examples:
+            # Blocking
+            result = robot.asr.recognize_riva()
+            print(result.get('text'))
+
+            # Non-blocking
+            h = robot.asr.recognize_riva_async()
             result = h.result()
             print(result.get('text'))
         """
