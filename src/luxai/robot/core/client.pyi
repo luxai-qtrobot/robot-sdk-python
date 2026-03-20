@@ -329,6 +329,62 @@ class AsrStreamAPI:
         """
         ...
 
+    def open_groq_speech_reader(self, queue_size: int | None = ...) -> TypedStreamReader[DictFrame]:
+        """
+        Outbound stream of transcribed speech segments from Groq Whisper ASR.
+
+        Published in both one-shot (``recognize_groq()``) and continuous modes.
+        Frame type is DictFrame with fields: 'text' and 'language'.
+
+        Typical usage:
+            def on_speech(frame):
+                print(frame.value.get('text'))
+            sub = robot.asr.stream.on_groq_speech(on_speech)
+        """
+        ...
+
+    def on_groq_speech(self, callback: Callable[[DictFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Outbound stream of transcribed speech segments from Groq Whisper ASR.
+
+        Published in both one-shot (``recognize_groq()``) and continuous modes.
+        Frame type is DictFrame with fields: 'text' and 'language'.
+
+        Typical usage:
+            def on_speech(frame):
+                print(frame.value.get('text'))
+            sub = robot.asr.stream.on_groq_speech(on_speech)
+        """
+        ...
+
+    def open_groq_event_reader(self, queue_size: int | None = ...) -> TypedStreamReader[StringFrame]:
+        """
+        Outbound stream of speech recognition lifecycle events from Groq Whisper ASR.
+
+        Frame type is StringFrame. Possible values:
+          'STARTED', 'RECOGNIZING', 'RECOGNIZED', 'STOPPED', 'CANCELED'.
+
+        Typical usage:
+            def on_event(frame):
+                print(frame.value)  # e.g. 'RECOGNIZED'
+            sub = robot.asr.stream.on_groq_event(on_event)
+        """
+        ...
+
+    def on_groq_event(self, callback: Callable[[StringFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Outbound stream of speech recognition lifecycle events from Groq Whisper ASR.
+
+        Frame type is StringFrame. Possible values:
+          'STARTED', 'RECOGNIZING', 'RECOGNIZED', 'STOPPED', 'CANCELED'.
+
+        Typical usage:
+            def on_event(frame):
+                print(frame.value)  # e.g. 'RECOGNIZED'
+            sub = robot.asr.stream.on_groq_event(on_event)
+        """
+        ...
+
 
 class AsrAPI:
     """Namespace for asr RPC/stream APIs."""
@@ -478,6 +534,81 @@ class AsrAPI:
 
             # Non-blocking
             h = robot.asr.recognize_riva_async()
+            result = h.result()
+            print(result.get('text'))
+        """
+        ...
+
+    def configure_groq(self, api_key: str, language: str = ..., context_prompt: str | None = None, silence_timeout: float = ..., use_vad: bool = ..., continuous_mode: bool = ...) -> bool:
+        """
+        Configure the Groq Whisper ASR engine.
+
+        Must be called once before using ``recognize_groq()`` or subscribing
+        to the ``asr.groq_speech`` / ``asr.groq_event`` streams.
+
+        Args:
+            api_key (str): Groq API key.
+            language (str): ISO-639-1 language code (e.g. 'en', 'fr'). Default 'en'.
+            context_prompt (str): Optional domain hint for Whisper (max 224 chars).
+            silence_timeout (float): Seconds of silence that end an utterance (default 0.5).
+            use_vad (bool): Enable client-side voice-activity detection (default True).
+            continuous_mode (bool): Enable continuous recognition mode (default False).
+
+        Returns:
+            bool: True if configured successfully.
+
+        Example:
+            ok = robot.asr.configure_groq(
+                api_key='<your-groq-api-key>',
+                language='en',
+                continuous_mode=True,
+            )
+        """
+        ...
+
+    def recognize_groq(self) -> dict:
+        """
+        Perform a single speech recognition with the Groq Whisper ASR engine.
+
+        Blocks until voice activity is detected, one utterance is captured
+        (ended by silence), and Groq transcribes it via the Whisper API.
+        For non-blocking use, call ``recognize_groq_async()`` which returns an
+        :class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.
+
+        Returns:
+            dict: Recognition result with fields 'text' and 'language'.
+
+        Examples:
+            # Blocking
+            result = robot.asr.recognize_groq()
+            print(result.get('text'))
+
+            # Non-blocking
+            h = robot.asr.recognize_groq_async()
+            result = h.result()
+            print(result.get('text'))
+        """
+        ...
+
+    def recognize_groq_async(self) -> ActionHandle:
+        """
+        Perform a single speech recognition with the Groq Whisper ASR engine.
+
+        Blocks until voice activity is detected, one utterance is captured
+        (ended by silence), and Groq transcribes it via the Whisper API.
+        For non-blocking use, call ``recognize_groq_async()`` which returns an
+        :class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.
+
+        Returns:
+            dict: Recognition result with fields 'text' and 'language'.
+
+        Examples:
+            # Blocking
+            result = robot.asr.recognize_groq()
+            print(result.get('text'))
+
+            # Non-blocking
+            h = robot.asr.recognize_groq_async()
             result = h.result()
             print(result.get('text'))
         """

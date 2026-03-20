@@ -33,6 +33,7 @@ A Python SDK for communicating with [LuxAI](https://luxai.com) robots. It provid
   - [Camera (RealSense)](#camera-realsense)
   - [ASR — Azure Speech](#asr--azure-speech)
   - [ASR — Nvidia Riva](#asr--nvidia-riva)
+  - [ASR — Groq (Whisper)](#asr--groq-whisper)
 - [Examples](#examples)
 - [License](#license)
 
@@ -50,6 +51,7 @@ pip install luxai-robot
 |---|---|
 | `luxai-robot[asr-azure]` | Azure Cognitive Services Speech SDK + PyTorch VAD |
 | `luxai-robot[asr-riva]` | Nvidia Riva client SDK + PyTorch VAD |
+| `luxai-robot[asr-groq]` | Groq SDK (Whisper API) + PyTorch VAD |
 
 Python **≥ 3.7.3** is required.
 
@@ -726,6 +728,64 @@ print(result)
 
 ---
 
+### ASR — Groq (Whisper)
+
+Requires the `asr-groq` plugin, the `luxai-robot[asr-groq]` extras, and a [Groq API key](https://console.groq.com). Uses the `whisper-large-v3-turbo` model via Groq's REST API (batch mode — the full utterance is captured locally then sent for transcription).
+
+> **Note:** Language codes are **ISO-639-1** (e.g. `'en'`, `'fr'`, `'de'`), not BCP-47.
+
+```bash
+pip install "luxai-robot[asr-groq]"
+```
+
+```python
+robot.enable_plugin_local("asr-groq")
+```
+
+**RPC methods:**
+
+| Method | Returns | Description |
+|---|---|---|
+| `asr.configure_groq(api_key, *, language, context_prompt, silence_timeout, use_vad, continuous_mode)` | `bool` | Configure Groq credentials and recognition settings |
+| `asr.recognize_groq()` | `dict` | Single recognition (blocking) |
+| `asr.recognize_groq_async()` | `ActionHandle[dict]` | Single recognition (non-blocking) |
+
+**Stream methods:**
+
+| Method | Description |
+|---|---|
+| `asr.stream.on_groq_event(callback)` | Subscribe to recognition lifecycle events |
+| `asr.stream.on_groq_speech(callback)` | Subscribe to transcribed speech results |
+
+**Example:**
+
+```python
+from luxai.magpie.frames import StringFrame, DictFrame
+
+robot.enable_plugin_local("asr-groq")
+robot.asr.configure_groq(
+    api_key="<your-groq-api-key>",
+    language="en",
+    silence_timeout=0.5,
+    continuous_mode=True,
+)
+
+def on_event(frame: StringFrame):
+    print("ASR event:", frame.value)
+
+def on_speech(frame: DictFrame):
+    print("Recognized:", frame.value)
+
+robot.asr.stream.on_groq_event(on_event)
+robot.asr.stream.on_groq_speech(on_speech)
+
+# Or use a single blocking recognition
+result = robot.asr.recognize_groq()
+print(result)
+```
+
+---
+
 ## Examples
 
 Ready-to-run examples are in the [`examples/`](examples/) directory:
@@ -743,6 +803,7 @@ Ready-to-run examples are in the [`examples/`](examples/) directory:
 | [`camera_example.py`](examples/camera_example.py) | Camera intrinsics, color stream (RealSense plugin) |
 | [`asr_azure_example.py`](examples/asr_azure_example.py) | Continuous speech recognition (Azure plugin) |
 | [`asr_riva_example.py`](examples/asr_riva_example.py) | Continuous speech recognition (Nvidia Riva plugin) |
+| [`asr_groq_example.py`](examples/asr_groq_example.py) | Continuous speech recognition via Groq Whisper API |
 
 Each example connects to the robot, demonstrates a set of APIs, and exits cleanly on `Ctrl+C`.
 

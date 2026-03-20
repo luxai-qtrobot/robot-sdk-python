@@ -235,6 +235,88 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
                 "    print(result.get('text'))\n"
             ),
         },
+
+        # =========================
+        # ASR Groq RPCs
+        # =========================
+        "asr.configure_groq": {
+            "service_name": "/asr-groq/configure",
+            "cancel_service_name": None,
+            "params": [
+                ("api_key", str),
+                ("language", str, "en"),
+                ("context_prompt", str, None),
+                ("silence_timeout", float, 0.5),
+                ("use_vad", bool, True),
+                ("continuous_mode", bool, False),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "asr-groq",
+            "install_hint": "pip install luxai-robot[asr-groq]",
+            "since": "0.5.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Configure the Groq Whisper ASR engine.\n"
+                "\n"
+                "Must be called once before using ``recognize_groq()`` or subscribing\n"
+                "to the ``asr.groq_speech`` / ``asr.groq_event`` streams.\n"
+                "\n"
+                "Args:\n"
+                "    api_key (str): Groq API key.\n"
+                "    language (str): ISO-639-1 language code (e.g. 'en', 'fr'). Default 'en'.\n"
+                "    context_prompt (str): Optional domain hint for Whisper (max 224 chars).\n"
+                "    silence_timeout (float): Seconds of silence that end an utterance (default 0.5).\n"
+                "    use_vad (bool): Enable client-side voice-activity detection (default True).\n"
+                "    continuous_mode (bool): Enable continuous recognition mode (default False).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True if configured successfully.\n"
+                "\n"
+                "Example:\n"
+                "    ok = robot.asr.configure_groq(\n"
+                "        api_key='<your-groq-api-key>',\n"
+                "        language='en',\n"
+                "        continuous_mode=True,\n"
+                "    )\n"
+            ),
+        },
+        "asr.recognize_groq": {
+            "service_name": "/asr-groq/recognize",
+            "cancel_service_name": "/asr-groq/recognize/cancel",
+            "params": [],
+            "response_type": dict,
+            "local": True,
+            "provider": "asr-groq",
+            "install_hint": "pip install luxai-robot[asr-groq]",
+            "since": "0.5.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Perform a single speech recognition with the Groq Whisper ASR engine.\n"
+                "\n"
+                "Blocks until voice activity is detected, one utterance is captured\n"
+                "(ended by silence), and Groq transcribes it via the Whisper API.\n"
+                "For non-blocking use, call ``recognize_groq_async()`` which returns an\n"
+                ":class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.\n"
+                "\n"
+                "Returns:\n"
+                "    dict: Recognition result with fields 'text' and 'language'.\n"
+                "\n"
+                "Examples:\n"
+                "    # Blocking\n"
+                "    result = robot.asr.recognize_groq()\n"
+                "    print(result.get('text'))\n"
+                "\n"
+                "    # Non-blocking\n"
+                "    h = robot.asr.recognize_groq_async()\n"
+                "    result = h.result()\n"
+                "    print(result.get('text'))\n"
+            ),
+        },
     },  # end of rpc
 
     # STREAM SECTION
@@ -435,6 +517,48 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
                 "    def on_event(frame):\n"
                 "        print(frame.value)  # e.g. 'RECOGNIZED'\n"
                 "    sub = robot.asr.stream.on_riva_event(on_event)\n"
+            ),
+        },
+
+        # -----------------------------------
+        #  ASR Groq streams
+        # -----------------------------------
+        "asr.groq_speech": {
+            "direction": "out",
+            "frame_type": "DictFrame",
+            "topic": "/asr-groq/speech",
+            "local": True,
+            "provider": "asr-groq",
+            "install_hint": "pip install luxai-robot[asr-groq]",
+            "doc": (
+                "Outbound stream of transcribed speech segments from Groq Whisper ASR.\n"
+                "\n"
+                "Published in both one-shot (``recognize_groq()``) and continuous modes.\n"
+                "Frame type is DictFrame with fields: 'text' and 'language'.\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_speech(frame):\n"
+                "        print(frame.value.get('text'))\n"
+                "    sub = robot.asr.stream.on_groq_speech(on_speech)\n"
+            ),
+        },
+        "asr.groq_event": {
+            "direction": "out",
+            "frame_type": "StringFrame",
+            "topic": "/asr-groq/event",
+            "local": True,
+            "provider": "asr-groq",
+            "install_hint": "pip install luxai-robot[asr-groq]",
+            "doc": (
+                "Outbound stream of speech recognition lifecycle events from Groq Whisper ASR.\n"
+                "\n"
+                "Frame type is StringFrame. Possible values:\n"
+                "  'STARTED', 'RECOGNIZING', 'RECOGNIZED', 'STOPPED', 'CANCELED'.\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_event(frame):\n"
+                "        print(frame.value)  # e.g. 'RECOGNIZED'\n"
+                "    sub = robot.asr.stream.on_groq_event(on_event)\n"
             ),
         },
 

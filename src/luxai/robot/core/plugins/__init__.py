@@ -27,6 +27,13 @@ except ImportError:
     PLUGIN_REGISTRY["asr-riva"] = None
 
 try:
+    # Groq Whisper ASR plugin (optional extra: luxai-robot[asr-groq])
+    from .asr_groq_plugin import ASRGroqPlugin
+    PLUGIN_REGISTRY["asr-groq"] = ASRGroqPlugin
+except ImportError:
+    PLUGIN_REGISTRY["asr-groq"] = None
+
+try:
     from .remote_plugin import RealsenseDriverPlugin
     PLUGIN_REGISTRY["realsense-driver"] = RealsenseDriverPlugin
 except ImportError:

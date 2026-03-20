@@ -41,6 +41,12 @@ asr-riva = [
     "nvidia-riva-client"
 ]
 
+asr-groq = [
+    "torch",  # for VAD
+    "torchaudio",  # for VAD
+    "groq"
+]
+
 dev = [
     "pytest",
     "coverage"
