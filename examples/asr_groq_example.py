@@ -16,8 +16,8 @@ def asr_speech_callback(speech: DictFrame):
 if __name__ == "__main__":
     # Logger.set_level("DEBUG")
 
-    # connect robot by node_id (serial number) or by endpoint (IP:port)
-    # robot = Robot.connect_zmq(node_id="QTRD000123")
+    # connect robot by robot_id (serial number) or by endpoint (IP:port)
+    # robot = Robot.connect_zmq(robot_id="QTRD000123")
     robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
     Logger.info(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK version: {robot._sdk_version}")
 

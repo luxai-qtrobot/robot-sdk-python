@@ -45,7 +45,7 @@ class MqttTransport(Transport):
     which bridges the robot's ZMQ RPC and stream APIs to MQTT topics.
 
     Service discovery is performed by calling the gateway's descriptor service on
-    the robot_serial topic (e.g. "QTRD000320/rpc/req"), which returns the system
+    the robot_id topic (e.g. "QTRD000320/rpc/req"), which returns the system
     description with mqtt transport info for every RPC and stream endpoint.
 
     Requires: pip install luxai-robot[mqtt]
@@ -53,18 +53,18 @@ class MqttTransport(Transport):
 
     _DEFAULT_QUEUE_SIZE = 10
 
-    def __init__(self, connection, robot_serial: str, connect_timeout: float = 5.0) -> None:
+    def __init__(self, connection, robot_id: str, connect_timeout: float = 5.0) -> None:
         """
         Args:
             connection: A connected MqttConnection instance (from luxai.magpie).
-            robot_serial: Robot serial number (e.g. "QTRD000320").
+            robot_id: Robot serial number (e.g. "QTRD000320").
                           Used as the MQTT service topic for the descriptor call.
             connect_timeout: Used as the ack_timeout for the descriptor RPC requester,
                              so the ACK window scales with the user's patience
                              (important for cloud/high-latency brokers).
         """
         self._connection = connection
-        self._robot_serial = robot_serial
+        self._robot_id = robot_id
         self._connect_timeout = connect_timeout
 
         self._requesters: Dict[str, _MqttRpcRequesterAdapter] = {}
@@ -72,7 +72,7 @@ class MqttTransport(Transport):
         self._lock = threading.Lock()
         self._closed = False
 
-        Logger.debug(f"MqttTransport: ready, robot_serial={robot_serial!r}")
+        Logger.debug(f"MqttTransport: ready, robot_id={robot_id!r}")
 
     # ------------------------------------------------------------------
     # RPCs
@@ -100,10 +100,10 @@ class MqttTransport(Transport):
 
         if transports is None:
             # Initial descriptor call — the gateway exposes the system descriptor
-            # at the robot_serial topic (e.g. "QTRD000320/rpc/req").
+            # at the robot_id topic (e.g. "QTRD000320/rpc/req").
             # Use connect_timeout as ack_timeout so cloud/high-latency brokers
             # get a generous window that matches the user's stated patience.
-            topic = self._robot_serial
+            topic = self._robot_id
             return self._get_or_create_requester(topic, ack_timeout=self._connect_timeout)
         else:
             mqtt_info = transports.get("mqtt")

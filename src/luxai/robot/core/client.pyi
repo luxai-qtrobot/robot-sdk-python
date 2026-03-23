@@ -27,7 +27,7 @@ class Robot:
         cls,
         *,
         endpoint: str | None = None,
-        node_id: str | None = None,
+        robot_id: str | None = None,
         connect_timeout: float = 5.0,
         default_rpc_timeout: float | None = None,
     ) -> Robot:
@@ -36,9 +36,9 @@ class Robot:
 
         This method establishes a communication channel to a robot either by:
         * Direct connection to a known ZMQ endpoint (e.g. ``tcp://<ip>:<port>``), or
-        * Automatic endpoint discovery using the robot's ``node_id``.
+        * Automatic endpoint discovery using the robot's ``robot_id``.
 
-        Exactly one of ``endpoint`` or ``node_id`` must be provided.  
+        Exactly one of ``endpoint`` or ``robot_id`` must be provided.  
         On success, a fully initialized :class:`Robot` object is returned and ready
         for issuing RPC commands or performing stream apis.
 
@@ -48,14 +48,14 @@ class Robot:
             Explicit ZMQ endpoint to connect to (e.g. ``"tcp://192.168.3.10:50557"``).
             If provided, discovery is skipped.
 
-        node_id:
+        robot_id:
             Robot hardware ID used for endpoint discovery. Mutually exclusive with
             ``endpoint``. If set, a discovery request is performed within
             ``connect_timeout``.
 
         connect_timeout:
             Maximum number of seconds to wait during endpoint discovery when
-            ``node_id`` is used.
+            ``robot_id`` is used.
 
         default_rpc_timeout:
             Optional override for the default timeout applied to RPC calls
@@ -69,9 +69,9 @@ class Robot:
         Raises
         ------
         ValueError
-            If neither or both of ``endpoint`` and ``node_id`` are provided.
+            If neither or both of ``endpoint`` and ``robot_id`` are provided.
         TimeoutError
-            If endpoint discovery using ``node_id`` does not resolve before
+            If endpoint discovery using ``robot_id`` does not resolve before
             ``connect_timeout`` expires.
 
         Examples
@@ -80,9 +80,9 @@ class Robot:
 
         >>> robot = Robot.connect_zmq(endpoint="tcp://192.168.3.10:50557")
 
-        Connect using a hardware ``node_id`` and automatic discovery:
+        Connect using a hardware ``robot_id`` and automatic discovery:
 
-        >>> robot = Robot.connect_zmq(node_id="QTRD000320")
+        >>> robot = Robot.connect_zmq(robot_id="QTRD000320")
 
         Override default RPC timeout:
 
@@ -97,7 +97,7 @@ class Robot:
     def connect_mqtt(
         cls,
         uri: str,
-        robot_serial: str,
+        robot_id: str,
         *,
         options: Any | None = None,
         connect_timeout: float = 10.0,
@@ -121,7 +121,7 @@ class Robot:
             Examples: ``"mqtt://10.231.0.2:1883"``,
             ``"wss://broker.example.com:8884/mqtt"``.
 
-        robot_serial:
+        robot_id:
             Robot serial number (e.g. ``"QTRD000320"``). Used to address the
             correct robot on a shared MQTT broker.
 

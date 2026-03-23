@@ -21,20 +21,20 @@ def connect_by_endpoint():
 
 
 # ── Option 2 ──────────────────────────────────────────────────────────────────
-# Connect by node_id (robot serial number).
+# Connect by robot_id (robot serial number).
 # The SDK resolves the robot's IP automatically via Zeroconf/mDNS discovery.
 # The robot must be reachable on the local network.
-def connect_by_node_id():
-    robot = Robot.connect_zmq(node_id="QTRD000320")
-    Logger.info(f"[node_id] connected to {robot._robot_serial} ({robot._robot_type})")
+def connect_by_robot_id():
+    robot = Robot.connect_zmq(robot_id="QTRD000320")
+    Logger.info(f"[robot_id] connected to {robot._robot_serial} ({robot._robot_type})")
     robot.close()
 
 
 # ── Option 3 ──────────────────────────────────────────────────────────────────
-# Connect by node_id with a custom discovery timeout.
-def connect_by_node_id_with_timeout():
-    robot = Robot.connect_zmq(node_id="QTRD000320", connect_timeout=10.0)
-    Logger.info(f"[node_id+timeout] connected to {robot._robot_serial} ({robot._robot_type})")
+# Connect by robot_id with a custom discovery timeout.
+def connect_by_robot_id_with_timeout():
+    robot = Robot.connect_zmq(robot_id="QTRD000320", connect_timeout=10.0)
+    Logger.info(f"[robot_id+timeout] connected to {robot._robot_serial} ({robot._robot_type})")
     robot.close()
 
 
@@ -73,8 +73,8 @@ if __name__ == "__main__":
 
     try:
         connect_by_endpoint()
-        # connect_by_node_id()
-        # connect_by_node_id_with_timeout()
+        # connect_by_robot_id()
+        # connect_by_robot_id_with_timeout()
         # connect_with_rpc_timeout()
         # connect_manual_transport()
         # connect_context_manager()

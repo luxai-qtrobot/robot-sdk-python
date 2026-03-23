@@ -81,7 +81,7 @@ pip install luxai-robot
 from luxai.robot.core import Robot
 
 # By serial number — auto-discovered via Zeroconf/mDNS (no IP needed)
-robot = Robot.connect_zmq(node_id="QTRD000320")
+robot = Robot.connect_zmq(robot_id="QTRD000320")
 
 # By explicit endpoint
 robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
@@ -89,7 +89,7 @@ robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
 # With a custom default RPC timeout (applies to all blocking calls)
 robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500", default_rpc_timeout=10.0)
 
-print(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK: {robot._sdk_version}")
+print(f"Connected to {robot._robot_id} ({robot._robot_type}), SDK: {robot._sdk_version}")
 robot.close()
 ```
 
@@ -115,7 +115,7 @@ robot = Robot.connect_mqtt("mqtt://broker.hivemq.com:1883", "QTRD000320")
 # WebSocket over TLS (useful through firewalls / web proxies)
 robot = Robot.connect_mqtt("wss://broker.example.com:8884/mqtt", "QTRD000320")
 
-print(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK: {robot._sdk_version}")
+print(f"Connected to {robot._robot_id} ({robot._robot_type}), SDK: {robot._sdk_version}")
 robot.close()
 ```
 
@@ -896,7 +896,7 @@ Ready-to-run examples are in the [`examples/`](examples/) directory:
 
 | File | Demonstrates |
 |---|---|
-| [`connect_zmq_example.py`](examples/connect_zmq_example.py) | All ZMQ connection variants: endpoint, node_id, timeout, manual transport, context manager |
+| [`connect_zmq_example.py`](examples/connect_zmq_example.py) | All ZMQ connection variants: endpoint, robot_id, timeout, manual transport, context manager |
 | [`connect_mqtt_example.py`](examples/connect_mqtt_example.py) | All MQTT connection variants: plain, user/pass, TLS, mTLS, WebSocket, full options, manual transport |
 | [`tts_examples.py`](examples/tts_examples.py) | List engines, say text, cancel speech, SSML, voices |
 | [`face_examples.py`](examples/face_examples.py) | List emotions, play animations, control eye gaze |

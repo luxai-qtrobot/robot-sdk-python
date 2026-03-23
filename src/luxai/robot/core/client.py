@@ -22,7 +22,7 @@ class Robot:
     High-level SDK client for controlling a robot.
 
     Transport-agnostic:
-      - Robot never looks at "zmq", "mqtt", endpoints, node_id, etc.
+      - Robot never looks at "zmq", "mqtt", endpoints, robot_id, etc.
       - It only stores the 'transports' blocks from SYSTEM_DESCRIPTION and
         forwards them to the Transport object.
     """
@@ -35,7 +35,7 @@ class Robot:
         cls,
         *,
         endpoint: str | None = None,
-        node_id: str | None = None,
+        robot_id: str | None = None,
         connect_timeout: float = 5.0,
         default_rpc_timeout: float | None = None,
     ) -> Robot:
@@ -44,9 +44,9 @@ class Robot:
 
         This method establishes a communication channel to a robot either by:
         * Direct connection to a known ZMQ endpoint (e.g. ``tcp://<ip>:<port>``), or
-        * Automatic endpoint discovery using the robot's ``node_id``.
+        * Automatic endpoint discovery using the robot's ``robot_id``.
 
-        Exactly one of ``endpoint`` or ``node_id`` must be provided.  
+        Exactly one of ``endpoint`` or ``robot_id`` must be provided.  
         On success, a fully initialized :class:`Robot` object is returned and ready
         for issuing RPC commands or performing stream apis.
 
@@ -56,14 +56,14 @@ class Robot:
             Explicit ZMQ endpoint to connect to (e.g. ``"tcp://192.168.3.10:50557"``).
             If provided, discovery is skipped.
 
-        node_id:
+        robot_id:
             Robot hardware ID used for endpoint discovery. Mutually exclusive with
             ``endpoint``. If set, a discovery request is performed within
             ``connect_timeout``.
 
         connect_timeout:
             Maximum number of seconds to wait during endpoint discovery when
-            ``node_id`` is used.
+            ``robot_id`` is used.
 
         default_rpc_timeout:
             Optional override for the default timeout applied to RPC calls
@@ -77,9 +77,9 @@ class Robot:
         Raises
         ------
         ValueError
-            If neither or both of ``endpoint`` and ``node_id`` are provided.
+            If neither or both of ``endpoint`` and ``robot_id`` are provided.
         TimeoutError
-            If endpoint discovery using ``node_id`` does not resolve before
+            If endpoint discovery using ``robot_id`` does not resolve before
             ``connect_timeout`` expires.
 
         Examples
@@ -88,9 +88,9 @@ class Robot:
 
         >>> robot = Robot.connect_zmq(endpoint="tcp://192.168.3.10:50557")
 
-        Connect using a hardware ``node_id`` and automatic discovery:
+        Connect using a hardware ``robot_id`` and automatic discovery:
 
-        >>> robot = Robot.connect_zmq(node_id="QTRD000320")
+        >>> robot = Robot.connect_zmq(robot_id="QTRD000320")
 
         Override default RPC timeout:
 
@@ -101,7 +101,7 @@ class Robot:
         """
         transport = ZmqTransport(
             endpoint=endpoint,
-            node_id=node_id,
+            node_id=robot_id,
             discovery_timeout=connect_timeout,
         )
         return cls(transport=transport, connect_timeout=connect_timeout, default_rpc_timeout=default_rpc_timeout)
@@ -110,7 +110,7 @@ class Robot:
     def connect_mqtt(
         cls,
         uri: str,
-        robot_serial: str,
+        robot_id: str,
         *,
         options=None,
         connect_timeout: float = 10.0,
@@ -134,7 +134,7 @@ class Robot:
             Examples: ``"mqtt://192.168.1.100:1883"``,
             ``"wss://broker.example.com:8884/mqtt"``.
 
-        robot_serial:
+        robot_id:
             Robot serial number (e.g. ``"QTRD000320"``). Used to address the
             correct robot on a shared MQTT broker.
 
@@ -203,7 +203,7 @@ class Robot:
                 f"within {connect_timeout}s."
             )
 
-        transport = MqttTransport(conn, robot_serial, connect_timeout=connect_timeout)
+        transport = MqttTransport(conn, robot_id, connect_timeout=connect_timeout)
         try:
             return cls(transport=transport, connect_timeout=connect_timeout, default_rpc_timeout=default_rpc_timeout)
         except Exception:
@@ -233,7 +233,7 @@ class Robot:
 
         # Robot capability info (may stay None if handshake fails)
         self._robot_type: str | None = None
-        self._robot_serial: str | None = None
+        self._robot_id: str | None = None
         self._sdk_version: str | None = None
         self._min_sdk: str | None = None
         self._max_sdk: str | None = None
@@ -437,7 +437,7 @@ class Robot:
 
     # ---------------------------------------------------------
     def enable_plugin_zmq(self, name: str, 
-                          node_id: str | None = None,
+                          robot_id: str | None = None,
                           endpoint: str | None = None) -> None:
         """
         Enable a remote plugin by name (string) over ZMQ transport.
@@ -448,7 +448,7 @@ class Robot:
         """
         transport = ZmqTransport(
             endpoint=endpoint,
-            node_id=node_id,
+            node_id=robot_id,
             discovery_timeout=5.0,
         )
         self.enable_plugin(name, transport)
@@ -566,7 +566,7 @@ class Robot:
         Expected format:
             {
                 "robot_type": "qtrobot-v3",
-                "robot_serial": "QTRD000123",
+                "robot_id": "QTRD000123",
                 "sdk_version": "1.2.3",
                 "min_sdk": "0.5.0",
                 "max_sdk": "0.9.0",
@@ -594,7 +594,7 @@ class Robot:
         """
         # --- identity & compatibility ---
         self._robot_type = desc.get("robot_type")
-        self._robot_serial = desc.get("robot_serial")
+        self._robot_id = desc.get("robot_id")
         self._sdk_version = desc.get("sdk_version")
         self._min_sdk = desc.get("min_sdk")
         self._max_sdk = desc.get("max_sdk")
