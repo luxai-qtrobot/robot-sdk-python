@@ -90,13 +90,95 @@ class Robot:
         ...     endpoint="tcp://192.168.3.10:50557",
         ...     default_rpc_timeout=2.0,
         ... )
-        """        
+        """
+        ...
+
+    @classmethod
+    def connect_mqtt(
+        cls,
+        uri: str,
+        robot_serial: str,
+        *,
+        options: Any | None = None,
+        connect_timeout: float = 10.0,
+        default_rpc_timeout: float | None = None,
+    ) -> Robot:
+        """
+        Create and return a :class:`Robot` client using the MQTT transport layer.
+
+        Connects to the robot via an MQTT broker and the
+        ``qtrobot-service-hub-gateway-mqtt`` bridge, which exposes the robot's
+        ZMQ RPC and stream APIs over MQTT topics.
+
+        Mutually exclusive with :meth:`connect_zmq` — each :class:`Robot` instance
+        uses exactly one transport.
+
+        Parameters
+        ----------
+        uri:
+            MQTT broker URI. Supported schemes:
+            ``mqtt://``, ``mqtts://``, ``ws://``, ``wss://``.
+            Examples: ``"mqtt://10.231.0.2:1883"``,
+            ``"wss://broker.example.com:8884/mqtt"``.
+
+        robot_serial:
+            Robot serial number (e.g. ``"QTRD000320"``). Used to address the
+            correct robot on a shared MQTT broker.
+
+        options:
+            Optional :class:`luxai.robot.MqttOptions` for advanced settings
+            (TLS, authentication, session, reconnect, LWT).
+            Requires ``pip install luxai-robot[mqtt]``.
+
+        connect_timeout:
+            Maximum seconds to wait for the MQTT broker connection.
+
+        default_rpc_timeout:
+            Optional override for the default timeout applied to RPC calls
+            issued by the resulting :class:`Robot` instance.
+
+        Returns
+        -------
+        Robot
+            A connected and ready-to-use Robot client wrapping an
+            :class:`~luxai.robot.core.transport.MqttTransport`.
+
+        Raises
+        ------
+        RuntimeError
+            If the MQTT broker connection fails or the robot descriptor cannot
+            be fetched.
+        ImportError
+            If ``paho-mqtt`` is not installed
+            (install via ``pip install luxai-robot[mqtt]``).
+
+        Examples
+        --------
+        Connect to a robot over plain MQTT:
+
+        >>> robot = Robot.connect_mqtt("mqtt://10.231.0.2:1883", "QTRD000320")
+
+        Connect with mutual TLS (mTLS):
+
+        >>> from luxai.robot import MqttOptions, MqttTlsOptions, MqttAuthOptions
+        >>> options = MqttOptions(
+        ...     tls=MqttTlsOptions(
+        ...         ca_file="/path/to/ca.crt",
+        ...         cert_file="/path/to/client.crt",
+        ...         key_file="/path/to/client.key",
+        ...     ),
+        ...     auth=MqttAuthOptions(mode="mtls"),
+        ... )
+        >>> robot = Robot.connect_mqtt("mqtts://10.231.0.2:8883", "QTRD000320",
+        ...                            options=options)
+        """
         ...
 
     def __init__(
         self,
         transport: Transport,
         *,
+        connect_timeout: float = 5.0,
         default_rpc_timeout: float | None = None,
     ) -> None:
         ...

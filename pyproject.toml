@@ -29,6 +29,10 @@ dependencies = [
 
 [project.optional-dependencies]
 
+mqtt = [
+    "luxai-magpie[mqtt]",
+]
+
 asr-azure = [
     "torch",  # for VAD
     "torchaudio", # for VAD

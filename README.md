@@ -15,6 +15,9 @@ A Python SDK for communicating with [LuxAI](https://luxai.com) robots. It provid
 
 - [Installation](#installation)
 - [Connecting to the Robot](#connecting-to-the-robot)
+  - [ZMQ transport](#zmq-transport)
+  - [MQTT transport](#mqtt-transport)
+  - [Direct transport construction](#direct-transport-construction)
 - [API Concepts](#api-concepts)
   - [RPC APIs — sync and async](#rpc-apis--sync-and-async)
   - [Stream APIs](#stream-apis)
@@ -45,13 +48,14 @@ A Python SDK for communicating with [LuxAI](https://luxai.com) robots. It provid
 pip install luxai-robot
 ```
 
-**Optional plugin extras:**
+**Optional extras:**
 
-| Extra | Installs |
-|---|---|
-| `luxai-robot[asr-azure]` | Azure Cognitive Services Speech SDK + PyTorch VAD |
-| `luxai-robot[asr-riva]` | Nvidia Riva client SDK + PyTorch VAD |
-| `luxai-robot[asr-groq]` | Groq SDK (Whisper API) + PyTorch VAD |
+| Extra | Installs | When to use |
+|---|---|---|
+| `luxai-robot[mqtt]` | `paho-mqtt` (via `luxai-magpie[mqtt]`) | Connect to the robot over MQTT |
+| `luxai-robot[asr-azure]` | Azure Cognitive Services Speech SDK + PyTorch VAD | Azure cloud ASR plugin |
+| `luxai-robot[asr-riva]` | Nvidia Riva client SDK + PyTorch VAD | On-device Riva ASR plugin |
+| `luxai-robot[asr-groq]` | Groq SDK (Whisper API) + PyTorch VAD | Groq cloud ASR plugin |
 
 Python **≥ 3.7.3** is required.
 
@@ -59,23 +63,123 @@ Python **≥ 3.7.3** is required.
 
 ## Connecting to the Robot
 
+The SDK supports two transport protocols. Each `Robot` instance uses exactly one transport — they are mutually exclusive. The `connect_zmq()` and `connect_mqtt()` class methods are convenience helpers; power users can construct a transport directly and pass it to `Robot(transport=...)`.
+
+Always call `robot.close()` when done, or use the `Robot` object as a context manager (`with Robot.connect_zmq(...) as robot:`).
+
+---
+
+### ZMQ transport
+
+Direct connection to the robot's onboard service hub over ZeroMQ. Use this when your machine is on the **same local network** as the robot.
+
+```bash
+pip install luxai-robot
+```
+
 ```python
 from luxai.robot.core import Robot
 
-# By serial number (auto-discovered over the local network)
-robot = Robot.connect_zmq(node_id="QTRD000310")
+# By serial number — auto-discovered via Zeroconf/mDNS (no IP needed)
+robot = Robot.connect_zmq(node_id="QTRD000320")
 
-# By explicit IP address and port
-robot = Robot.connect_zmq(endpoint="tcp://192.168.1.100:50500")
+# By explicit endpoint
+robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
+
+# With a custom default RPC timeout (applies to all blocking calls)
+robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500", default_rpc_timeout=10.0)
 
 print(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK: {robot._sdk_version}")
-
-# ... use the robot ...
-
 robot.close()
 ```
 
-Always call `robot.close()` when done (or use a `try/finally` block, as shown in the examples).
+---
+
+### MQTT transport
+
+Connect to the robot through an **MQTT broker** via the `qtrobot-service-hub-gateway-mqtt` bridge running on the robot. This is the transport of choice when connecting **remotely** (over the internet, through a cloud broker, or across network boundaries) or when using WebSocket-based connections from browser environments.
+
+```bash
+pip install "luxai-robot[mqtt]"
+```
+
+```python
+from luxai.robot.core import Robot
+
+# Basic — plain TCP, no authentication
+robot = Robot.connect_mqtt("mqtt://10.231.0.2:1883", "QTRD000320")
+
+# Public cloud broker (e.g. for testing)
+robot = Robot.connect_mqtt("mqtt://broker.hivemq.com:1883", "QTRD000320")
+
+# WebSocket over TLS (useful through firewalls / web proxies)
+robot = Robot.connect_mqtt("wss://broker.example.com:8884/mqtt", "QTRD000320")
+
+print(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK: {robot._sdk_version}")
+robot.close()
+```
+
+**With authentication and TLS:**
+
+```python
+from luxai.robot import MqttOptions, MqttTlsOptions, MqttAuthOptions
+
+# Username / password
+robot = Robot.connect_mqtt(
+    "mqtt://10.231.0.2:1883", "QTRD000320",
+    options=MqttOptions(
+        auth=MqttAuthOptions(mode="username_password",
+                             username="myuser", password="mypassword"),
+    ),
+)
+
+# One-way TLS (server certificate verification)
+robot = Robot.connect_mqtt(
+    "mqtts://10.231.0.2:8883", "QTRD000320",
+    options=MqttOptions(
+        tls=MqttTlsOptions(ca_file="/path/to/ca.crt"),
+    ),
+)
+
+# Mutual TLS (mTLS) — strongest authentication, no password needed
+robot = Robot.connect_mqtt(
+    "mqtts://10.231.0.2:8883", "QTRD000320",
+    options=MqttOptions(
+        tls=MqttTlsOptions(
+            ca_file="/path/to/ca.crt",
+            cert_file="/path/to/client.crt",
+            key_file="/path/to/client.key",
+        ),
+        auth=MqttAuthOptions(mode="mtls"),
+    ),
+)
+```
+
+`MqttOptions` also exposes `MqttSessionOptions` (persistent sessions), `MqttReconnectOptions` (exponential backoff), and `MqttWillOptions` (last-will message). See [`examples/connect_mqtt_example.py`](examples/connect_mqtt_example.py) for the full set of variants.
+
+> **Note:** Only the streams explicitly configured in `qtrobot-service-hub-gateway-mqtt` are bridged to MQTT. Calling a stream API for a non-bridged endpoint raises `UnsupportedAPIError`.
+
+---
+
+### Direct transport construction
+
+`connect_zmq()` and `connect_mqtt()` are thin helpers. You can construct the transport yourself for full lifecycle control:
+
+```python
+from luxai.robot.core import Robot
+from luxai.robot.core.transport import ZmqTransport, MqttTransport
+from luxai.magpie.transport.mqtt import MqttConnection
+
+# ZMQ
+transport = ZmqTransport(endpoint="tcp://10.231.0.2:50500")
+robot = Robot(transport=transport)
+
+# MQTT
+conn = MqttConnection("mqtt://10.231.0.2:1883")
+conn.connect(timeout=10.0)
+transport = MqttTransport(conn, "QTRD000320")
+robot = Robot(transport=transport)
+```
 
 ---
 
@@ -792,6 +896,8 @@ Ready-to-run examples are in the [`examples/`](examples/) directory:
 
 | File | Demonstrates |
 |---|---|
+| [`connect_zmq_example.py`](examples/connect_zmq_example.py) | All ZMQ connection variants: endpoint, node_id, timeout, manual transport, context manager |
+| [`connect_mqtt_example.py`](examples/connect_mqtt_example.py) | All MQTT connection variants: plain, user/pass, TLS, mTLS, WebSocket, full options, manual transport |
 | [`tts_examples.py`](examples/tts_examples.py) | List engines, say text, cancel speech, SSML, voices |
 | [`face_examples.py`](examples/face_examples.py) | List emotions, play animations, control eye gaze |
 | [`gesture_examples.py`](examples/gesture_examples.py) | List gestures, play, record, and store gesture files |

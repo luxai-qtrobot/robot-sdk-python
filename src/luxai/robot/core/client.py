@@ -10,7 +10,7 @@ from luxai.magpie.transport.stream_reader import StreamReader
 from luxai.magpie.transport.stream_writer import StreamWriter
 
 from .actions import ActionHandle, ActionError
-from .transport import Transport, SupportsPreallocation, UnsupportedAPIError, ZmqTransport, LocalTransport
+from .transport import Transport, SupportsPreallocation, UnsupportedAPIError, ZmqTransport, LocalTransport, MqttTransport
 from .config import ( QTROBOT_APIS, SDK_VERSION, SYSTEM_DESCRIBE_SERVICE)
 from .typed_stream import TypedStreamReader, TypedStreamWriter
 from .plugins import PLUGIN_REGISTRY, RobotPlugin
@@ -104,7 +104,111 @@ class Robot:
             node_id=node_id,
             discovery_timeout=connect_timeout,
         )
-        return cls(transport=transport, default_rpc_timeout=default_rpc_timeout)
+        return cls(transport=transport, connect_timeout=connect_timeout, default_rpc_timeout=default_rpc_timeout)
+
+    @classmethod
+    def connect_mqtt(
+        cls,
+        uri: str,
+        robot_serial: str,
+        *,
+        options=None,
+        connect_timeout: float = 10.0,
+        default_rpc_timeout: float | None = None,
+    ) -> "Robot":
+        """
+        Create and return a :class:`Robot` client using the MQTT transport layer.
+
+        Connects to the robot via an MQTT broker and the
+        ``qtrobot-service-hub-gateway-mqtt``, which bridges the robot's ZMQ RPC
+        and stream APIs to MQTT topics.
+
+        Mutually exclusive with :meth:`connect_zmq` — each :class:`Robot` instance
+        uses exactly one transport.
+
+        Parameters
+        ----------
+        uri:
+            MQTT broker URI. Supported schemes:
+            ``mqtt://``, ``mqtts://``, ``ws://``, ``wss://``.
+            Examples: ``"mqtt://192.168.1.100:1883"``,
+            ``"wss://broker.example.com:8884/mqtt"``.
+
+        robot_serial:
+            Robot serial number (e.g. ``"QTRD000320"``). Used to address the
+            correct robot on a shared MQTT broker.
+
+        options:
+            Optional :class:`luxai.robot.mqtt.MqttOptions` for advanced settings
+            (TLS, authentication, session, reconnect, LWT).
+
+        connect_timeout:
+            End-to-end timeout (seconds) for the full connection sequence:
+            broker TCP handshake + gateway descriptor RPC (including MQTT ACK).
+            Increase this for cloud or high-latency brokers.
+
+        default_rpc_timeout:
+            Optional override for the default timeout applied to RPC calls.
+
+        Returns
+        -------
+        Robot
+            A connected and ready-to-use Robot client wrapping an
+            :class:`MqttTransport`.
+
+        Raises
+        ------
+        RuntimeError
+            If the MQTT broker connection fails or the robot descriptor cannot
+            be fetched.
+        ImportError
+            If ``paho-mqtt`` is not installed (install via
+            ``pip install luxai-robot[mqtt]``).
+
+        Examples
+        --------
+        Connect to a robot over MQTT:
+
+        >>> robot = Robot.connect_mqtt("mqtt://192.168.1.100:1883", "QTRD000320")
+
+        Connect with TLS and authentication:
+
+        >>> from luxai.robot import MqttOptions, MqttTlsOptions, MqttAuthOptions
+        >>> options = MqttOptions(
+        ...     tls=MqttTlsOptions(ca_file="/path/to/ca.crt"),
+        ...     auth=MqttAuthOptions(mode="username_password",
+        ...                          username="user", password="pass"),
+        ... )
+        >>> robot = Robot.connect_mqtt("mqtts://broker:8883", "QTRD000320",
+        ...                            options=options)
+        """
+        try:
+            from luxai.magpie.transport.mqtt import MqttConnection
+        except ImportError as e:
+            raise ImportError(
+                "MQTT transport requires paho-mqtt. "
+                "Install via: pip install luxai-robot[mqtt]"
+            ) from e
+
+        conn = MqttConnection(uri, options=options)
+        try:
+            connected = conn.connect(timeout=connect_timeout)
+        except Exception as e:
+            raise RuntimeError(
+                f"Robot: failed to connect to MQTT broker at {uri!r}: {e}"
+            ) from e
+        if not connected:
+            raise RuntimeError(
+                f"Robot: failed to connect to MQTT broker at {uri!r} "
+                f"within {connect_timeout}s."
+            )
+
+        transport = MqttTransport(conn, robot_serial, connect_timeout=connect_timeout)
+        try:
+            return cls(transport=transport, connect_timeout=connect_timeout, default_rpc_timeout=default_rpc_timeout)
+        except Exception:
+            transport.close()
+            raise
 
     # ------------------------------------------------------------------
     # Constructor
@@ -113,6 +217,7 @@ class Robot:
         self,
         transport: Transport,
         *,
+        connect_timeout: float = 5.0,
         default_rpc_timeout: float | None = None,
     ) -> None:
         """
@@ -120,6 +225,7 @@ class Robot:
 
         Args:
             transport: A concrete Transport instance.
+            connect_timeout: Timeout for the initial handshake RPC (seconds).
             default_rpc_timeout: Default RPC timeout for actions (seconds).
         """
         self._robot_transport = transport
@@ -145,7 +251,7 @@ class Robot:
         self._plugins: Dict[str, RobotPlugin] = {} 
 
         # ---- Handshake with robot to get the correct routes for apis----
-        self._handshake_with_robot()
+        self._handshake_with_robot(timeout=connect_timeout)
 
         # ---- Optional preallocation of RPC requesters ----
         if isinstance(self._robot_transport, SupportsPreallocation):
@@ -432,7 +538,7 @@ class Robot:
     # ------------------------------------------------------------------
     # Handshake: SYSTEM_DESCRIBE_SERVICE + route building
     # ------------------------------------------------------------------
-    def _handshake_with_robot(self) -> None:
+    def _handshake_with_robot(self, timeout: float = 5.0) -> None:
         """
         Fetch SYSTEM_DESCRIPTION from the robot and build:
           - rpc routes (services)
@@ -441,8 +547,8 @@ class Robot:
         """
         try:
             requester = self._robot_transport.get_requester(SYSTEM_DESCRIBE_SERVICE, None)
-            rpc_req = {"name": SYSTEM_DESCRIBE_SERVICE, "args": {"sdk_version": SDK_VERSION}}            
-            raw = requester.call(rpc_req, timeout=5.0)        
+            rpc_req = {"name": SYSTEM_DESCRIBE_SERVICE, "args": {"sdk_version": SDK_VERSION}}
+            raw = requester.call(rpc_req, timeout=timeout)
 
         except Exception as e:            
             raise RuntimeError(f"Robot: system describe RPC failed: {e}")            
