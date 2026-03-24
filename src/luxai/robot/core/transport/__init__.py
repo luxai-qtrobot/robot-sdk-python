@@ -3,6 +3,7 @@ from .transport import Transport, SupportsPreallocation, UnsupportedAPIError
 from .zmq_transport import ZmqTransport
 from .local_transport import LocalTransport
 from .mqtt_transport import MqttTransport
+from .multi_transport import MultiTransport, Priority, WinnerTakesAll, RoutingPolicy
 
 try:
     from .mqtt_options import (
@@ -32,4 +33,8 @@ __all__ = [
     "MqttReconnectOptions",
     "MqttWillOptions",
     "MqttDefaultsOptions",
+    "MultiTransport",
+    "Priority",
+    "WinnerTakesAll",
+    "RoutingPolicy",
 ]
