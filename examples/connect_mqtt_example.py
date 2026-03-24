@@ -20,7 +20,7 @@ from luxai.robot import (
     MqttReconnectOptions,
 )
 
-BROKER_LOCAL  = "mqtt://10.231.0.2:1883"              # robot's onboard/local broker
+BROKER_LOCAL  = "mqtt://192.168.3.152:1883"              # robot's onboard/local broker
 BROKER_PUBLIC = "mqtt://broker.hivemq.com:1883"      # public HiveMQ broker (no auth)
 ROBOT_ID      = "QTRD000320"                         # change to your robot serial
 
@@ -30,8 +30,8 @@ BROKER = BROKER_LOCAL   # switch to BROKER_PUBLIC to test over the internet
 # ── Option 1 ──────────────────────────────────────────────────────────────────
 # Basic plain-TCP connection — no TLS, no authentication.
 def connect_basic():
-    robot = Robot.connect_mqtt(BROKER, ROBOT_ID)
-    Logger.info(f"[basic] connected to {robot._robot_id} ({robot._robot_type})")
+    robot = Robot.connect_mqtt(BROKER, ROBOT_ID)    
+    Logger.info(f"[basic] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -46,7 +46,7 @@ def connect_with_username_password():
         )
     )
     robot = Robot.connect_mqtt(BROKER, ROBOT_ID, options=options)
-    Logger.info(f"[user/pass] connected to {robot._robot_id} ({robot._robot_type})")
+    Logger.info(f"[user/pass] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -60,7 +60,7 @@ def connect_with_tls():
         )
     )
     robot = Robot.connect_mqtt("mqtts://10.231.0.2:8883", ROBOT_ID, options=options)
-    Logger.info(f"[tls] connected to {robot._robot_id} ({robot._robot_type})")
+    Logger.info(f"[tls] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -77,7 +77,7 @@ def connect_with_mtls():
         auth=MqttAuthOptions(mode="mtls"),
     )
     robot = Robot.connect_mqtt("mqtts://10.231.0.2:8883", ROBOT_ID, options=options)
-    Logger.info(f"[mtls] connected to {robot._robot_id} ({robot._robot_type})")
+    Logger.info(f"[mtls] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -94,7 +94,7 @@ def connect_websocket_tls():
         ),
     )
     robot = Robot.connect_mqtt("wss://broker.example.com:8884/mqtt", ROBOT_ID, options=options)
-    Logger.info(f"[wss] connected to {robot._robot_id} ({robot._robot_type})")
+    Logger.info(f"[wss] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -125,7 +125,7 @@ def connect_full_options():
         connect_timeout=15.0,
         default_rpc_timeout=30.0,
     )
-    Logger.info(f"[full] connected to {robot._robot_id} ({robot._robot_type})")
+    Logger.info(f"[full] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -148,7 +148,7 @@ def connect_manual_transport():
 
     transport = MqttTransport(conn, ROBOT_ID)
     robot = Robot(transport=transport)
-    Logger.info(f"[manual] connected to {robot._robot_id} ({robot._robot_type})")
+    Logger.info(f"[manual] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -156,7 +156,7 @@ def connect_manual_transport():
 # Use Robot as a context manager for automatic cleanup.
 def connect_context_manager():
     with Robot.connect_mqtt(BROKER, ROBOT_ID) as robot:
-        Logger.info(f"[context] connected to {robot._robot_id} ({robot._robot_type})")
+        Logger.info(f"[context] connected to {robot.robot_id} ({robot.robot_type})")
         robot.tts.say_text("Hello over MQTT!")
     # robot.close() is called automatically on exit
 

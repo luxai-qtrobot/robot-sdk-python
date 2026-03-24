@@ -53,9 +53,9 @@ if __name__ == "__main__":
     # Logger.set_level("DEBUG")
 
     # connect robot by robot_id (serial number), e.g. "QTRD000123" or by endpoint (IP:port)
-    # robot = Robot.connect_zmq(robot_id="QTRD000123")
-    robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
-    Logger.info(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK version: {robot._sdk_version}")
+    # robot = Robot.connect_zmq(robot_id="QTRD000123")    
+    robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")   
+    Logger.info(f"Connected to {robot.robot_id} ({robot.robot_type}), SDK version: {robot.sdk_version}")
 
     list_emotions(robot)
     # show_emotion(robot)

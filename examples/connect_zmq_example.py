@@ -16,7 +16,7 @@ from luxai.robot.core.transport import ZmqTransport
 # Use this when you know the robot's IP address.
 def connect_by_endpoint():
     robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
-    Logger.info(f"[endpoint] connected to {robot._robot_serial} ({robot._robot_type})")
+    Logger.info(f"[endpoint] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -26,7 +26,7 @@ def connect_by_endpoint():
 # The robot must be reachable on the local network.
 def connect_by_robot_id():
     robot = Robot.connect_zmq(robot_id="QTRD000320")
-    Logger.info(f"[robot_id] connected to {robot._robot_serial} ({robot._robot_type})")
+    Logger.info(f"[robot_id] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -34,7 +34,7 @@ def connect_by_robot_id():
 # Connect by robot_id with a custom discovery timeout.
 def connect_by_robot_id_with_timeout():
     robot = Robot.connect_zmq(robot_id="QTRD000320", connect_timeout=10.0)
-    Logger.info(f"[robot_id+timeout] connected to {robot._robot_serial} ({robot._robot_type})")
+    Logger.info(f"[robot_id+timeout] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -44,7 +44,7 @@ def connect_by_robot_id_with_timeout():
 # a per-call timeout is specified explicitly.
 def connect_with_rpc_timeout():
     robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500", default_rpc_timeout=10.0)
-    Logger.info(f"[rpc_timeout] connected to {robot._robot_serial} ({robot._robot_type})")
+    Logger.info(f"[rpc_timeout] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -55,7 +55,7 @@ def connect_with_rpc_timeout():
 def connect_manual_transport():
     transport = ZmqTransport(endpoint="tcp://10.231.0.2:50500")
     robot = Robot(transport=transport)
-    Logger.info(f"[manual] connected to {robot._robot_serial} ({robot._robot_type})")
+    Logger.info(f"[manual] connected to {robot.robot_id} ({robot.robot_type})")
     robot.close()
 
 
@@ -63,7 +63,7 @@ def connect_manual_transport():
 # Use Robot as a context manager for automatic cleanup.
 def connect_context_manager():
     with Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500") as robot:
-        Logger.info(f"[context] connected to {robot._robot_serial} ({robot._robot_type})")
+        Logger.info(f"[context] connected to {robot.robot_id} ({robot.robot_type})")
         robot.tts.say_text("Hello from ZMQ!")
     # robot.close() is called automatically on exit
 

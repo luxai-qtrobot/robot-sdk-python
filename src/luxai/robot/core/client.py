@@ -264,6 +264,35 @@ class Robot:
      
         
     
+    # ------------------------------------------------------------------
+    # Read-only properties
+    # ------------------------------------------------------------------
+
+    @property
+    def robot_id(self) -> str | None:
+        """Unique robot identifier as reported by the robot (e.g. ``"QTRD000320"``), or ``None`` if not yet known."""
+        return self._robot_id
+
+    @property
+    def robot_type(self) -> str | None:
+        """Robot model/type string returned by the robot descriptor, or ``None`` if not yet known."""
+        return self._robot_type
+
+    @property
+    def sdk_version(self) -> str | None:
+        """Robot-side SDK version string, or ``None`` if not yet known."""
+        return self._sdk_version
+
+    @property
+    def min_sdk(self) -> str | None:
+        """Minimum client SDK version required by the robot, or ``None`` if not reported."""
+        return self._min_sdk
+
+    @property
+    def max_sdk(self) -> str | None:
+        """Maximum client SDK version supported by the robot, or ``None`` if not reported."""
+        return self._max_sdk
+
     def close(self) -> None:
         """Close the underlying transport and free resources."""
         # Stop plugins

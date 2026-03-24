@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # connect robot by robot_id (serial number), e.g. "QTRD000123" or by endpoint (IP:port)
     # robot = Robot.connect_zmq(robot_id="QTRD000123")
     robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
-    Logger.info(f"Connected to {robot._robot_serial} ({robot._robot_type}), SDK version: {robot._sdk_version}")
+    Logger.info(f"Connected to {robot.robot_id} ({robot.robot_type}), SDK version: {robot.sdk_version}")
     
     robot.enable_plugin_local("asr-azure")
     ret = robot.asr.configure_azure(
