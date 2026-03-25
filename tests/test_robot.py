@@ -39,17 +39,17 @@ class TestHandshake:
 
     def test_robot_type_set_from_description(self):
         robot = make_robot()
-        assert robot._robot_type == "test-robot"
+        assert robot.robot_type == "test-robot"
         robot.close()
 
     def test_robot_serial_set_from_description(self):
         robot = make_robot()
-        assert robot._robot_serial == "TEST001"
+        assert robot.robot_id == "TEST001"
         robot.close()
 
     def test_sdk_version_set_from_description(self):
         robot = make_robot()
-        assert robot._sdk_version == "1.0.0"
+        assert robot.sdk_version == "1.0.0"
         robot.close()
 
     def test_rpc_routes_populated(self):
@@ -65,21 +65,21 @@ class TestHandshake:
         robot.close()
 
     def test_handshake_failure_does_not_raise(self):
-        """If the handshake RPC fails the Robot should still be created."""
+        """If the handshake RPC returns status=False, Robot raises RuntimeError."""
+        import pytest
         transport = MockTransport()
-        # Make the handshake return failure
         transport.requester.set_response(SYSTEM_DESCRIBE_SERVICE, status=False)
-        robot = Robot(transport=transport)
-        # Routes won't be populated, but construction must succeed
-        robot.close()
+        with pytest.raises(RuntimeError):
+            Robot(transport=transport)
 
     def test_handshake_exception_does_not_raise(self):
-        """If transport.get_requester raises, Robot should still be created."""
+        """If transport.get_requester raises, Robot raises RuntimeError."""
+        import pytest
         class BrokenTransport(MockTransport):
             def get_requester(self, service_name, transports):
                 raise RuntimeError("connection refused")
-        robot = Robot(transport=BrokenTransport())
-        robot.close()
+        with pytest.raises(RuntimeError):
+            Robot(transport=BrokenTransport())
 
 
 # ---------------------------------------------------------------------------

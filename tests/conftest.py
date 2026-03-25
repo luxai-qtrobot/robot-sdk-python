@@ -27,7 +27,7 @@ from luxai.robot.core.config import SYSTEM_DESCRIBE_SERVICE
 #: tests inside test_robot.py.
 MINIMAL_SYSTEM_DESC: Dict[str, Any] = {
     "robot_type": "test-robot",
-    "robot_serial": "TEST001",
+    "robot_id": "TEST001",
     "sdk_version": "1.0.0",
     "min_sdk": "0.1.0",
     "max_sdk": "9.9.9",
