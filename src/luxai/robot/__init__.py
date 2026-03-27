@@ -14,3 +14,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from luxai.magpie.transport.webrtc.webrtc_options import (
+        WebRTCOptions,
+        WebRTCTurnServer,
+    )
+except ImportError:
+    pass
+

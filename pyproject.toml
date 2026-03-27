@@ -33,6 +33,10 @@ mqtt = [
     "luxai-magpie[mqtt]",
 ]
 
+webrtc = [
+    "luxai-magpie[webrtc]",
+]
+
 asr-azure = [
     "torch",  # for VAD
     "torchaudio", # for VAD

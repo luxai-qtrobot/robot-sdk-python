@@ -174,6 +174,157 @@ class Robot:
         """
         ...
 
+    @classmethod
+    def connect_webrtc_mqtt(
+        cls,
+        broker_url: str,
+        robot_id: str,
+        *,
+        mqtt_options: Any | None = None,
+        webrtc_options: Any | None = None,
+        reconnect: bool = False,
+        connect_timeout: float = 15.0,
+        default_rpc_timeout: float | None = None,
+    ) -> Robot:
+        """
+        Create and return a :class:`Robot` client using a WebRTC transport with
+        MQTT as the signaling channel.
+
+        The MQTT broker is used only for the WebRTC handshake (SDP offer/answer
+        and ICE candidates).  Once the peer connection is established all traffic
+        — RPCs and streams — flows directly over the P2P WebRTC data channel or
+        media tracks.
+
+        Parameters
+        ----------
+        broker_url:
+            MQTT broker URI used for WebRTC signaling, e.g.
+            ``"mqtt://broker.hivemq.com:1883"`` or ``"mqtts://10.0.0.1:8883"``.
+
+        robot_id:
+            Robot serial number (e.g. ``"QTRD000320"``).  Used as the WebRTC
+            session identifier so both peers rendezvous on the same channel.
+
+        mqtt_options:
+            Optional :class:`luxai.robot.MqttOptions` for the signaling broker
+            (TLS, authentication, reconnect, etc.).
+
+        webrtc_options:
+            Optional :class:`luxai.robot.WebRTCOptions` for the WebRTC peer
+            connection (STUN/TURN servers, codec preferences, etc.).
+
+        reconnect:
+            Automatically re-establish the WebRTC connection if it drops.
+
+        connect_timeout:
+            End-to-end timeout (seconds) covering broker connection, role
+            negotiation, and the full WebRTC handshake.
+
+        default_rpc_timeout:
+            Optional override for the default RPC call timeout.
+
+        Returns
+        -------
+        Robot
+            A connected and ready-to-use Robot client wrapping a
+            :class:`~luxai.robot.core.transport.WebRTCTransport`.
+
+        Raises
+        ------
+        ImportError
+            If ``aiortc`` is not installed
+            (``pip install luxai-robot[webrtc]``).
+        RuntimeError
+            If the WebRTC handshake does not complete within *connect_timeout*.
+
+        Examples
+        --------
+        Basic connection over a local MQTT broker:
+
+        >>> robot = Robot.connect_webrtc_mqtt("mqtt://192.168.1.100:1883", "QTRD000320")
+
+        With TLS signaling and custom STUN/TURN servers:
+
+        >>> from luxai.robot import MqttOptions, MqttTlsOptions, WebRTCOptions
+        >>> robot = Robot.connect_webrtc_mqtt(
+        ...     "mqtts://10.231.0.2:8883",
+        ...     "QTRD000320",
+        ...     mqtt_options=MqttOptions(tls=MqttTlsOptions(ca_file="/path/to/ca.crt")),
+        ...     webrtc_options=WebRTCOptions(stun_servers=["stun:stun.l.google.com:19302"]),
+        ... )
+        """
+        ...
+
+    @classmethod
+    def connect_webrtc_zmq(
+        cls,
+        endpoint: str,
+        robot_id: str,
+        *,
+        bind: bool = False,
+        webrtc_options: Any | None = None,
+        reconnect: bool = False,
+        connect_timeout: float = 15.0,
+        default_rpc_timeout: float | None = None,
+    ) -> Robot:
+        """
+        Create and return a :class:`Robot` client using a WebRTC transport with
+        ZMQ PAIR socket as the (broker-less) signaling channel.
+
+        Suitable for LAN / local use where no MQTT broker is available.  One
+        peer must bind (``bind=True``) and the other must connect
+        (``bind=False``, the default).
+
+        Parameters
+        ----------
+        endpoint:
+            ZMQ endpoint for signaling, e.g. ``"tcp://192.168.1.10:5555"``.
+            Use ``"tcp://*:5555"`` when binding.
+
+        robot_id:
+            Robot serial number (e.g. ``"QTRD000320"``).  Used as the WebRTC
+            session identifier.
+
+        bind:
+            ``True`` → bind the ZMQ socket (robot side);
+            ``False`` → connect (operator side, default).
+
+        webrtc_options:
+            Optional :class:`luxai.robot.WebRTCOptions` for the WebRTC peer
+            connection (STUN/TURN servers, codec preferences, etc.).
+
+        reconnect:
+            Automatically re-establish the WebRTC connection if it drops.
+
+        connect_timeout:
+            End-to-end timeout (seconds) for role negotiation and the full
+            WebRTC handshake.
+
+        default_rpc_timeout:
+            Optional override for the default RPC call timeout.
+
+        Returns
+        -------
+        Robot
+            A connected and ready-to-use Robot client wrapping a
+            :class:`~luxai.robot.core.transport.WebRTCTransport`.
+
+        Raises
+        ------
+        ImportError
+            If ``aiortc`` is not installed
+            (``pip install luxai-robot[webrtc]``).
+        RuntimeError
+            If the WebRTC handshake does not complete within *connect_timeout*.
+
+        Examples
+        --------
+        Connect from the operator side (robot binds on port 5555):
+
+        >>> robot = Robot.connect_webrtc_zmq("tcp://192.168.1.10:5555", "QTRD000320")
+        """
+        ...
+
     def __init__(
         self,
         transport: Transport,

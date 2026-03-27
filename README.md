@@ -17,6 +17,7 @@ A Python SDK for communicating with [LuxAI](https://luxai.com) robots. It provid
 - [Connecting to the Robot](#connecting-to-the-robot)
   - [ZMQ transport](#zmq-transport)
   - [MQTT transport](#mqtt-transport)
+  - [WebRTC transport](#webrtc-transport)
   - [Direct transport construction](#direct-transport-construction)
 - [API Concepts](#api-concepts)
   - [RPC APIs — sync and async](#rpc-apis--sync-and-async)
@@ -53,6 +54,7 @@ pip install luxai-robot
 | Extra | Installs | When to use |
 |---|---|---|
 | `luxai-robot[mqtt]` | `paho-mqtt` (via `luxai-magpie[mqtt]`) | Connect to the robot over MQTT |
+| `luxai-robot[webrtc]` | `aiortc` (via `luxai-magpie[webrtc]`) | Connect to the robot over WebRTC |
 | `luxai-robot[asr-azure]` | Azure Cognitive Services Speech SDK + PyTorch VAD | Azure cloud ASR plugin |
 | `luxai-robot[asr-riva]` | Nvidia Riva client SDK + PyTorch VAD | On-device Riva ASR plugin |
 | `luxai-robot[asr-groq]` | Groq SDK (Whisper API) + PyTorch VAD | Groq cloud ASR plugin |
@@ -63,7 +65,7 @@ Python **≥ 3.7.3** is required.
 
 ## Connecting to the Robot
 
-The SDK supports two transport protocols. Each `Robot` instance uses exactly one transport — they are mutually exclusive. The `connect_zmq()` and `connect_mqtt()` class methods are convenience helpers; power users can construct a transport directly and pass it to `Robot(transport=...)`.
+The SDK supports three transport protocols. Each `Robot` instance uses exactly one transport — they are mutually exclusive. The `connect_zmq()`, `connect_mqtt()`, and `connect_webrtc_*()` class methods are convenience helpers; power users can construct a transport directly and pass it to `Robot(transport=...)`.
 
 Always call `robot.close()` when done, or use the `Robot` object as a context manager (`with Robot.connect_zmq(...) as robot:`).
 
@@ -161,14 +163,81 @@ robot = Robot.connect_mqtt(
 
 ---
 
-### Direct transport construction
+### WebRTC transport
 
-`connect_zmq()` and `connect_mqtt()` are thin helpers. You can construct the transport yourself for full lifecycle control:
+Connect to the robot directly via a **P2P WebRTC** connection. The MQTT broker or a ZMQ socket is used only for the signaling handshake (SDP offer/answer + ICE candidates); once established, all traffic flows directly over the WebRTC data channel or native media tracks. This gives the lowest round-trip latency and removes the broker as a bottleneck for streaming data.
+
+```bash
+pip install "luxai-robot[webrtc]"              # ZMQ signaling (no broker)
+pip install "luxai-robot[webrtc,mqtt]"         # MQTT signaling
+```
+
+**MQTT signaling** — works over the internet through any MQTT broker:
 
 ```python
 from luxai.robot.core import Robot
-from luxai.robot.core.transport import ZmqTransport, MqttTransport
+
+# Basic — plain TCP broker, no authentication
+robot = Robot.connect_webrtc_mqtt("mqtt://192.168.1.100:1883", "QTRD000320")
+
+# Public cloud broker (e.g. for testing)
+robot = Robot.connect_webrtc_mqtt("mqtt://broker.hivemq.com:1883", "QTRD000320")
+```
+
+**With TLS signaling and custom STUN/TURN servers:**
+
+```python
+from luxai.robot import MqttOptions, MqttTlsOptions, MqttAuthOptions, WebRTCOptions, WebRTCTurnServer
+
+robot = Robot.connect_webrtc_mqtt(
+    "mqtts://10.231.0.2:8883",
+    "QTRD000320",
+    mqtt_options=MqttOptions(
+        tls=MqttTlsOptions(
+            ca_file="/path/to/ca.crt",
+            cert_file="/path/to/client.crt",
+            key_file="/path/to/client.key",
+        ),
+        auth=MqttAuthOptions(mode="mtls"),
+    ),
+    webrtc_options=WebRTCOptions(
+        stun_servers=["stun:stun.l.google.com:19302"],
+        turn_servers=[
+            WebRTCTurnServer(url="turn:turn.example.com:3478",
+                             username="user", credential="pass")
+        ],
+    ),
+)
+```
+
+**ZMQ signaling** — broker-less, LAN only. One peer binds, the other connects:
+
+```python
+# Robot side (bind=True)
+robot = Robot.connect_webrtc_zmq("tcp://*:5555", "QTRD000320", bind=True)
+
+# Operator side (default bind=False)
+robot = Robot.connect_webrtc_zmq("tcp://192.168.1.10:5555", "QTRD000320")
+```
+
+See [`examples/connect_webrtc_example.py`](examples/connect_webrtc_example.py) for all variants including reconnect, TURN relay, manual transport construction, and context manager usage.
+
+| Signaling | Broker needed | Works over internet | Use case |
+|---|---|---|---|
+| MQTT | Yes | Yes | Cloud/remote deployments |
+| ZMQ | No | LAN only | Local / embedded |
+
+---
+
+### Direct transport construction
+
+`connect_zmq()`, `connect_mqtt()`, and `connect_webrtc_*()` are thin helpers. You can construct the transport yourself for full lifecycle control:
+
+```python
+from luxai.robot.core import Robot
+from luxai.robot.core.transport import ZmqTransport, MqttTransport, WebRTCTransport
 from luxai.magpie.transport.mqtt import MqttConnection
+from luxai.magpie.transport.webrtc import WebRTCConnection
 
 # ZMQ
 transport = ZmqTransport(endpoint="tcp://10.231.0.2:50500")
@@ -178,6 +247,12 @@ robot = Robot(transport=transport)
 conn = MqttConnection("mqtt://10.231.0.2:1883")
 conn.connect(timeout=10.0)
 transport = MqttTransport(conn, "QTRD000320")
+robot = Robot(transport=transport)
+
+# WebRTC (MQTT signaling)
+conn = WebRTCConnection.with_mqtt("mqtt://10.231.0.2:1883", session_id="QTRD000320")
+conn.connect(timeout=15.0)
+transport = WebRTCTransport(conn)
 robot = Robot(transport=transport)
 ```
 
@@ -898,6 +973,7 @@ Ready-to-run examples are in the [`examples/`](examples/) directory:
 |---|---|
 | [`connect_zmq_example.py`](examples/connect_zmq_example.py) | All ZMQ connection variants: endpoint, robot_id, timeout, manual transport, context manager |
 | [`connect_mqtt_example.py`](examples/connect_mqtt_example.py) | All MQTT connection variants: plain, user/pass, TLS, mTLS, WebSocket, full options, manual transport |
+| [`connect_webrtc_example.py`](examples/connect_webrtc_example.py) | All WebRTC connection variants: MQTT signaling, ZMQ signaling, TLS, TURN, reconnect, manual transport |
 | [`tts_examples.py`](examples/tts_examples.py) | List engines, say text, cancel speech, SSML, voices |
 | [`face_examples.py`](examples/face_examples.py) | List emotions, play animations, control eye gaze |
 | [`gesture_examples.py`](examples/gesture_examples.py) | List gestures, play, record, and store gesture files |

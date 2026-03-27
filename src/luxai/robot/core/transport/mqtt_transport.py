@@ -12,31 +12,6 @@ from luxai.magpie.transport import StreamWriter
 from .transport import Transport, TransportsMeta, UnsupportedAPIError
 
 
-class _MqttRpcRequesterAdapter:
-    """
-    Adapts MqttRpcRequester to the SDK's RPC envelope convention.
-
-    The SDK always calls:
-        requester.call({"name": service_name, "args": args_dict}, timeout=...)
-
-    The MQTT gateway expects only the args dict as the MQTT payload — the service
-    name is already encoded in the topic.  This adapter strips the outer envelope
-    before forwarding to MqttRpcRequester, and returns the response verbatim
-    (the gateway passes the full ZMQ response {"status": bool, "response": ...}
-    back as the MQTT reply payload).
-    """
-
-    def __init__(self, requester) -> None:
-        self._requester = requester
-
-    def call(self, request_obj: object, timeout: float = None) -> object:
-        args = request_obj.get("args", {}) if isinstance(request_obj, dict) else request_obj
-        return self._requester.call(args, timeout=timeout)
-
-    def close(self) -> None:
-        self._requester.close()
-
-
 class MqttTransport(Transport):
     """
     MQTT-based Transport implementation using the Magpie MQTT library.
@@ -67,7 +42,7 @@ class MqttTransport(Transport):
         self._robot_id = robot_id
         self._connect_timeout = connect_timeout
 
-        self._requesters: Dict[str, _MqttRpcRequesterAdapter] = {}
+        self._requesters: Dict[str, RpcRequester] = {}
         self._stream_resources: list = []
         self._lock = threading.Lock()
         self._closed = False
@@ -78,23 +53,22 @@ class MqttTransport(Transport):
     # RPCs
     # ------------------------------------------------------------------
 
-    def _get_or_create_requester(self, topic: str, ack_timeout: float = 2.0) -> _MqttRpcRequesterAdapter:
+    def _get_or_create_requester(self, topic: str, ack_timeout: float = 2.0) -> RpcRequester:
         with self._lock:
-            adapter = self._requesters.get(topic)
-            if adapter is not None:
-                return adapter
+            requester = self._requesters.get(topic)
+            if requester is not None:
+                return requester
             from luxai.magpie.transport.mqtt import MqttRpcRequester
             requester = MqttRpcRequester(self._connection, service_name=topic, ack_timeout=ack_timeout)
-            adapter = _MqttRpcRequesterAdapter(requester)
-            self._requesters[topic] = adapter
+            self._requesters[topic] = requester
             Logger.debug(f"MqttTransport: created MqttRpcRequester for topic={topic!r}, ack_timeout={ack_timeout}s")
-            return adapter
+            return requester
 
     def get_requester(
         self,
         service_name: str,
         transports: TransportsMeta | None,
-    ) -> _MqttRpcRequesterAdapter:
+    ) -> RpcRequester:
         if self._closed:
             raise RuntimeError("MqttTransport is closed")
 
@@ -203,9 +177,9 @@ class MqttTransport(Transport):
         self._stream_resources.clear()
 
         with self._lock:
-            for topic, adapter in list(self._requesters.items()):
+            for topic, requester in list(self._requesters.items()):
                 try:
-                    adapter.close()
+                    requester.close()
                     Logger.debug(f"MqttTransport: closed requester for {topic!r}")
                 except Exception as e:
                     Logger.warning(
