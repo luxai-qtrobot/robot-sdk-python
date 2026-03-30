@@ -669,7 +669,35 @@ class Robot:
 
 
     # ---------------------------------------------------------
-    def enable_plugin_zmq(self, name: str, 
+    def enable_plugin_mqtt(self, name: str, node_id: str) -> None:
+        """
+        Enable a remote plugin over MQTT, reusing the robot's broker connection.
+
+        The ``node_id`` must match the plugin's ZMQ node identifier (e.g.
+        ``"qtrobot-realsense-driver"``), which the MQTT gateway uses as the
+        plugin's topic namespace.
+
+        Requires the robot to be connected via :meth:`connect_mqtt`.
+
+        Examples:
+            robot.enable_plugin_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
+        """
+        from .transport.mqtt_transport import MqttTransport as _MqttTransport
+
+        if not isinstance(self._robot_transport, _MqttTransport):
+            raise RuntimeError(
+                "enable_plugin_mqtt() requires the robot to be connected via connect_mqtt()."
+            )
+
+        transport = _MqttTransport(
+            connection=self._robot_transport.connection,
+            robot_id=node_id,
+            connect_timeout=self._robot_transport._connect_timeout,
+            owns_connection=False,
+        )
+        self.enable_plugin(name, transport)
+
+    def enable_plugin_zmq(self, name: str,
                           robot_id: str | None = None,
                           endpoint: str | None = None) -> None:
         """

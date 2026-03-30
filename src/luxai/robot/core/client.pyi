@@ -407,13 +407,45 @@ class Robot:
         """
         ...
 
-    def enable_plugin_zmq(self, name: str, endpoint: str | None = None) -> None:
+    def enable_plugin_zmq(
+        self,
+        name: str,
+        robot_id: str | None = None,
+        endpoint: str | None = None,
+    ) -> None:
         """
-        Enable a plugin by name (string) over ZMQ transport.
+        Enable a remote plugin by name over ZMQ transport.
+
+        Args:
+            name:      Plugin name as registered in the plugin registry (e.g. ``"realsense-driver"``).
+            robot_id:  ZMQ node identifier of the plugin (e.g. ``"qtrobot-realsense-driver"``).
+                       Used for Zeroconf-based discovery. Omit if passing ``endpoint`` directly.
+            endpoint:  Direct ZMQ endpoint of the plugin (e.g. ``"tcp://192.168.3.152:50750"``).
 
         Examples:
-            robot.enable_plugin("realsense-driver") # lets discovery find the it
-            robot.enable_plugin("realsense-driver", endpoint="tcp://192.168.3.152:50655")
+            robot.enable_plugin_zmq("realsense-driver")  # Zeroconf discovery
+            robot.enable_plugin_zmq("realsense-driver", robot_id="qtrobot-realsense-driver")
+            robot.enable_plugin_zmq("realsense-driver", endpoint="tcp://192.168.3.152:50750")
+        """
+        ...
+
+    def enable_plugin_mqtt(self, name: str, node_id: str) -> None:
+        """
+        Enable a remote plugin over MQTT, reusing the robot's broker connection.
+
+        The ``node_id`` must match the plugin's ZMQ node identifier (e.g.
+        ``"qtrobot-realsense-driver"``), which the MQTT gateway uses as the
+        plugin's topic namespace.
+
+        Requires the robot to be connected via :meth:`connect_mqtt`.
+
+        Args:
+            name:    Plugin name as registered in the plugin registry (e.g. ``"realsense-driver"``).
+            node_id: Plugin's ZMQ node identifier, used by the MQTT gateway as the topic namespace
+                     (e.g. ``"qtrobot-realsense-driver"``).
+
+        Examples:
+            robot.enable_plugin_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
         """
         ...
 

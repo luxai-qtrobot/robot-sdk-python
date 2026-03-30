@@ -20,7 +20,7 @@ from luxai.robot import (
     MqttReconnectOptions,
 )
 
-BROKER_LOCAL  = "mqtt://192.168.3.152:1883"              # robot's onboard/local broker
+BROKER_LOCAL  = "mqtt://10.231.0.2:1883"              # robot's onboard/local broker
 BROKER_PUBLIC = "mqtt://broker.hivemq.com:1883"      # public HiveMQ broker (no auth)
 ROBOT_ID      = "QTRD000320"                         # change to your robot serial
 

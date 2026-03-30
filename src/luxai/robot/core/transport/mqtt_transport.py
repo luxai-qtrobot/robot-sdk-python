@@ -28,19 +28,30 @@ class MqttTransport(Transport):
 
     _DEFAULT_QUEUE_SIZE = 10
 
-    def __init__(self, connection, robot_id: str, connect_timeout: float = 5.0) -> None:
+    def __init__(
+        self,
+        connection,
+        robot_id: str,
+        connect_timeout: float = 5.0,
+        owns_connection: bool = True,
+    ) -> None:
         """
         Args:
             connection: A connected MqttConnection instance (from luxai.magpie).
-            robot_id: Robot serial number (e.g. "QTRD000320").
-                          Used as the MQTT service topic for the descriptor call.
+            robot_id: Robot or plugin identifier (e.g. ``"QTRD000320"`` or
+                      ``"qtrobot-realsense-driver"``). Used as the MQTT namespace
+                      for the descriptor call.
             connect_timeout: Used as the ack_timeout for the descriptor RPC requester,
                              so the ACK window scales with the user's patience
                              (important for cloud/high-latency brokers).
+            owns_connection: If ``True`` (default), ``close()`` will disconnect the
+                             broker connection. Set to ``False`` for plugin transports
+                             that share the robot's connection.
         """
         self._connection = connection
         self._robot_id = robot_id
         self._connect_timeout = connect_timeout
+        self._owns_connection = owns_connection
 
         self._requesters: Dict[str, RpcRequester] = {}
         self._stream_resources: list = []
@@ -48,6 +59,11 @@ class MqttTransport(Transport):
         self._closed = False
 
         Logger.debug(f"MqttTransport: ready, robot_id={robot_id!r}")
+
+    @property
+    def connection(self):
+        """The underlying MqttConnection, for sharing with plugin transports."""
+        return self._connection
 
     # ------------------------------------------------------------------
     # RPCs
@@ -187,9 +203,10 @@ class MqttTransport(Transport):
                     )
             self._requesters.clear()
 
-        try:
-            self._connection.disconnect()
-        except Exception as e:
-            Logger.warning(f"MqttTransport: error disconnecting MQTT: {e}")
+        if self._owns_connection:
+            try:
+                self._connection.disconnect()
+            except Exception as e:
+                Logger.warning(f"MqttTransport: error disconnecting MQTT: {e}")
 
         self._closed = True
