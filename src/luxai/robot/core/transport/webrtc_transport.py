@@ -29,12 +29,18 @@ class WebRTCTransport(Transport):
 
     _DEFAULT_QUEUE_SIZE = 10
 
-    def __init__(self, connection) -> None:
+    def __init__(self, connection, *, signaling_params: dict | None = None) -> None:
         """
         Args:
-            connection: A connected WebRTCConnection instance (from luxai.magpie).
+            connection:       A connected WebRTCConnection instance (from luxai.magpie).
+            signaling_params: Internal dict storing the signaling configuration used to
+                              establish this connection (type, broker_url, mqtt_options,
+                              webrtc_options, reconnect, connect_timeout, endpoint, bind).
+                              Used by enable_plugin_webrtc_mqtt/zmq to reuse the same
+                              signaling setup for plugin peer connections.
         """
         self._connection = connection
+        self._signaling_params: dict = signaling_params or {}
         self._requesters: Dict[str, RpcRequester] = {}
         self._stream_resources: list = []
         self._lock = threading.Lock()

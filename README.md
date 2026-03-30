@@ -38,6 +38,7 @@ A Python SDK for communicating with [LuxAI](https://luxai.com) robots. It provid
   - [ASR — Azure Speech](#asr--azure-speech)
   - [ASR — Nvidia Riva](#asr--nvidia-riva)
   - [ASR — Groq (Whisper)](#asr--groq-whisper)
+  - [Full plugin guide →](PLUGIN.md)
 - [Examples](#examples)
 - [License](#license)
 
@@ -91,7 +92,7 @@ robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
 # With a custom default RPC timeout (applies to all blocking calls)
 robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500", default_rpc_timeout=10.0)
 
-print(f"Connected to {robot._robot_id} ({robot._robot_type}), SDK: {robot._sdk_version}")
+print(f"Connected to {robot.robot_id} ({robot.robot_type}), SDK: {robot.sdk_version}")
 robot.close()
 ```
 
@@ -117,7 +118,7 @@ robot = Robot.connect_mqtt("mqtt://broker.hivemq.com:1883", "QTRD000320")
 # WebSocket over TLS (useful through firewalls / web proxies)
 robot = Robot.connect_mqtt("wss://broker.example.com:8884/mqtt", "QTRD000320")
 
-print(f"Connected to {robot._robot_id} ({robot._robot_type}), SDK: {robot._sdk_version}")
+print(f"Connected to {robot.robot_id} ({robot.robot_type}), SDK: {robot.sdk_version}")
 robot.close()
 ```
 
@@ -742,17 +743,33 @@ robot.microphone.stream.on_int_event(on_event)
 
 ## Plugin System
 
-Plugins extend the SDK with additional hardware or services that are not part of the robot's core firmware. Enable a plugin before using its API.
+Plugins extend the SDK with additional hardware or services not part of the robot's core firmware. Once enabled, plugin APIs are available under the corresponding namespace (`robot.asr`, `robot.camera`).
+
+| Method | Transport | Use case |
+|---|---|---|
+| `enable_plugin_local(name)` | In-process | Plugin runs in the same Python process |
+| `enable_plugin_zmq(name, robot_id/endpoint)` | ZMQ | Plugin on the same LAN |
+| `enable_plugin_mqtt(name, node_id)` | MQTT | Plugin via broker — internet-ready |
+| `enable_plugin_webrtc_mqtt(name, node_id)` | WebRTC+MQTT | Plugin via P2P — lowest latency over internet |
+| `enable_plugin_webrtc_zmq(name, node_id)` | WebRTC+ZMQ | Plugin via P2P — broker-less LAN |
 
 ```python
-# Load a plugin running locally on the same machine
+# Local (in-process)
 robot.enable_plugin_local("asr-azure")
 
-# Load a plugin running on another host (e.g. a camera node)
+# LAN — direct ZMQ
 robot.enable_plugin_zmq("realsense-driver", endpoint="tcp://192.168.1.150:50655")
+
+# Internet — MQTT (reuses robot's broker connection automatically)
+robot = Robot.connect_mqtt("mqtt://broker.example.com:1883", "QTRD000320")
+robot.enable_plugin_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
+
+# Internet — WebRTC P2P (reuses robot's signaling broker automatically)
+robot = Robot.connect_webrtc_mqtt("mqtt://broker.example.com:1883", "QTRD000320")
+robot.enable_plugin_webrtc_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
 ```
 
-Once enabled, the plugin's APIs are available under the corresponding namespace (`robot.asr`, `robot.camera`).
+> See [PLUGIN.md](PLUGIN.md) for a full guide to the plugin system — architecture, all transports, and examples.
 
 ---
 
@@ -982,6 +999,8 @@ Ready-to-run examples are in the [`examples/`](examples/) directory:
 | [`media_video_examples.py`](examples/media_video_examples.py) | Video file playback, RGBA frame streaming |
 | [`speaker_examples.py`](examples/speaker_examples.py) | Volume control, mute/unmute |
 | [`microphone_example.py`](examples/microphone_example.py) | Record to WAV, VAD events, DSP tuning |
+| [`plugin_mqtt_example.py`](examples/plugin_mqtt_example.py) | Enable/disable plugins over MQTT: shared broker, stream, different broker, context manager |
+| [`plugin_webrtc_example.py`](examples/plugin_webrtc_example.py) | Enable/disable plugins over WebRTC: inherit signaling, mTLS+TURN, ZMQ signaling, context manager |
 | [`camera_example.py`](examples/camera_example.py) | Camera intrinsics, color stream (RealSense plugin) |
 | [`asr_azure_example.py`](examples/asr_azure_example.py) | Continuous speech recognition (Azure plugin) |
 | [`asr_riva_example.py`](examples/asr_riva_example.py) | Continuous speech recognition (Nvidia Riva plugin) |

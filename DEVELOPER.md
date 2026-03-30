@@ -117,6 +117,9 @@ robot-sdk-python/
 │       │   ├── transport.py           # Transport Protocol + SupportsPreallocation
 │       │   ├── zmq_transport.py       # ZMQ/Magpie implementation
 │       │   ├── local_transport.py     # inproc:// implementation (for local plugins)
+│       │   ├── mqtt_transport.py      # MQTT implementation (broker-based, shared connection)
+│       │   ├── mqtt_options.py        # Re-exports MqttOptions and related classes
+│       │   ├── webrtc_transport.py    # WebRTC implementation (P2P, stores signaling_params)
 │       │   └── __init__.py
 │       │
 │       ├── plugins/
@@ -202,9 +205,19 @@ def close(self) -> None: ...
 
 **`SupportsPreallocation`** is an optional second Protocol. If the transport implements it, `Robot.__init__` calls `preallocate_requesters(rpc_routes)` right after the handshake — this lets `ZmqTransport` pre-create all ZMQ requester sockets upfront instead of lazily, avoiding first-call latency.
 
+> **User-facing plugin guide:** See [PLUGIN.md](PLUGIN.md) for practical usage, examples, and architecture diagrams.
+
 **`ZmqTransport`** — connects to the robot over TCP. Accepts either a direct `endpoint` or a `node_id` for UDP/multicast discovery. Implements `SupportsPreallocation`.
 
 **`LocalTransport`** — connects over ZMQ `inproc://` within the same process. Used exclusively by local plugins (e.g., `ASRAzurePlugin` starts a local magpie node on `inproc://asr-azure-rpc`).
+
+**`MqttTransport`** — connects via an MQTT broker. The `robot_id` (or plugin `node_id`) acts as the topic namespace prefix. Lazily creates `MqttRpcRequester` instances per-topic. Key implementation details:
+- `get_requester(service_name, transports=None)` — when `transports is None` (descriptor call), uses `robot_id` as the topic; otherwise reads `transports["mqtt"]["topic"]`.
+- `owns_connection: bool` — when `False` (plugin transports), `close()` skips `connection.disconnect()` so the shared broker connection stays alive. Set to `True` (default) for the main robot transport.
+- `connection` property — exposes the underlying `MqttConnection` so `enable_plugin_mqtt()` can share it.
+
+**`WebRTCTransport`** — connects via a P2P WebRTC peer connection. Signaling (SDP + ICE) is done through a pluggable channel (MQTT or ZMQ). Key implementation detail:
+- `_signaling_params: dict` — stores the signaling configuration (`type`, `broker_url`/`endpoint`, `mqtt_options`, `webrtc_options`, `reconnect`, `connect_timeout`) so that `enable_plugin_webrtc_mqtt/zmq()` can create plugin peers with the same settings without requiring the user to repeat them.
 
 **Adding a new transport:** Implement the `Transport` Protocol (and optionally `SupportsPreallocation`), then pass an instance to `Robot(transport=MyTransport(...))` directly.
 
@@ -595,14 +608,14 @@ After `start`, `robot.asr.configure_azure(...)` resolves through `_rpc_routes` t
 
 ### Remote plugin pattern (RemotePlugin)
 
-A **remote plugin** runs on a separate host (or process) and exposes a ZMQ interface. `RemotePlugin` is a base class for these:
+A **remote plugin** runs on a separate host (or process) and exposes its interface over a transport. `RemotePlugin` is a base class for these:
 
 **`start(robot, transport)`:**
 1. Issues a system-describe RPC (empty args) to the plugin host via the transport.
 2. The plugin host responds with its own `SYSTEM_DESCRIPTION` (rpc + stream routing tables).
 3. Calls `robot._setup_rpc_routes(transport, rpcs)` and `robot._setup_stream_routes(transport, streams)`.
 
-This is the same mechanism as the main robot handshake — plugins that run remotely are self-describing.
+This is the same mechanism as the main robot handshake — plugins that run remotely are self-describing. **This is why any transport works:** `RemotePlugin.start()` only uses `transport.get_requester()` and `transport.get_stream_reader/writer()` — the same `Transport` Protocol — regardless of whether the underlying wire is ZMQ, MQTT, or WebRTC.
 
 `RealsenseDriverPlugin` is a zero-body subclass of `RemotePlugin`:
 
@@ -613,6 +626,37 @@ class RealsenseDriverPlugin(RemotePlugin):
 ```
 
 The name string `"realsense-driver"` is used both as the PLUGIN_REGISTRY key and as the service name for the initial describe call.
+
+---
+
+### Plugin transport ownership
+
+Each `enable_plugin_*()` method creates a transport for the plugin and passes it to `plugin.start(robot, transport)`. The plugin stores the transport and closes it in `stop()`.
+
+**Connection sharing (MQTT):** `enable_plugin_mqtt()` creates a new `MqttTransport` that shares the robot's `MqttConnection` but with `owns_connection=False`. This means `transport.close()` releases the plugin's requesters and subscribers but does **not** disconnect the broker — only the main robot transport (with `owns_connection=True`) does that.
+
+**Independent connections (WebRTC):** `enable_plugin_webrtc_mqtt/zmq()` creates a fully independent `WebRTCConnection` and `WebRTCTransport` for the plugin. Each plugin peer has its own data channel and media tracks — no conflict with the robot peer or other plugin peers. The plugin transport always owns its connection.
+
+**`_signaling_params` propagation:** When `connect_webrtc_mqtt()` creates the robot's transport, it stores the full signaling configuration in `WebRTCTransport._signaling_params`. When `enable_plugin_webrtc_mqtt()` is called without explicit parameters, it reads these stored params to set up the plugin peer with the same broker, options, and timeout — so the common case (same gateway, same broker) requires zero extra configuration.
+
+---
+
+### How to Add a New Remote Plugin (MQTT/WebRTC)
+
+Adding MQTT or WebRTC support to an existing plugin requires **no changes** to the plugin class. `RemotePlugin.start()` is transport-agnostic. The only thing that changes is the `enable_plugin_*()` call:
+
+```python
+# ZMQ — existing
+robot.enable_plugin_zmq("realsense-driver", endpoint="tcp://192.168.1.150:50655")
+
+# MQTT — same plugin class, different transport
+robot.enable_plugin_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
+
+# WebRTC — same plugin class, different transport
+robot.enable_plugin_webrtc_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
+```
+
+The plugin class (`RealsenseDriverPlugin`) does not need to know or care which transport it receives.
 
 ---
 

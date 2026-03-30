@@ -310,7 +310,14 @@ class Robot:
                 "Check that the robot is reachable and uses the same robot_id."
             )
 
-        transport = WebRTCTransport(conn)
+        transport = WebRTCTransport(conn, signaling_params={
+            "type": "mqtt",
+            "broker_url": broker_url,
+            "mqtt_options": mqtt_options,
+            "webrtc_options": webrtc_options,
+            "reconnect": reconnect,
+            "connect_timeout": connect_timeout,
+        })
         try:
             return cls(transport=transport, connect_timeout=connect_timeout, default_rpc_timeout=default_rpc_timeout)
         except Exception:
@@ -407,7 +414,14 @@ class Robot:
                 "Check that the robot is reachable and uses the same robot_id."
             )
 
-        transport = WebRTCTransport(conn)
+        transport = WebRTCTransport(conn, signaling_params={
+            "type": "zmq",
+            "endpoint": endpoint,
+            "bind": bind,
+            "webrtc_options": webrtc_options,
+            "reconnect": reconnect,
+            "connect_timeout": connect_timeout,
+        })
         try:
             return cls(transport=transport, connect_timeout=connect_timeout, default_rpc_timeout=default_rpc_timeout)
         except Exception:
@@ -714,6 +728,194 @@ class Robot:
         )
         self.enable_plugin(name, transport)
 
+
+    def enable_plugin_webrtc_mqtt(
+        self,
+        name: str,
+        node_id: str,
+        *,
+        broker_url: str | None = None,
+        mqtt_options=None,
+        webrtc_options=None,
+        reconnect: bool | None = None,
+        connect_timeout: float | None = None,
+    ) -> None:
+        """
+        Enable a remote plugin over a dedicated WebRTC connection, using MQTT
+        as the signaling channel.
+
+        Each plugin gets its own independent WebRTC peer connection — with its
+        own data channel and media tracks — so plugin video/audio streams do not
+        conflict with the robot peer's tracks.
+
+        When called on a robot connected via :meth:`connect_webrtc_mqtt`, all
+        signaling parameters (``broker_url``, ``mqtt_options``, ``webrtc_options``,
+        ``reconnect``, ``connect_timeout``) default to the values used for the
+        robot connection. Override any of them to target a different broker or
+        use different options for the plugin peer.
+
+        Args:
+            name:           Plugin name as registered in the plugin registry
+                            (e.g. ``"realsense-driver"``).
+            node_id:        Plugin's ZMQ node identifier, used as the WebRTC
+                            session ID for signaling (e.g. ``"qtrobot-realsense-driver"``).
+            broker_url:     MQTT broker URI for WebRTC signaling. Defaults to the
+                            robot's broker if connected via connect_webrtc_mqtt().
+            mqtt_options:   Signaling broker options (TLS, auth, etc.). Defaults to
+                            the robot's mqtt_options.
+            webrtc_options: WebRTC peer options (STUN/TURN, codecs). Defaults to
+                            the robot's webrtc_options.
+            reconnect:      Automatically re-establish if the connection drops.
+                            Defaults to the robot's reconnect setting.
+            connect_timeout: End-to-end timeout (seconds). Defaults to the robot's
+                             connect_timeout.
+
+        Examples:
+            # Reuse robot's broker and settings automatically
+            robot.enable_plugin_webrtc_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
+
+            # Or target a different broker for the plugin
+            robot.enable_plugin_webrtc_mqtt(
+                "realsense-driver",
+                node_id="qtrobot-realsense-driver",
+                broker_url="mqtt://other-broker:1883",
+            )
+        """
+        try:
+            from luxai.magpie.transport.webrtc import WebRTCConnection
+        except ImportError as e:
+            raise ImportError(
+                "WebRTC transport requires aiortc. "
+                "Install via: pip install luxai-robot[webrtc]"
+            ) from e
+
+        if not isinstance(self._robot_transport, WebRTCTransport):
+            raise RuntimeError(
+                "enable_plugin_webrtc_mqtt() requires the robot to be connected via "
+                "connect_webrtc_mqtt() or connect_webrtc_zmq(). "
+                "Alternatively, use enable_plugin(name, WebRTCTransport(...)) directly."
+            )
+
+        params = self._robot_transport._signaling_params
+        _broker_url   = broker_url      if broker_url      is not None else params.get("broker_url")
+        _mqtt_options = mqtt_options    if mqtt_options     is not None else params.get("mqtt_options")
+        _webrtc_opts  = webrtc_options  if webrtc_options   is not None else params.get("webrtc_options")
+        _reconnect    = reconnect       if reconnect        is not None else params.get("reconnect", False)
+        _timeout      = connect_timeout if connect_timeout  is not None else params.get("connect_timeout", 15.0)
+
+        if not _broker_url:
+            raise RuntimeError(
+                "broker_url is required when the robot is not connected via connect_webrtc_mqtt()."
+            )
+
+        conn = WebRTCConnection.with_mqtt(
+            _broker_url,
+            session_id=node_id,
+            timeout=_timeout,
+            mqtt_options=_mqtt_options,
+            reconnect=_reconnect,
+            options=_webrtc_opts,
+        )
+        if not conn.connect(timeout=_timeout):
+            conn.disconnect()
+            raise RuntimeError(
+                f"Robot: WebRTC handshake for plugin {node_id!r} timed out after {_timeout}s."
+            )
+        transport = WebRTCTransport(conn)
+        try:
+            self.enable_plugin(name, transport)
+        except Exception:
+            transport.close()
+            raise
+
+    def enable_plugin_webrtc_zmq(
+        self,
+        name: str,
+        node_id: str,
+        *,
+        endpoint: str | None = None,
+        bind: bool | None = None,
+        webrtc_options=None,
+        reconnect: bool | None = None,
+        connect_timeout: float | None = None,
+    ) -> None:
+        """
+        Enable a remote plugin over a dedicated WebRTC connection, using ZMQ
+        as the (broker-less) signaling channel.
+
+        When called on a robot connected via :meth:`connect_webrtc_zmq`, all
+        signaling parameters default to the values used for the robot connection.
+        Override any of them to target a different endpoint or use different options.
+
+        Args:
+            name:           Plugin name as registered in the plugin registry
+                            (e.g. ``"realsense-driver"``).
+            node_id:        Plugin's ZMQ node identifier, used as the WebRTC
+                            session ID for signaling (e.g. ``"qtrobot-realsense-driver"``).
+            endpoint:       ZMQ signaling endpoint. Defaults to the robot's endpoint
+                            if connected via connect_webrtc_zmq().
+            bind:           ``True`` → bind; ``False`` → connect. Defaults to the
+                            robot's bind setting.
+            webrtc_options: WebRTC peer options. Defaults to the robot's webrtc_options.
+            reconnect:      Auto-reconnect on drop. Defaults to the robot's setting.
+            connect_timeout: End-to-end timeout. Defaults to the robot's connect_timeout.
+
+        Examples:
+            # Reuse robot's ZMQ signaling settings
+            robot.enable_plugin_webrtc_zmq("realsense-driver", node_id="qtrobot-realsense-driver")
+
+            # Or use a different endpoint for the plugin
+            robot.enable_plugin_webrtc_zmq(
+                "realsense-driver",
+                node_id="qtrobot-realsense-driver",
+                endpoint="tcp://192.168.1.10:5556",
+            )
+        """
+        try:
+            from luxai.magpie.transport.webrtc import WebRTCConnection
+        except ImportError as e:
+            raise ImportError(
+                "WebRTC transport requires aiortc. "
+                "Install via: pip install luxai-robot[webrtc]"
+            ) from e
+
+        if not isinstance(self._robot_transport, WebRTCTransport):
+            raise RuntimeError(
+                "enable_plugin_webrtc_zmq() requires the robot to be connected via "
+                "connect_webrtc_zmq() or connect_webrtc_mqtt(). "
+                "Alternatively, use enable_plugin(name, WebRTCTransport(...)) directly."
+            )
+
+        params = self._robot_transport._signaling_params
+        _endpoint    = endpoint        if endpoint        is not None else params.get("endpoint")
+        _bind        = bind            if bind            is not None else params.get("bind", False)
+        _webrtc_opts = webrtc_options  if webrtc_options  is not None else params.get("webrtc_options")
+        _reconnect   = reconnect       if reconnect       is not None else params.get("reconnect", False)
+        _timeout     = connect_timeout if connect_timeout is not None else params.get("connect_timeout", 15.0)
+
+        if not _endpoint:
+            raise RuntimeError(
+                "endpoint is required when the robot is not connected via connect_webrtc_zmq()."
+            )
+
+        conn = WebRTCConnection.with_zmq(
+            _endpoint,
+            session_id=node_id,
+            bind=_bind,
+            reconnect=_reconnect,
+            options=_webrtc_opts,
+        )
+        if not conn.connect(timeout=_timeout):
+            conn.disconnect()
+            raise RuntimeError(
+                f"Robot: WebRTC handshake for plugin {node_id!r} timed out after {_timeout}s."
+            )
+        transport = WebRTCTransport(conn)
+        try:
+            self.enable_plugin(name, transport)
+        except Exception:
+            transport.close()
+            raise
 
     def enable_plugin_local(self, name: str) -> None:
         """

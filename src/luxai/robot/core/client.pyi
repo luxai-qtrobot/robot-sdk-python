@@ -190,24 +190,27 @@ class Robot:
         Create and return a :class:`Robot` client using a WebRTC transport with
         MQTT as the signaling channel.
 
-        The MQTT broker is used only for the WebRTC handshake (SDP offer/answer
-        and ICE candidates).  Once the peer connection is established all traffic
+        The MQTT broker is used **only** for the WebRTC handshake (SDP offer/answer
+        and ICE candidates). Once the peer connection is established, all traffic
         — RPCs and streams — flows directly over the P2P WebRTC data channel or
-        media tracks.
+        native media tracks.
+
+        Mutually exclusive with :meth:`connect_zmq` and :meth:`connect_mqtt` —
+        each :class:`Robot` instance uses exactly one transport.
 
         Parameters
         ----------
         broker_url:
             MQTT broker URI used for WebRTC signaling, e.g.
-            ``"mqtt://broker.hivemq.com:1883"`` or ``"mqtts://10.0.0.1:8883"``.
+            ``"mqtt://10.231.0.2:1883"`` or ``"mqtts://broker.example.com:8883"``.
 
         robot_id:
-            Robot serial number (e.g. ``"QTRD000320"``).  Used as the WebRTC
-            session identifier so both peers rendezvous on the same channel.
+            Robot identifier (e.g. ``"QTRD000320"``). Used as the WebRTC session
+            ID so both peers rendezvous on the same signaling channel.
 
         mqtt_options:
             Optional :class:`luxai.robot.MqttOptions` for the signaling broker
-            (TLS, authentication, reconnect, etc.).
+            (TLS, authentication, reconnect policy, etc.).
 
         webrtc_options:
             Optional :class:`luxai.robot.WebRTCOptions` for the WebRTC peer
@@ -227,7 +230,7 @@ class Robot:
         -------
         Robot
             A connected and ready-to-use Robot client wrapping a
-            :class:`~luxai.robot.core.transport.WebRTCTransport`.
+            :class:`WebRTCTransport`.
 
         Raises
         ------
@@ -239,18 +242,24 @@ class Robot:
 
         Examples
         --------
-        Basic connection over a local MQTT broker:
+        Basic connection over a local broker:
 
-        >>> robot = Robot.connect_webrtc_mqtt("mqtt://192.168.1.100:1883", "QTRD000320")
+        >>> robot = Robot.connect_webrtc_mqtt("mqtt://10.231.0.2:1883", "QTRD000320")
 
-        With TLS signaling and custom STUN/TURN servers:
+        With mTLS signaling and STUN/TURN for NAT traversal:
 
-        >>> from luxai.robot import MqttOptions, MqttTlsOptions, WebRTCOptions
+        >>> from luxai.robot import MqttOptions, MqttTlsOptions, WebRTCOptions, WebRTCTurnServer
         >>> robot = Robot.connect_webrtc_mqtt(
         ...     "mqtts://10.231.0.2:8883",
         ...     "QTRD000320",
-        ...     mqtt_options=MqttOptions(tls=MqttTlsOptions(ca_file="/path/to/ca.crt")),
-        ...     webrtc_options=WebRTCOptions(stun_servers=["stun:stun.l.google.com:19302"]),
+        ...     mqtt_options=MqttOptions(
+        ...         tls=MqttTlsOptions(ca_file="/path/to/ca.crt"),
+        ...     ),
+        ...     webrtc_options=WebRTCOptions(
+        ...         stun_servers=["stun:stun.l.google.com:19302"],
+        ...         turn_servers=[WebRTCTurnServer(url="turn:turn.example.com:3478",
+        ...                                        username="user", credential="pass")],
+        ...     ),
         ... )
         """
         ...
@@ -269,11 +278,14 @@ class Robot:
     ) -> Robot:
         """
         Create and return a :class:`Robot` client using a WebRTC transport with
-        ZMQ PAIR socket as the (broker-less) signaling channel.
+        a ZMQ PAIR socket as the (broker-less) signaling channel.
 
-        Suitable for LAN / local use where no MQTT broker is available.  One
-        peer must bind (``bind=True``) and the other must connect
-        (``bind=False``, the default).
+        Suitable for LAN / local use where no MQTT broker is available. One peer
+        must bind (``bind=True``) and the other must connect (``bind=False``,
+        the default).
+
+        Mutually exclusive with :meth:`connect_zmq` and :meth:`connect_mqtt` —
+        each :class:`Robot` instance uses exactly one transport.
 
         Parameters
         ----------
@@ -282,11 +294,11 @@ class Robot:
             Use ``"tcp://*:5555"`` when binding.
 
         robot_id:
-            Robot serial number (e.g. ``"QTRD000320"``).  Used as the WebRTC
-            session identifier.
+            Robot identifier (e.g. ``"QTRD000320"``). Used as the WebRTC
+            session ID.
 
         bind:
-            ``True`` → bind the ZMQ socket (robot side);
+            ``True`` → bind the ZMQ socket (typically the robot side);
             ``False`` → connect (operator side, default).
 
         webrtc_options:
@@ -307,7 +319,7 @@ class Robot:
         -------
         Robot
             A connected and ready-to-use Robot client wrapping a
-            :class:`~luxai.robot.core.transport.WebRTCTransport`.
+            :class:`WebRTCTransport`.
 
         Raises
         ------
@@ -446,6 +458,87 @@ class Robot:
 
         Examples:
             robot.enable_plugin_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
+        """
+        ...
+
+    def enable_plugin_webrtc_mqtt(
+        self,
+        name: str,
+        node_id: str,
+        *,
+        broker_url: str | None = None,
+        mqtt_options: Any | None = None,
+        webrtc_options: Any | None = None,
+        reconnect: bool | None = None,
+        connect_timeout: float | None = None,
+    ) -> None:
+        """
+        Enable a remote plugin over a dedicated WebRTC peer connection, using
+        MQTT as the signaling channel.
+
+        Each plugin gets its own independent WebRTC peer — with its own data
+        channel and media tracks — so plugin video/audio streams do not conflict
+        with the robot peer's tracks.
+
+        Args:
+            name:           Plugin name as registered in the plugin registry
+                            (e.g. ``"realsense-driver"``).
+            node_id:        Plugin's ZMQ node identifier, used as the WebRTC
+                            session ID for signaling
+                            (e.g. ``"qtrobot-realsense-driver"``).
+            broker_url:     MQTT broker URI for WebRTC signaling
+                            (e.g. ``"mqtt://10.231.0.2:1883"``).
+            mqtt_options:   Optional :class:`luxai.robot.MqttOptions` for the
+                            signaling broker (TLS, authentication, etc.).
+            webrtc_options: Optional :class:`luxai.robot.WebRTCOptions` for
+                            the WebRTC peer (STUN/TURN, codec prefs, etc.).
+            reconnect:      Automatically re-establish if the connection drops.
+            connect_timeout: End-to-end timeout (seconds) for signaling + handshake.
+
+        Examples:
+            robot.enable_plugin_webrtc_mqtt(
+                "realsense-driver",
+                node_id="qtrobot-realsense-driver",
+                broker_url="mqtt://10.231.0.2:1883",
+            )
+        """
+        ...
+
+    def enable_plugin_webrtc_zmq(
+        self,
+        name: str,
+        node_id: str,
+        *,
+        endpoint: str | None = None,
+        bind: bool | None = None,
+        webrtc_options: Any | None = None,
+        reconnect: bool | None = None,
+        connect_timeout: float | None = None,
+    ) -> None:
+        """
+        Enable a remote plugin over a dedicated WebRTC peer connection, using
+        ZMQ as the (broker-less) signaling channel.
+
+        Args:
+            name:           Plugin name as registered in the plugin registry
+                            (e.g. ``"realsense-driver"``).
+            node_id:        Plugin's ZMQ node identifier, used as the WebRTC
+                            session ID for signaling
+                            (e.g. ``"qtrobot-realsense-driver"``).
+            endpoint:       ZMQ endpoint for WebRTC signaling
+                            (e.g. ``"tcp://192.168.1.10:5556"``).
+            bind:           ``True`` → bind the ZMQ socket; ``False`` → connect (default).
+            webrtc_options: Optional :class:`luxai.robot.WebRTCOptions` for
+                            the WebRTC peer (STUN/TURN, codec prefs, etc.).
+            reconnect:      Automatically re-establish if the connection drops.
+            connect_timeout: End-to-end timeout (seconds) for signaling + handshake.
+
+        Examples:
+            robot.enable_plugin_webrtc_zmq(
+                "realsense-driver",
+                node_id="qtrobot-realsense-driver",
+                endpoint="tcp://192.168.1.10:5556",
+            )
         """
         ...
 
