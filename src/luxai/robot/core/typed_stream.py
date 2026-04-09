@@ -35,7 +35,9 @@ class TypedStreamReader(Generic[F]):
         if payload is None:
             return None
         data, _ = payload
-        return self._frame_type.from_dict(data=data)      
+        if isinstance(data, self._frame_type):
+            return data
+        return self._frame_type.from_dict(data=data)
 
     def close(self) -> None:
         self.stream_reader.close()      

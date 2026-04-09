@@ -21,10 +21,10 @@ from luxai.robot import (
     MqttTlsOptions,
     MqttAuthOptions,
     WebRTCOptions,
-    WebRTCTurnServer,
+    WebRTCTurnServer
 )
 
-BROKER_LOCAL  = "mqtt://192.168.3.152:1883"   # MQTT broker used for signaling
+BROKER_LOCAL  = "mqtt://10.231.0.2:1883"     # MQTT broker used for signaling
 BROKER_PUBLIC = "mqtt://broker.hivemq.com:1883"
 ROBOT_ID      = "QTRD000320"                  # change to your robot serial
 
@@ -35,9 +35,10 @@ BROKER = BROKER_LOCAL   # switch to BROKER_PUBLIC to signal over the internet
 # Basic WebRTC connection using MQTT signaling — no TLS, no authentication.
 # The broker is only used for the handshake; all data flows P2P afterwards.
 def connect_webrtc_mqtt_basic():
-    robot = Robot.connect_webrtc_mqtt(BROKER, ROBOT_ID)
-    Logger.info(f"[webrtc/mqtt basic] connected to {robot.robot_id} ({robot.robot_type})")
-    robot.tts.say_text("Hello over WebRTC!")
+    Logger.set_level("DEBUG")
+    
+    robot = Robot.connect_webrtc_mqtt(BROKER, ROBOT_ID, webrtc_options=WebRTCOptions(stun_servers=[]))
+    Logger.info(f"[webrtc/mqtt basic] connected to {robot.robot_id} ({robot.robot_type})")    
     robot.close()
 
 
