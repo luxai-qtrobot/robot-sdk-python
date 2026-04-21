@@ -9,8 +9,8 @@ from luxai.magpie.transport import RpcRequester
 from luxai.magpie.transport import StreamReader
 from luxai.magpie.transport import StreamWriter
 from luxai.magpie.transport import ZMQRpcRequester
-from luxai.magpie.transport import ZMQSubscriber
-from luxai.magpie.transport import ZMQPublisher
+from luxai.magpie.transport import ZmqStreamReader
+from luxai.magpie.transport import ZmqStreamWriter
 from luxai.magpie.discovery import ZconfDiscovery, NodeInfo  # adjust path if needed
 
 from .transport import Transport, SupportsPreallocation, TransportsMeta, UnsupportedAPIError
@@ -36,7 +36,7 @@ class ZmqTransport(Transport, SupportsPreallocation):
         service/stream.
       - Resolve endpoints (including wildcard host and optional node_id via
         Zeroconf).
-      - Manage ZMQRpcRequester / ZMQSubscriber / ZMQPublisher instances.
+      - Manage ZMQRpcRequester / ZmqStreamReader / ZmqStreamWriter instances.
 
     Robot never deals with endpoints, node_id, or Zeroconf directly.
     """
@@ -146,7 +146,7 @@ class ZmqTransport(Transport, SupportsPreallocation):
         queue_size: int | None = None,
     ) -> StreamReader:
         """
-        Create a ZMQSubscriber for the given topic based on the 'zmq' entry.
+        Create a ZmqStreamReader for the given topic based on the 'zmq' entry.
 
         Queue size precedence:
           1) user-provided queue_size (if not None)
@@ -169,7 +169,7 @@ class ZmqTransport(Transport, SupportsPreallocation):
         else:
             qsize = int(zmq_info.get("queue_size", self._DEFAULT_QUEUE_SIZE))
 
-        sub = ZMQSubscriber(
+        sub = ZmqStreamReader(
             endpoint=endpoint,
             topic=topic,
             queue_size=qsize,
@@ -178,7 +178,7 @@ class ZmqTransport(Transport, SupportsPreallocation):
         )
 
         Logger.debug(
-            f"ZmqTransport: created ZMQSubscriber for topic={topic!r} at {endpoint}, "
+            f"ZmqTransport: created ZmqStreamReader for topic={topic!r} at {endpoint}, "
             f"queue_size={qsize}, delivery={delivery}, bind={bind}"
         )
         self._stream_resources.append(sub)
@@ -191,7 +191,7 @@ class ZmqTransport(Transport, SupportsPreallocation):
         queue_size: int | None = None,
     ) -> StreamWriter:
         """
-        Create a ZMQPublisher for the given stream, based on the 'zmq' entry.
+        Create a ZmqStreamWriter for the given stream, based on the 'zmq' entry.
 
         Queue size precedence:
           1) user-provided queue_size (if not None)
@@ -216,16 +216,16 @@ class ZmqTransport(Transport, SupportsPreallocation):
         else:
             qsize = int(zmq_info.get("queue_size", self._DEFAULT_QUEUE_SIZE))
 
-        pub = ZMQPublisher(
+        pub = ZmqStreamWriter(
             endpoint=endpoint,
             queue_size=qsize,
             bind=bind,
             delivery=delivery,
         )
         if not pub.wait_connect(timeout=5.0):
-            Logger.warning(f"ZmqTransport: Failed to connect ZMQPublisher for topic {topic!r} within 5 seconds.")
+            Logger.warning(f"ZmqTransport: Failed to connect ZmqStreamWriter for topic {topic!r} within 5 seconds.")
         Logger.debug(
-            f"ZmqTransport: created ZMQPublisher for {topic!r} at {endpoint}, "
+            f"ZmqTransport: created ZmqStreamWriter for {topic!r} at {endpoint}, "
             f"queue_size={qsize}, delivery={delivery}, bind={bind}"            
         )
         self._stream_resources.append(pub)

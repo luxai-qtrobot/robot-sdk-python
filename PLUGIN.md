@@ -66,7 +66,7 @@ robot.enable_plugin_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
 |---|---|---|
 | `enable_plugin_local(name)` | Same Python process | In-process (ZMQ inproc) |
 | `enable_plugin_zmq(name, ...)` | Same LAN | Direct TCP/ZMQ |
-| `enable_plugin_mqtt(name, node_id)` | Anywhere with broker access | MQTT pub/sub |
+| `enable_plugin_mqtt(name, node_id)` | Anywhere with broker access | MQTT topics |
 | `enable_plugin_webrtc_mqtt(name, node_id)` | Anywhere (internet) | P2P WebRTC, MQTT signaling |
 | `enable_plugin_webrtc_zmq(name, node_id)` | LAN, broker-less | P2P WebRTC, ZMQ signaling |
 

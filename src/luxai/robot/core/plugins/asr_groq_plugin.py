@@ -1,4 +1,4 @@
-from luxai.magpie.transport import ZMQRpcResponder, ZMQPublisher
+from luxai.magpie.transport import ZMQRpcResponder, ZmqStreamWriter
 from luxai.magpie.utils import Logger
 from luxai.robot.core.transport import Transport
 from luxai.robot.perception.asr import ASRGroqNode
@@ -27,7 +27,7 @@ class ASRGroqPlugin(RobotPlugin):
         self.groq_node = ASRGroqNode(
             robot=robot,
             responder=ZMQRpcResponder(f"inproc://{self.plugin_name}-rpc", bind=True),
-            stream_writer=ZMQPublisher(f"inproc://{self.plugin_name}-stream", bind=True, queue_size=10),
+            stream_writer=ZmqStreamWriter(f"inproc://{self.plugin_name}-stream", bind=True, queue_size=10),
             name=self.plugin_name,
         )
 

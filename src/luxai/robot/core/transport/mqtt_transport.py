@@ -130,15 +130,15 @@ class MqttTransport(Transport):
         else:
             qsize = int(mqtt_info.get("queue_size", self._DEFAULT_QUEUE_SIZE))
 
-        from luxai.magpie.transport.mqtt import MqttSubscriber
-        sub = MqttSubscriber(
+        from luxai.magpie.transport.mqtt import MqttStreamReader
+        sub = MqttStreamReader(
             connection=self._connection,
             topic=mqtt_topic,
             queue_size=qsize,
             qos=qos,
         )
         Logger.debug(
-            f"MqttTransport: created MqttSubscriber for topic={mqtt_topic!r}, "
+            f"MqttTransport: created MqttStreamReader for topic={mqtt_topic!r}, "
             f"queue_size={qsize}"
         )
         self._stream_resources.append(sub)
@@ -164,14 +164,14 @@ class MqttTransport(Transport):
         else:
             qsize = int(mqtt_info.get("queue_size", self._DEFAULT_QUEUE_SIZE))
 
-        from luxai.magpie.transport.mqtt import MqttPublisher
-        pub = MqttPublisher(
+        from luxai.magpie.transport.mqtt import MqttStreamWriter
+        pub = MqttStreamWriter(
             connection=self._connection,
             queue_size=qsize,
             qos=qos,
         )
         Logger.debug(
-            f"MqttTransport: created MqttPublisher for topic={topic!r}, "
+            f"MqttTransport: created MqttStreamWriter for topic={topic!r}, "
             f"queue_size={qsize}"
         )
         self._stream_resources.append(pub)

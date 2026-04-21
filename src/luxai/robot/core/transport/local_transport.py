@@ -9,8 +9,8 @@ from luxai.magpie.transport import RpcRequester
 from luxai.magpie.transport import StreamReader
 from luxai.magpie.transport import StreamWriter
 from luxai.magpie.transport import ZMQRpcRequester
-from luxai.magpie.transport import ZMQSubscriber
-from luxai.magpie.transport import ZMQPublisher
+from luxai.magpie.transport import ZmqStreamReader
+from luxai.magpie.transport import ZmqStreamWriter
 
 from .transport import Transport,TransportsMeta, UnsupportedAPIError
 
@@ -20,7 +20,7 @@ class LocalTransport(Transport):
     Local-based Transport implementation using inproc:// ZMQ endpoints.
 
     Responsibilities:
-    - Manage ZMQRpcRequesters and ZMQSubscriber/ZMQPublisher instances      
+    - Manage ZMQRpcRequesters and ZmqStreamReader/ZmqStreamWriter instances      
     - Provide get_requester(), get_stream_reader(), get_stream_writer() methods.
     """
 
@@ -87,7 +87,7 @@ class LocalTransport(Transport):
         queue_size: int | None = None,
     ) -> StreamReader:
         """
-        Create a ZMQSubscriber for the given topic based on the 'zmq' entry.
+        Create a ZmqStreamReader for the given topic based on the 'zmq' entry.
 
         Queue size precedence:
           1) user-provided queue_size (if not None)
@@ -110,7 +110,7 @@ class LocalTransport(Transport):
         else:
             qsize = int(zmq_info.get("queue_size", self._DEFAULT_QUEUE_SIZE))
 
-        sub = ZMQSubscriber(
+        sub = ZmqStreamReader(
             endpoint=endpoint,
             topic=topic,
             queue_size=qsize,
@@ -119,7 +119,7 @@ class LocalTransport(Transport):
         )
 
         Logger.debug(
-            f"LocalTransport: created ZMQSubscriber for topic={topic!r} at {endpoint}, "
+            f"LocalTransport: created ZmqStreamReader for topic={topic!r} at {endpoint}, "
             f"queue_size={qsize}, delivery={delivery}, bind={bind}"
         )
         self._stream_resources.append(sub)
@@ -132,7 +132,7 @@ class LocalTransport(Transport):
         queue_size: int | None = None,
     ) -> StreamWriter:
         """
-        Create a ZMQPublisher for the given stream, based on the 'zmq' entry.
+        Create a ZmqStreamWriter for the given stream, based on the 'zmq' entry.
 
         Queue size precedence:
           1) user-provided queue_size (if not None)
@@ -155,7 +155,7 @@ class LocalTransport(Transport):
         else:
             qsize = int(zmq_info.get("queue_size", self._DEFAULT_QUEUE_SIZE))
 
-        pub = ZMQPublisher(
+        pub = ZmqStreamWriter(
             endpoint=endpoint,
             queue_size=qsize,
             bind=bind,
@@ -163,7 +163,7 @@ class LocalTransport(Transport):
         )
 
         Logger.debug(
-            f"LocalTransport: created ZMQPublisher for {topic!r} at {endpoint}, "
+            f"LocalTransport: created ZmqStreamWriter for {topic!r} at {endpoint}, "
             f"queue_size={qsize}, delivery={delivery}, bind={bind}"            
         )
         self._stream_resources.append(pub)

@@ -509,8 +509,8 @@ robot.motor.stream.<stream_method>(...)
 
 | Method | Description |
 |---|---|
-| `stream.on_joints_state(callback)` | Subscribe to joint position/velocity/effort/temp/voltage |
-| `stream.on_joints_error(callback)` | Subscribe to motor fault events |
+| `stream.on_joints_state(callback)` | Listen to joint position/velocity/effort/temp/voltage |
+| `stream.on_joints_error(callback)` | Listen to motor fault events |
 | `stream.open_joints_command_writer()` | Open a writer to send direct joint position commands |
 
 **Examples:**
@@ -795,7 +795,7 @@ robot.enable_plugin_zmq("realsense-driver", endpoint="tcp://<host>:50655")
 |---|---|
 | `camera.stream.open_color_reader(...)` | Read RGB frames |
 | `camera.stream.open_depth_reader(...)` | Read depth frames |
-| `camera.stream.on_acceleration(callback)` | Subscribe to IMU acceleration events |
+| `camera.stream.on_acceleration(callback)` | Listen to IMU acceleration events |
 
 **Example:**
 
@@ -836,8 +836,8 @@ robot.enable_plugin_local("asr-azure")
 
 | Method | Description |
 |---|---|
-| `asr.stream.on_azure_event(callback)` | Subscribe to recognition lifecycle events |
-| `asr.stream.on_azure_speech(callback)` | Subscribe to recognized speech results |
+| `asr.stream.on_azure_event(callback)` | Listen to recognition lifecycle events |
+| `asr.stream.on_azure_speech(callback)` | Listen to recognized speech results |
 
 **Example:**
 
@@ -892,8 +892,8 @@ robot.enable_plugin_local("asr-riva")
 
 | Method | Description |
 |---|---|
-| `asr.stream.on_riva_event(callback)` | Subscribe to recognition lifecycle events |
-| `asr.stream.on_riva_speech(callback)` | Subscribe to recognized speech results |
+| `asr.stream.on_riva_event(callback)` | Listen to recognition lifecycle events |
+| `asr.stream.on_riva_speech(callback)` | Listen to recognized speech results |
 
 **Example:**
 
@@ -950,8 +950,8 @@ robot.enable_plugin_local("asr-groq")
 
 | Method | Description |
 |---|---|
-| `asr.stream.on_groq_event(callback)` | Subscribe to recognition lifecycle events |
-| `asr.stream.on_groq_speech(callback)` | Subscribe to transcribed speech results |
+| `asr.stream.on_groq_event(callback)` | Listen to recognition lifecycle events |
+| `asr.stream.on_groq_speech(callback)` | Listen to transcribed speech results |
 
 **Example:**
 

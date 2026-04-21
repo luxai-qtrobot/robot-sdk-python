@@ -75,7 +75,7 @@ This document covers the internal design of the `luxai-robot` SDK — for contri
 │  get_stream_reader(topic, transports_meta)     → StreamReader    │
 │  get_stream_writer(topic, transports_meta)     → StreamWriter    │
 └──────────────┬───────────────────────────────────────────────────┘
-               │  ZMQ request/reply  or  inproc pub/sub
+               │  ZMQ request/reply  or  inproc streaming
                ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │  Robot firmware  (on the robot)                                  │
@@ -399,8 +399,8 @@ All API definitions live in [idl/api_core.py](src/luxai/robot/core/idl/api_core.
     # The ":o" / ":i" suffix is a convention — the firmware uses this exact string.
 
     "direction": "out" | "in",
-    # "out" → robot publishes, SDK subscribes → generates reader + callback
-    # "in"  → SDK publishes, robot subscribes → generates writer
+    # "out" → robot writes, SDK reads → generates reader + callback
+    # "in"  → SDK writes, robot reads → generates writer
 
     # ── Frame type ──────────────────────────────────────────────────────
     "frame_type": str,
@@ -593,7 +593,7 @@ A **local plugin** runs a magpie node inside the same Python process, communicat
 
 **`start(robot, transport)`:**
 1. Creates a magpie `ZMQRpcResponder` bound to `inproc://<plugin>-rpc`.
-2. Creates a magpie `ZMQPublisher` bound to `inproc://<plugin>-stream`.
+2. Creates a magpie `ZmqStreamWriter` bound to `inproc://<plugin>-stream`.
 3. Starts the plugin's processing node (e.g. `ASRAzureNode`) using those sockets.
 4. Calls `robot._setup_rpc_routes(transport, rpc)` — adds the plugin's service names to `robot._rpc_routes`.
 5. Calls `robot._setup_stream_routes(transport, stream)` — adds the plugin's topics to `robot._stream_routes`.
@@ -633,7 +633,7 @@ The name string `"realsense-driver"` is used both as the PLUGIN_REGISTRY key and
 
 Each `enable_plugin_*()` method creates a transport for the plugin and passes it to `plugin.start(robot, transport)`. The plugin stores the transport and closes it in `stop()`.
 
-**Connection sharing (MQTT):** `enable_plugin_mqtt()` creates a new `MqttTransport` that shares the robot's `MqttConnection` but with `owns_connection=False`. This means `transport.close()` releases the plugin's requesters and subscribers but does **not** disconnect the broker — only the main robot transport (with `owns_connection=True`) does that.
+**Connection sharing (MQTT):** `enable_plugin_mqtt()` creates a new `MqttTransport` that shares the robot's `MqttConnection` but with `owns_connection=False`. This means `transport.close()` releases the plugin's requesters and readers but does **not** disconnect the broker — only the main robot transport (with `owns_connection=True`) does that.
 
 **Independent connections (WebRTC):** `enable_plugin_webrtc_mqtt/zmq()` creates a fully independent `WebRTCConnection` and `WebRTCTransport` for the plugin. Each plugin peer has its own data channel and media tracks — no conflict with the robot peer or other plugin peers. The plugin transport always owns its connection.
 

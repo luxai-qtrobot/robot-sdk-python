@@ -110,9 +110,9 @@ class WebRTCTransport(Transport):
             webrtc_info.get("queue_size", self._DEFAULT_QUEUE_SIZE)
         )
 
-        from luxai.magpie.transport.webrtc import WebRTCSubscriber
-        sub = WebRTCSubscriber(connection=self._connection, topic=webrtc_topic, queue_size=qsize)
-        Logger.debug(f"WebRTCTransport: created WebRTCSubscriber for topic={webrtc_topic!r}, queue_size={qsize}")
+        from luxai.magpie.transport.webrtc import WebRtcStreamReader
+        sub = WebRtcStreamReader(connection=self._connection, topic=webrtc_topic, queue_size=qsize)
+        Logger.debug(f"WebRTCTransport: created WebRtcStreamReader for topic={webrtc_topic!r}, queue_size={qsize}")
         self._stream_resources.append(sub)
         return sub
 
@@ -133,9 +133,9 @@ class WebRTCTransport(Transport):
             webrtc_info.get("queue_size", self._DEFAULT_QUEUE_SIZE)
         )
 
-        from luxai.magpie.transport.webrtc import WebRTCPublisher
-        pub = WebRTCPublisher(connection=self._connection, queue_size=qsize)
-        Logger.debug(f"WebRTCTransport: created WebRTCPublisher for topic={topic!r}, queue_size={qsize}")
+        from luxai.magpie.transport.webrtc import WebRtcStreamWriter
+        pub = WebRtcStreamWriter(connection=self._connection, queue_size=qsize)
+        Logger.debug(f"WebRTCTransport: created WebRtcStreamWriter for topic={topic!r}, queue_size={qsize}")
         self._stream_resources.append(pub)
         return pub
 
