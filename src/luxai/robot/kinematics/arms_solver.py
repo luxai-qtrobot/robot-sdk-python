@@ -1,6 +1,5 @@
+import math
 from typing import List, Sequence
-
-import numpy as np
 
 
 class ArmsSolver:
@@ -28,18 +27,23 @@ class ArmsSolver:
         x, y, z = xyz
         z    -= self._D1
         y    -= self._D2
-        d_xz  = np.hypot(x, z)
+        d_xz  = math.hypot(x, z)
 
         if side == "left":
-            t1 = -np.arctan2(z, x)
-            t2 = -np.arctan2(d_xz,  y)
+            t1 = -math.atan2(z, x)
+            t2 = -math.atan2(d_xz,  y)
         else:
-            t1 =  np.arctan2(z, x)
-            t2 = -np.arctan2(d_xz, -y)
+            t1 =  math.atan2(z, x)
+            t2 = -math.atan2(d_xz, -y)
 
-        t3 = np.radians(self._ELBOW_ROLL_DEG)
+        t3 = math.radians(self._ELBOW_ROLL_DEG)
 
-        t1 = np.clip(t1, np.radians(self._SHOULDER_PITCH_LIMIT[0]), np.radians(self._SHOULDER_PITCH_LIMIT[1]))
-        t2 = np.clip(t2, np.radians(self._SHOULDER_ROLL_LIMIT[0]),  np.radians(self._SHOULDER_ROLL_LIMIT[1]))
+        lo1 = math.radians(self._SHOULDER_PITCH_LIMIT[0])
+        hi1 = math.radians(self._SHOULDER_PITCH_LIMIT[1])
+        lo2 = math.radians(self._SHOULDER_ROLL_LIMIT[0])
+        hi2 = math.radians(self._SHOULDER_ROLL_LIMIT[1])
 
-        return [float(np.degrees(t1)), float(np.degrees(t2)), float(np.degrees(t3))]
+        t1 = max(lo1, min(hi1, t1))
+        t2 = max(lo2, min(hi2, t2))
+
+        return [math.degrees(t1), math.degrees(t2), math.degrees(t3)]

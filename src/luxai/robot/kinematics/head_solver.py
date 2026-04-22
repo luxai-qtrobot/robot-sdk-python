@@ -1,4 +1,4 @@
-import numpy as np
+import math
 
 
 class HeadSolver:
@@ -40,28 +40,28 @@ class HeadSolver:
     def calculate_head_angles(self, xyz):
         """IK: 3-D point in robot base frame → [head_yaw_deg, head_pitch_deg]."""
         x, y, z = xyz
-        yaw   = np.arctan2(y, x)
-        d_xy  = np.sqrt(x**2 + y**2)
-        pitch = np.arctan2(self.camera_height - z, d_xy)
-        yaw   = np.clip(yaw,   np.radians(self._YAW_LIMIT[0]),   np.radians(self._YAW_LIMIT[1]))
-        pitch = np.clip(pitch, np.radians(self._PITCH_LIMIT[0]), np.radians(self._PITCH_LIMIT[1]))
-        return [float(np.degrees(yaw)), float(np.degrees(pitch))]
+        yaw   = math.atan2(y, x)
+        d_xy  = math.sqrt(x**2 + y**2)
+        pitch = math.atan2(self.camera_height - z, d_xy)
+        yaw   = max(math.radians(self._YAW_LIMIT[0]),   min(math.radians(self._YAW_LIMIT[1]),   yaw))
+        pitch = max(math.radians(self._PITCH_LIMIT[0]), min(math.radians(self._PITCH_LIMIT[1]), pitch))
+        return [math.degrees(yaw), math.degrees(pitch)]
 
     def calculate_xyz(self, head_yaw_deg, head_pitch_deg, depth):
         """FK: joint angles + depth → 3-D point in robot base frame."""
-        t1 = np.radians(head_yaw_deg)
-        t2 = np.radians(head_pitch_deg)
-        x  = depth * np.cos(t1)
-        y  = depth * np.sin(t1)
-        z  = self.camera_height - depth * np.sin(t2)
-        return [float(x), float(y), float(z)]
+        t1 = math.radians(head_yaw_deg)
+        t2 = math.radians(head_pitch_deg)
+        x  = depth * math.cos(t1)
+        y  = depth * math.sin(t1)
+        z  = self.camera_height - depth * math.sin(t2)
+        return [x, y, z]
 
     def pixel_to_base(self, uv, depth, head_yaw_deg, head_pitch_deg):
         """Camera pixel + depth + current head angles → 3-D point in robot base frame."""
         xyz_cam  = self.pixel_to_camera(uv[0], uv[1], depth)
         xyz_base = self._camera_to_base(xyz_cam, head_yaw_deg, head_pitch_deg)
         # x is approximated by depth (forward distance) for head angle calculation
-        return [depth, float(xyz_base[1]), float(xyz_base[2])]
+        return [depth, xyz_base[1], xyz_base[2]]
 
     def pixel_to_camera(self, u, v, depth):
         """Pixel (u, v) + depth → 3-D point in camera frame."""
@@ -70,34 +70,50 @@ class HeadSolver:
         x_cam = (u - self.ppx) * depth / self.fx
         y_cam = (v - self.ppy) * depth / self.fy
         z_cam = depth + self.cam_offset_z
-        return [float(x_cam), float(y_cam), float(z_cam)]
+        return [x_cam, y_cam, z_cam]
 
     def _camera_to_base(self, xyz_camera, head_yaw_deg, head_pitch_deg):
-        t1    = np.radians(head_yaw_deg)
-        t2    = np.radians(head_pitch_deg)
-        T     = self._transformation_matrix(t1, t2)
-        p_hom = np.dot(T, np.append(xyz_camera, 1))
-        return p_hom[:3].tolist()
+        t1 = math.radians(head_yaw_deg)
+        t2 = math.radians(head_pitch_deg)
+        T  = self._transformation_matrix(t1, t2)
+        x, y, z = xyz_camera
+        # Apply 4x4 homogeneous transform to [x, y, z, 1]
+        return [
+            T[0][0]*x + T[0][1]*y + T[0][2]*z + T[0][3],
+            T[1][0]*x + T[1][1]*y + T[1][2]*z + T[1][3],
+            T[2][0]*x + T[2][1]*y + T[2][2]*z + T[2][3],
+        ]
 
     def _transformation_matrix(self, theta1, theta2):
-        T01 = np.array([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, 0.34],
-            [0, 0, 0, 1],
-        ])
-        c1 = np.cos(theta1); s1 = np.sin(theta1)
-        T12 = np.array([
-            [c1, 0, -s1, 0],
-            [s1, 0,  c1, 0],
-            [ 0,-1,   0, 0.1],
-            [ 0, 0,   0, 1],
-        ])
-        c2 = np.cos(theta2); s2 = np.sin(theta2)
-        T23 = np.array([
+        # T01: translation along z by 0.34
+        # T12: yaw rotation + translation along z by 0.1
+        # T23: pitch rotation + translation
+        # Returns T01 × T12 × T23 as a 4x4 list-of-lists
+
+        c1 = math.cos(theta1); s1 = math.sin(theta1)
+        c2 = math.cos(theta2); s2 = math.sin(theta2)
+
+        # T01 × T12 (T01 is pure z-translation by 0.34, so only the last
+        # column translation row changes: tz becomes 0.34 + 0.1 = 0.44)
+        T02 = [
+            [ c1,  0, -s1,    0],
+            [ s1,  0,  c1,    0],
+            [  0, -1,    0, 0.44],
+            [  0,  0,    0,    1],
+        ]
+
+        T23 = [
             [ 0, -s2,  c2,  0.16 * s2],
             [ 0,  c2,  s2, -0.16 * c2],
-            [-1,   0,   0,  0],
-            [ 0,   0,   0,  1],
-        ])
-        return np.dot(np.dot(T01, T12), T23)
+            [-1,    0,   0,          0],
+            [ 0,    0,   0,          1],
+        ]
+
+        return self._matmul4(T02, T23)
+
+    @staticmethod
+    def _matmul4(A, B):
+        return [
+            [sum(A[i][k] * B[k][j] for k in range(4)) for j in range(4)]
+            for i in range(4)
+        ]
