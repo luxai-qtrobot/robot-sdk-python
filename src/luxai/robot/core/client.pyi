@@ -571,6 +571,11 @@ class Robot:
         ...
 
     @property
+    def kinematics(self) -> KinematicsAPI:
+        """Namespace view for kinematics APIs."""
+        ...
+
+    @property
     def media(self) -> MediaAPI:
         """Namespace view for media APIs."""
         ...
@@ -1561,6 +1566,329 @@ class GestureAPI:
     @property
     def stream(self) -> GestureStreamAPI:
         """Stream namespace for gesture APIs."""
+        ...
+
+
+class KinematicsAPI:
+    """Namespace for kinematics RPC/stream APIs."""
+
+    def configure(self, fx: float = ..., fy: float = ..., ppx: float = ..., ppy: float = ..., img_cx: float = ..., img_cy: float = ..., camera_height: float = ..., motor_timeout: float = ...) -> bool:
+        """
+        Configure the kinematics plugin (optional — defaults match the QTrobot hardware).
+
+        Args:
+            fx (float): Camera focal length x (default 376.4).
+            fy (float): Camera focal length y (default 376.1).
+            ppx (float): Camera principal point x (default 314.6).
+            ppy (float): Camera principal point y (default 255.6).
+            camera_height (float): Camera height above robot base frame in metres (default 0.6).
+            motor_timeout (float): Hard-cap wait time in seconds for joint motion to complete (default 20.0).
+
+        Returns:
+            bool: True if configured successfully.
+
+        Example:
+            robot.kinematics.configure(motor_timeout=15.0)
+        """
+        ...
+
+    def look_at_point(self, x: float, y: float, z: float, only_gaze: bool = ..., velocity: float = ...) -> bool:
+        """
+        Move the robot head to look at a 3-D point in the robot base frame.
+
+        The robot base frame origin is at the bottom of the robot.
+        Sends an eye-gaze command and (unless only_gaze=True) a head joint command,
+        then blocks until the head motors stop.
+
+        Args:
+            x (float): Forward distance from robot base (metres).
+            y (float): Lateral distance (positive = left, negative = right).
+            z (float): Height above base (metres).
+            only_gaze (bool): If True, move eyes only — do not move the head (default False).
+            velocity (float): Joint velocity override in motor units; 0 = use robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Examples:
+            # Blocking
+            robot.kinematics.look_at_point(0.8, 0.0, 1.2)
+
+            # Non-blocking
+            h = robot.kinematics.look_at_point_async(0.8, 0.0, 1.2)
+            h.wait()
+
+            # Eyes only
+            robot.kinematics.look_at_point(0.8, 0.3, 1.0, only_gaze=True)
+        """
+        ...
+
+    def look_at_point_async(self, x: float, y: float, z: float, only_gaze: bool = ..., velocity: float = ...) -> ActionHandle:
+        """
+        Move the robot head to look at a 3-D point in the robot base frame.
+
+        The robot base frame origin is at the bottom of the robot.
+        Sends an eye-gaze command and (unless only_gaze=True) a head joint command,
+        then blocks until the head motors stop.
+
+        Args:
+            x (float): Forward distance from robot base (metres).
+            y (float): Lateral distance (positive = left, negative = right).
+            z (float): Height above base (metres).
+            only_gaze (bool): If True, move eyes only — do not move the head (default False).
+            velocity (float): Joint velocity override in motor units; 0 = use robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Examples:
+            # Blocking
+            robot.kinematics.look_at_point(0.8, 0.0, 1.2)
+
+            # Non-blocking
+            h = robot.kinematics.look_at_point_async(0.8, 0.0, 1.2)
+            h.wait()
+
+            # Eyes only
+            robot.kinematics.look_at_point(0.8, 0.3, 1.0, only_gaze=True)
+        """
+        ...
+
+    def look_at_pixel(self, u: int, v: int, depth: float = ..., only_gaze: bool = ..., velocity: float = ...) -> bool:
+        """
+        Move the robot head to look at a camera pixel.
+
+        Converts the pixel (u, v) and depth into a 3-D point using the current
+        head joint angles and the camera intrinsics, then calls look_at_point.
+
+        Args:
+            u (int): Pixel column (horizontal).
+            v (int): Pixel row (vertical).
+            depth (float): Distance to the pixel in metres (default 1.0).
+            only_gaze (bool): If True, move eyes only (default False).
+            velocity (float): Joint velocity override; 0 = robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Example:
+            robot.kinematics.look_at_pixel(320, 240, depth=1.5)
+        """
+        ...
+
+    def look_at_pixel_async(self, u: int, v: int, depth: float = ..., only_gaze: bool = ..., velocity: float = ...) -> ActionHandle:
+        """
+        Move the robot head to look at a camera pixel.
+
+        Converts the pixel (u, v) and depth into a 3-D point using the current
+        head joint angles and the camera intrinsics, then calls look_at_point.
+
+        Args:
+            u (int): Pixel column (horizontal).
+            v (int): Pixel row (vertical).
+            depth (float): Distance to the pixel in metres (default 1.0).
+            only_gaze (bool): If True, move eyes only (default False).
+            velocity (float): Joint velocity override; 0 = robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Example:
+            robot.kinematics.look_at_pixel(320, 240, depth=1.5)
+        """
+        ...
+
+    def reach_right(self, x: float, y: float, z: float, velocity: float = ...) -> bool:
+        """
+        Move the right arm to reach a 3-D point in the robot base frame.
+
+        Solves inverse kinematics for the right arm and blocks until the arm motors stop.
+        If the point is outside the reachable workspace the arm moves to the closest
+        reachable configuration (joint limits are clamped automatically).
+
+        Args:
+            x (float): Forward distance from robot base (metres).
+            y (float): Lateral distance (negative = right side).
+            z (float): Height above base (metres).
+            velocity (float): Joint velocity override; 0 = robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Example:
+            robot.kinematics.reach_right(0.3, -0.2, 0.5)
+        """
+        ...
+
+    def reach_right_async(self, x: float, y: float, z: float, velocity: float = ...) -> ActionHandle:
+        """
+        Move the right arm to reach a 3-D point in the robot base frame.
+
+        Solves inverse kinematics for the right arm and blocks until the arm motors stop.
+        If the point is outside the reachable workspace the arm moves to the closest
+        reachable configuration (joint limits are clamped automatically).
+
+        Args:
+            x (float): Forward distance from robot base (metres).
+            y (float): Lateral distance (negative = right side).
+            z (float): Height above base (metres).
+            velocity (float): Joint velocity override; 0 = robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Example:
+            robot.kinematics.reach_right(0.3, -0.2, 0.5)
+        """
+        ...
+
+    def reach_left(self, x: float, y: float, z: float, velocity: float = ...) -> bool:
+        """
+        Move the left arm to reach a 3-D point in the robot base frame.
+
+        Solves inverse kinematics for the left arm and blocks until the arm motors stop.
+        If the point is outside the reachable workspace the arm moves to the closest
+        reachable configuration (joint limits are clamped automatically).
+
+        Args:
+            x (float): Forward distance from robot base (metres).
+            y (float): Lateral distance (positive = left side).
+            z (float): Height above base (metres).
+            velocity (float): Joint velocity override; 0 = robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Example:
+            robot.kinematics.reach_left(0.3, 0.2, 0.5)
+        """
+        ...
+
+    def reach_left_async(self, x: float, y: float, z: float, velocity: float = ...) -> ActionHandle:
+        """
+        Move the left arm to reach a 3-D point in the robot base frame.
+
+        Solves inverse kinematics for the left arm and blocks until the arm motors stop.
+        If the point is outside the reachable workspace the arm moves to the closest
+        reachable configuration (joint limits are clamped automatically).
+
+        Args:
+            x (float): Forward distance from robot base (metres).
+            y (float): Lateral distance (positive = left side).
+            z (float): Height above base (metres).
+            velocity (float): Joint velocity override; 0 = robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Example:
+            robot.kinematics.reach_left(0.3, 0.2, 0.5)
+        """
+        ...
+
+    def aim_at_point(self, x: float, y: float, z: float, velocity: float = ...) -> bool:
+        """
+        Point at a 3-D location in the robot base frame, auto-selecting the arm.
+
+        The arm is chosen automatically: left arm if y >= 0, right arm if y < 0.
+        Blocks until the arm motors stop.
+
+        Args:
+            x (float): Forward distance from robot base (metres).
+            y (float): Lateral distance (positive = left, negative = right).
+            z (float): Height above base (metres).
+            velocity (float): Joint velocity override; 0 = robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Example:
+            robot.kinematics.aim_at_point(0.5, 0.0, 1.0)
+        """
+        ...
+
+    def aim_at_point_async(self, x: float, y: float, z: float, velocity: float = ...) -> ActionHandle:
+        """
+        Point at a 3-D location in the robot base frame, auto-selecting the arm.
+
+        The arm is chosen automatically: left arm if y >= 0, right arm if y < 0.
+        Blocks until the arm motors stop.
+
+        Args:
+            x (float): Forward distance from robot base (metres).
+            y (float): Lateral distance (positive = left, negative = right).
+            z (float): Height above base (metres).
+            velocity (float): Joint velocity override; 0 = robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Example:
+            robot.kinematics.aim_at_point(0.5, 0.0, 1.0)
+        """
+        ...
+
+    def aim_at_pixel(self, u: int, v: int, depth: float = ..., velocity: float = ...) -> bool:
+        """
+        Point at a camera pixel, auto-selecting the arm.
+
+        Converts the pixel (u, v) and depth into a 3-D point using the current
+        head joint angles and camera intrinsics, then calls aim_at_point.
+
+        Args:
+            u (int): Pixel column (horizontal).
+            v (int): Pixel row (vertical).
+            depth (float): Distance to the pixel in metres (default 1.0).
+            velocity (float): Joint velocity override; 0 = robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Example:
+            robot.kinematics.aim_at_pixel(320, 240, depth=1.0)
+        """
+        ...
+
+    def aim_at_pixel_async(self, u: int, v: int, depth: float = ..., velocity: float = ...) -> ActionHandle:
+        """
+        Point at a camera pixel, auto-selecting the arm.
+
+        Converts the pixel (u, v) and depth into a 3-D point using the current
+        head joint angles and camera intrinsics, then calls aim_at_point.
+
+        Args:
+            u (int): Pixel column (horizontal).
+            v (int): Pixel row (vertical).
+            depth (float): Distance to the pixel in metres (default 1.0).
+            velocity (float): Joint velocity override; 0 = robot default (default 0).
+
+        Returns:
+            bool: True on completion.
+
+        Example:
+            robot.kinematics.aim_at_pixel(320, 240, depth=1.0)
+        """
+        ...
+
+    def pixel_to_point(self, u: int, v: int, depth: float = ...) -> dict:
+        """
+        Convert a camera pixel to a 3-D point in the robot base frame.
+
+        Uses the current head joint angles and the configured camera intrinsics.
+        Returns immediately — this is a pure computation with no motor movement.
+
+        Args:
+            u (int): Pixel column (horizontal).
+            v (int): Pixel row (vertical).
+            depth (float): Distance to the pixel in metres (default 1.0).
+
+        Returns:
+            dict: {'x': float, 'y': float, 'z': float} in robot base frame (metres).
+
+        Example:
+            pt = robot.kinematics.pixel_to_point(320, 240, depth=1.2)
+            print(pt['x'], pt['y'], pt['z'])
+        """
         ...
 
 

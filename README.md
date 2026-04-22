@@ -38,6 +38,7 @@ A Python SDK for communicating with [LuxAI](https://luxai.com) robots. It provid
   - [ASR — Azure Speech](#asr--azure-speech)
   - [ASR — Nvidia Riva](#asr--nvidia-riva)
   - [ASR — Groq (Whisper)](#asr--groq-whisper)
+  - [Kinematics](#kinematics)
   - [Full plugin guide →](PLUGIN.md)
 - [Examples](#examples)
 - [License](#license)
@@ -982,6 +983,66 @@ print(result)
 
 ---
 
+### Kinematics
+
+The `kinematics` plugin provides inverse kinematics (IK) for the robot head and arms, allowing you to direct the robot's gaze or reach to a 3-D point in the robot base frame (origin at the bottom of the robot, x = forward, y = left, z = up). It runs locally in the same Python process — no extra service needed.
+
+```python
+robot.enable_plugin_local("kinematics")
+```
+
+Camera intrinsics default to the QTrobot RealSense hardware values. Call `kinematics.configure()` only if you need to override them.
+
+**RPC methods:**
+
+| Method | Returns | Description |
+|---|---|---|
+| `kinematics.configure(*, fx, fy, ppx, ppy, camera_height, motor_timeout)` | `bool` | Override camera intrinsics or motor timeout (optional) |
+| `kinematics.look_at_point(x, y, z, *, only_gaze, velocity)` | `bool` | Move head (and eyes) to look at a 3-D point |
+| `kinematics.look_at_pixel(u, v, *, depth, only_gaze, velocity)` | `bool` | Move head to look at a camera pixel |
+| `kinematics.reach_right(x, y, z, *, velocity)` | `bool` | Move right arm to reach a 3-D point |
+| `kinematics.reach_left(x, y, z, *, velocity)` | `bool` | Move left arm to reach a 3-D point |
+| `kinematics.aim_at_point(x, y, z, *, velocity)` | `bool` | Point at a 3-D location (arm auto-selected by y sign) |
+| `kinematics.aim_at_pixel(u, v, *, depth, velocity)` | `bool` | Point at a camera pixel (arm auto-selected) |
+| `kinematics.pixel_to_point(u, v, *, depth)` | `dict` | Convert pixel to 3-D point — no motor movement |
+
+All action methods also have an `_async()` variant that returns an `ActionHandle` supporting `.wait()` and `.cancel()`.
+
+`velocity=0` (default) uses the robot's configured joint velocity. Pass a positive value to override it for that call.
+
+**Example:**
+
+```python
+robot.enable_plugin_local("kinematics")
+
+# Look at a point straight ahead at face height
+robot.kinematics.look_at_point(0.8, 0.0, 1.2)
+
+# Eyes only — no head movement
+robot.kinematics.look_at_point(0.8, 0.3, 1.0, only_gaze=True)
+
+# Look at a detected face centre from a camera frame
+robot.kinematics.look_at_pixel(face_u, face_v, depth=1.0)
+
+# Reach with the right arm, then home it
+robot.kinematics.reach_right(0.3, -0.2, 0.5)
+robot.motor.home("RightShoulderPitch")
+
+# Point at something — arm chosen automatically (y < 0 → right, y >= 0 → left)
+robot.kinematics.aim_at_point(0.6, -0.1, 1.0)
+
+# Non-blocking with cancel
+h = robot.kinematics.reach_left_async(0.3, 0.2, 0.6)
+time.sleep(0.3)
+h.cancel()
+
+# Utility: pixel → 3-D point (no movement)
+pt = robot.kinematics.pixel_to_point(320, 240, depth=1.5)
+print(pt["x"], pt["y"], pt["z"])
+```
+
+---
+
 ## Examples
 
 Ready-to-run examples are in the [`examples/`](examples/) directory:
@@ -1001,6 +1062,7 @@ Ready-to-run examples are in the [`examples/`](examples/) directory:
 | [`microphone_example.py`](examples/microphone_example.py) | Record to WAV, VAD events, DSP tuning |
 | [`plugin_mqtt_example.py`](examples/plugin_mqtt_example.py) | Enable/disable plugins over MQTT: shared broker, stream, different broker, context manager |
 | [`plugin_webrtc_example.py`](examples/plugin_webrtc_example.py) | Enable/disable plugins over WebRTC: inherit signaling, mTLS+TURN, ZMQ signaling, context manager |
+| [`kinematics_example.py`](examples/kinematics_example.py) | Head gaze, look at pixel, reach/aim with both arms, non-blocking motion, cancel |
 | [`camera_example.py`](examples/camera_example.py) | Camera intrinsics, color stream (RealSense plugin) |
 | [`asr_azure_example.py`](examples/asr_azure_example.py) | Continuous speech recognition (Azure plugin) |
 | [`asr_riva_example.py`](examples/asr_riva_example.py) | Continuous speech recognition (Nvidia Riva plugin) |

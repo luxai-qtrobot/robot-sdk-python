@@ -317,6 +317,307 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
                 "    print(result.get('text'))\n"
             ),
         },
+        # =========================
+        # Kinematics RPCs
+        # =========================
+        "kinematics.configure": {
+            "service_name": "/kinematics/configure",
+            "cancel_service_name": None,
+            "params": [
+                ("fx",             float, 419.76220703125),
+                ("fy",             float, 419.3450927734375),
+                ("ppx",            float, 421.1879577636719),
+                ("ppy",            float, 247.27752685546875),
+                ("img_cx",         float, 424.0),
+                ("img_cy",         float, 240.0),
+                ("camera_height",  float, 0.6),
+                ("motor_timeout",  float, 20.0),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "kinematics",
+            "since": "0.6.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Configure the kinematics plugin (optional — defaults match the QTrobot hardware).\n"
+                "\n"
+                "Args:\n"
+                "    fx (float): Camera focal length x (default 376.4).\n"
+                "    fy (float): Camera focal length y (default 376.1).\n"
+                "    ppx (float): Camera principal point x (default 314.6).\n"
+                "    ppy (float): Camera principal point y (default 255.6).\n"
+                "    camera_height (float): Camera height above robot base frame in metres (default 0.6).\n"
+                "    motor_timeout (float): Hard-cap wait time in seconds for joint motion to complete (default 20.0).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True if configured successfully.\n"
+                "\n"
+                "Example:\n"
+                "    robot.kinematics.configure(motor_timeout=15.0)\n"
+            ),
+        },
+        "kinematics.look_at_point": {
+            "service_name": "/kinematics/look_at_point",
+            "cancel_service_name": "/kinematics/look_at_point/cancel",
+            "params": [
+                ("x",          float),
+                ("y",          float),
+                ("z",          float),
+                ("only_gaze",  bool,  False),
+                ("velocity",   float, 0.0),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "kinematics",
+            "since": "0.6.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Move the robot head to look at a 3-D point in the robot base frame.\n"
+                "\n"
+                "The robot base frame origin is at the bottom of the robot.\n"
+                "Sends an eye-gaze command and (unless only_gaze=True) a head joint command,\n"
+                "then blocks until the head motors stop.\n"
+                "\n"
+                "Args:\n"
+                "    x (float): Forward distance from robot base (metres).\n"
+                "    y (float): Lateral distance (positive = left, negative = right).\n"
+                "    z (float): Height above base (metres).\n"
+                "    only_gaze (bool): If True, move eyes only — do not move the head (default False).\n"
+                "    velocity (float): Joint velocity override in motor units; 0 = use robot default (default 0).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True on completion.\n"
+                "\n"
+                "Examples:\n"
+                "    # Blocking\n"
+                "    robot.kinematics.look_at_point(0.8, 0.0, 1.2)\n"
+                "\n"
+                "    # Non-blocking\n"
+                "    h = robot.kinematics.look_at_point_async(0.8, 0.0, 1.2)\n"
+                "    h.wait()\n"
+                "\n"
+                "    # Eyes only\n"
+                "    robot.kinematics.look_at_point(0.8, 0.3, 1.0, only_gaze=True)\n"
+            ),
+        },
+        "kinematics.look_at_pixel": {
+            "service_name": "/kinematics/look_at_pixel",
+            "cancel_service_name": "/kinematics/look_at_pixel/cancel",
+            "params": [
+                ("u",          int),
+                ("v",          int),
+                ("depth",      float, 1.0),
+                ("only_gaze",  bool,  False),
+                ("velocity",   float, 0.0),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "kinematics",
+            "since": "0.6.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Move the robot head to look at a camera pixel.\n"
+                "\n"
+                "Converts the pixel (u, v) and depth into a 3-D point using the current\n"
+                "head joint angles and the camera intrinsics, then calls look_at_point.\n"
+                "\n"
+                "Args:\n"
+                "    u (int): Pixel column (horizontal).\n"
+                "    v (int): Pixel row (vertical).\n"
+                "    depth (float): Distance to the pixel in metres (default 1.0).\n"
+                "    only_gaze (bool): If True, move eyes only (default False).\n"
+                "    velocity (float): Joint velocity override; 0 = robot default (default 0).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True on completion.\n"
+                "\n"
+                "Example:\n"
+                "    robot.kinematics.look_at_pixel(320, 240, depth=1.5)\n"
+            ),
+        },
+        "kinematics.reach_right": {
+            "service_name": "/kinematics/reach_right",
+            "cancel_service_name": "/kinematics/reach_right/cancel",
+            "params": [
+                ("x",        float),
+                ("y",        float),
+                ("z",        float),
+                ("velocity", float, 0.0),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "kinematics",
+            "since": "0.6.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Move the right arm to reach a 3-D point in the robot base frame.\n"
+                "\n"
+                "Solves inverse kinematics for the right arm and blocks until the arm motors stop.\n"
+                "If the point is outside the reachable workspace the arm moves to the closest\n"
+                "reachable configuration (joint limits are clamped automatically).\n"
+                "\n"
+                "Args:\n"
+                "    x (float): Forward distance from robot base (metres).\n"
+                "    y (float): Lateral distance (negative = right side).\n"
+                "    z (float): Height above base (metres).\n"
+                "    velocity (float): Joint velocity override; 0 = robot default (default 0).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True on completion.\n"
+                "\n"
+                "Example:\n"
+                "    robot.kinematics.reach_right(0.3, -0.2, 0.5)\n"
+            ),
+        },
+        "kinematics.reach_left": {
+            "service_name": "/kinematics/reach_left",
+            "cancel_service_name": "/kinematics/reach_left/cancel",
+            "params": [
+                ("x",        float),
+                ("y",        float),
+                ("z",        float),
+                ("velocity", float, 0.0),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "kinematics",
+            "since": "0.6.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Move the left arm to reach a 3-D point in the robot base frame.\n"
+                "\n"
+                "Solves inverse kinematics for the left arm and blocks until the arm motors stop.\n"
+                "If the point is outside the reachable workspace the arm moves to the closest\n"
+                "reachable configuration (joint limits are clamped automatically).\n"
+                "\n"
+                "Args:\n"
+                "    x (float): Forward distance from robot base (metres).\n"
+                "    y (float): Lateral distance (positive = left side).\n"
+                "    z (float): Height above base (metres).\n"
+                "    velocity (float): Joint velocity override; 0 = robot default (default 0).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True on completion.\n"
+                "\n"
+                "Example:\n"
+                "    robot.kinematics.reach_left(0.3, 0.2, 0.5)\n"
+            ),
+        },
+        "kinematics.aim_at_point": {
+            "service_name": "/kinematics/aim_at_point",
+            "cancel_service_name": "/kinematics/aim_at_point/cancel",
+            "params": [
+                ("x",        float),
+                ("y",        float),
+                ("z",        float),
+                ("velocity", float, 0.0),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "kinematics",
+            "since": "0.6.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Point at a 3-D location in the robot base frame, auto-selecting the arm.\n"
+                "\n"
+                "The arm is chosen automatically: left arm if y >= 0, right arm if y < 0.\n"
+                "Blocks until the arm motors stop.\n"
+                "\n"
+                "Args:\n"
+                "    x (float): Forward distance from robot base (metres).\n"
+                "    y (float): Lateral distance (positive = left, negative = right).\n"
+                "    z (float): Height above base (metres).\n"
+                "    velocity (float): Joint velocity override; 0 = robot default (default 0).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True on completion.\n"
+                "\n"
+                "Example:\n"
+                "    robot.kinematics.aim_at_point(0.5, 0.0, 1.0)\n"
+            ),
+        },
+        "kinematics.aim_at_pixel": {
+            "service_name": "/kinematics/aim_at_pixel",
+            "cancel_service_name": "/kinematics/aim_at_pixel/cancel",
+            "params": [
+                ("u",        int),
+                ("v",        int),
+                ("depth",    float, 1.0),
+                ("velocity", float, 0.0),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "kinematics",
+            "since": "0.6.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Point at a camera pixel, auto-selecting the arm.\n"
+                "\n"
+                "Converts the pixel (u, v) and depth into a 3-D point using the current\n"
+                "head joint angles and camera intrinsics, then calls aim_at_point.\n"
+                "\n"
+                "Args:\n"
+                "    u (int): Pixel column (horizontal).\n"
+                "    v (int): Pixel row (vertical).\n"
+                "    depth (float): Distance to the pixel in metres (default 1.0).\n"
+                "    velocity (float): Joint velocity override; 0 = robot default (default 0).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True on completion.\n"
+                "\n"
+                "Example:\n"
+                "    robot.kinematics.aim_at_pixel(320, 240, depth=1.0)\n"
+            ),
+        },
+        "kinematics.pixel_to_point": {
+            "service_name": "/kinematics/pixel_to_point",
+            "cancel_service_name": None,
+            "params": [
+                ("u",     int),
+                ("v",     int),
+                ("depth", float, 1.0),
+            ],
+            "response_type": dict,
+            "local": True,
+            "provider": "kinematics",
+            "since": "0.6.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Convert a camera pixel to a 3-D point in the robot base frame.\n"
+                "\n"
+                "Uses the current head joint angles and the configured camera intrinsics.\n"
+                "Returns immediately — this is a pure computation with no motor movement.\n"
+                "\n"
+                "Args:\n"
+                "    u (int): Pixel column (horizontal).\n"
+                "    v (int): Pixel row (vertical).\n"
+                "    depth (float): Distance to the pixel in metres (default 1.0).\n"
+                "\n"
+                "Returns:\n"
+                "    dict: {'x': float, 'y': float, 'z': float} in robot base frame (metres).\n"
+                "\n"
+                "Example:\n"
+                "    pt = robot.kinematics.pixel_to_point(320, 240, depth=1.2)\n"
+                "    print(pt['x'], pt['y'], pt['z'])\n"
+            ),
+        },
+
     },  # end of rpc
 
     # STREAM SECTION

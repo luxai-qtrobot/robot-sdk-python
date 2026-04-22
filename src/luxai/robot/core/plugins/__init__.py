@@ -40,6 +40,12 @@ except ImportError:
     # Extension not installed -> plugin just won't be available.
     PLUGIN_REGISTRY["realsense-drivere"] = None
 
+try:
+    from .kinematics_plugin import KinematicsPlugin
+    PLUGIN_REGISTRY["kinematics"] = KinematicsPlugin
+except ImportError:
+    PLUGIN_REGISTRY["kinematics"] = None
+
 
 
 # In the future, you add more here:
