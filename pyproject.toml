@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "luxai-robot"
 description = "Python SDK for robot, a robot for social interaction developed by LuxAI S.A."
 readme = "README.md"
-requires-python = ">=3.7.3"
+requires-python = ">=3.9"
 license = { file = "LICENSE" }
 authors = [
     { name = "LuxAI S.A.", email = "ali.paikan@luxai.com" }
@@ -57,7 +57,8 @@ asr-groq = [
 
 dev = [
     "pytest",
-    "coverage"
+    "coverage",
+    "numpy",
 ]
 
 # full = [

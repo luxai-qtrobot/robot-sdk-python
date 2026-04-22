@@ -61,7 +61,7 @@ pip install luxai-robot
 | `luxai-robot[asr-riva]` | Nvidia Riva client SDK + PyTorch VAD | On-device Riva ASR plugin |
 | `luxai-robot[asr-groq]` | Groq SDK (Whisper API) + PyTorch VAD | Groq cloud ASR plugin |
 
-Python **≥ 3.7.3** is required.
+Python **≥ 3.9** is required.
 
 ---
 
