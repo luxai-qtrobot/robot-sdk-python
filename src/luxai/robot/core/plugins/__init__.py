@@ -34,11 +34,12 @@ except ImportError:
     PLUGIN_REGISTRY["asr-groq"] = None
 
 try:
-    from .remote_plugin import RealsenseDriverPlugin
+    from .remote_plugin import RealsenseDriverPlugin, HumanDetectorPlugin
     PLUGIN_REGISTRY["realsense-driver"] = RealsenseDriverPlugin
+    PLUGIN_REGISTRY["human-detector"] = HumanDetectorPlugin
 except ImportError:
-    # Extension not installed -> plugin just won't be available.
-    PLUGIN_REGISTRY["realsense-drivere"] = None
+    PLUGIN_REGISTRY["realsense-driver"] = None
+    PLUGIN_REGISTRY["human-detector"] = None
 
 try:
     from .kinematics_plugin import KinematicsPlugin

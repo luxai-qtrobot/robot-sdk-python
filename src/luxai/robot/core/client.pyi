@@ -422,7 +422,7 @@ class Robot:
     def enable_plugin_zmq(
         self,
         name: str,
-        robot_id: str | None = None,
+        node_id: str | None = None,
         endpoint: str | None = None,
     ) -> None:
         """
@@ -430,13 +430,12 @@ class Robot:
 
         Args:
             name:      Plugin name as registered in the plugin registry (e.g. ``"realsense-driver"``).
-            robot_id:  ZMQ node identifier of the plugin (e.g. ``"qtrobot-realsense-driver"``).
+            node_id:  ZMQ node identifier of the plugin (e.g. ``"qtrobot-realsense-driver"``).
                        Used for Zeroconf-based discovery. Omit if passing ``endpoint`` directly.
             endpoint:  Direct ZMQ endpoint of the plugin (e.g. ``"tcp://192.168.3.152:50750"``).
 
-        Examples:
-            robot.enable_plugin_zmq("realsense-driver")  # Zeroconf discovery
-            robot.enable_plugin_zmq("realsense-driver", robot_id="qtrobot-realsense-driver")
+        Examples:        
+            robot.enable_plugin_zmq("realsense-driver", node_id="qtrobot-realsense-driver")
             robot.enable_plugin_zmq("realsense-driver", endpoint="tcp://192.168.3.152:50750")
         """
         ...
@@ -588,6 +587,11 @@ class Robot:
     @property
     def motor(self) -> MotorAPI:
         """Namespace view for motor APIs."""
+        ...
+
+    @property
+    def perception(self) -> PerceptionAPI:
+        """Namespace view for perception APIs."""
         ...
 
     @property
@@ -2893,6 +2897,75 @@ class MotorAPI:
     @property
     def stream(self) -> MotorStreamAPI:
         """Stream namespace for motor APIs."""
+        ...
+
+
+class PerceptionStreamAPI:
+    """Stream APIs for perception namespace."""
+
+    def open_human_presence_reader(self, queue_size: int | None = ...) -> TypedStreamReader[DictFrame]:
+        """
+        Outbound stream of detected human presence data.
+
+        Frame type is DictFrame with field 'persons': a dict keyed by person ID,
+        each containing body, face, voice, and engagement information.
+
+        Typical usage:
+            def on_presence(frame):
+                persons = frame.value.get('persons', {})
+            sub = robot.perception.stream.on_human_presence(on_presence)
+        """
+        ...
+
+    def on_human_presence(self, callback: Callable[[DictFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Outbound stream of detected human presence data.
+
+        Frame type is DictFrame with field 'persons': a dict keyed by person ID,
+        each containing body, face, voice, and engagement information.
+
+        Typical usage:
+            def on_presence(frame):
+                persons = frame.value.get('persons', {})
+            sub = robot.perception.stream.on_human_presence(on_presence)
+        """
+        ...
+
+    def open_human_annotated_image_reader(self, queue_size: int | None = ...) -> TypedStreamReader[ImageFrameRaw]:
+        """
+        Outbound annotated image stream from the human detector.
+
+        Frame type is ImageFrameRaw (BGR, same resolution as color camera).
+        Annotations include YOLO pose skeleton, head orientation arrow, and 3D position label.
+        Only published when stream_annotated_image=true in the detector config.
+
+        Typical usage:
+            reader = robot.perception.stream.open_human_annotated_image_reader()
+            frame = reader.read(timeout=3.0)
+        """
+        ...
+
+    def on_human_annotated_image(self, callback: Callable[[ImageFrameRaw], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Outbound annotated image stream from the human detector.
+
+        Frame type is ImageFrameRaw (BGR, same resolution as color camera).
+        Annotations include YOLO pose skeleton, head orientation arrow, and 3D position label.
+        Only published when stream_annotated_image=true in the detector config.
+
+        Typical usage:
+            reader = robot.perception.stream.open_human_annotated_image_reader()
+            frame = reader.read(timeout=3.0)
+        """
+        ...
+
+
+class PerceptionAPI:
+    """Namespace for perception RPC/stream APIs."""
+
+    @property
+    def stream(self) -> PerceptionStreamAPI:
+        """Stream namespace for perception APIs."""
         ...
 
 

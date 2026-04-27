@@ -863,5 +863,49 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             ),
         },
 
+        # -----------------------------------
+        #  Human Detector streams
+        # -----------------------------------
+        "perception.human_presence": {
+            "direction": "out",
+            "frame_type": "DictFrame",
+            "topic": "/human/presence",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "provider": "human-detector",
+            "doc": (
+                "Outbound stream of detected human presence data.\n"
+                "\n"
+                "Frame type is DictFrame with field 'persons': a dict keyed by person ID,\n"
+                "each containing body, face, voice, and engagement information.\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_presence(frame):\n"
+                "        persons = frame.value.get('persons', {})\n"
+                "    sub = robot.perception.stream.on_human_presence(on_presence)\n"
+            ),
+        },
+        "perception.human_annotated_image": {
+            "direction": "out",
+            "frame_type": "ImageFrameRaw",
+            "topic": "/human/annotated_image",
+            "deprecated": False,
+            "experimental": False,
+            "robots": ["qtrobot-v3"],
+            "provider": "human-detector",
+            "doc": (
+                "Outbound annotated image stream from the human detector.\n"
+                "\n"
+                "Frame type is ImageFrameRaw (BGR, same resolution as color camera).\n"
+                "Annotations include YOLO pose skeleton, head orientation arrow, and 3D position label.\n"
+                "Only published when stream_annotated_image=true in the detector config.\n"
+                "\n"
+                "Typical usage:\n"
+                "    reader = robot.perception.stream.open_human_annotated_image_reader()\n"
+                "    frame = reader.read(timeout=3.0)\n"
+            ),
+        },
+
     }
 }

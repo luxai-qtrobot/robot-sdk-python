@@ -55,11 +55,11 @@ class KinematicsPlugin(RobotPlugin):
     # RobotPlugin: stop
     # ------------------------------------------------------------------
     def stop(self) -> None:
+        if self._kinematics_node is not None:
+            self._kinematics_node.terminate()
+            self._kinematics_node = None
+
         if self._transport is not None:
             self._transport.close()
             self._transport = None
             Logger.debug(f"{self.plugin_name} plugin stopped.")
-
-        if self._kinematics_node is not None:
-            self._kinematics_node.terminate()
-            self._kinematics_node = None

@@ -712,18 +712,18 @@ class Robot:
         self.enable_plugin(name, transport)
 
     def enable_plugin_zmq(self, name: str,
-                          robot_id: str | None = None,
+                          node_id: str | None = None,
                           endpoint: str | None = None) -> None:
         """
         Enable a remote plugin by name (string) over ZMQ transport.
 
         Examples:
-            robot.enable_plugin("realsense-driver") # lets discovery find the it
+            robot.enable_plugin("realsense-driver", node_id="qtrobot-realsense-driver") # lets discovery find the it
             robot.enable_plugin("realsense-driver", endpoint="tcp://192.168.3.152:50655")
         """
         transport = ZmqTransport(
             endpoint=endpoint,
-            node_id=robot_id,
+            node_id=node_id,
             discovery_timeout=5.0,
         )
         self.enable_plugin(name, transport)

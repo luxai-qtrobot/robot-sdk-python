@@ -422,7 +422,7 @@ class Robot:
     def enable_plugin_zmq(
         self,
         name: str,
-        robot_id: str | None = None,
+        node_id: str | None = None,
         endpoint: str | None = None,
     ) -> None:
         """
@@ -430,13 +430,12 @@ class Robot:
 
         Args:
             name:      Plugin name as registered in the plugin registry (e.g. ``"realsense-driver"``).
-            robot_id:  ZMQ node identifier of the plugin (e.g. ``"qtrobot-realsense-driver"``).
+            node_id:  ZMQ node identifier of the plugin (e.g. ``"qtrobot-realsense-driver"``).
                        Used for Zeroconf-based discovery. Omit if passing ``endpoint`` directly.
             endpoint:  Direct ZMQ endpoint of the plugin (e.g. ``"tcp://192.168.3.152:50750"``).
 
-        Examples:
-            robot.enable_plugin_zmq("realsense-driver")  # Zeroconf discovery
-            robot.enable_plugin_zmq("realsense-driver", robot_id="qtrobot-realsense-driver")
+        Examples:        
+            robot.enable_plugin_zmq("realsense-driver", node_id="qtrobot-realsense-driver")
             robot.enable_plugin_zmq("realsense-driver", endpoint="tcp://192.168.3.152:50750")
         """
         ...

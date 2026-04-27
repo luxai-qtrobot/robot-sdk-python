@@ -749,7 +749,7 @@ Plugins extend the SDK with additional hardware or services not part of the robo
 | Method | Transport | Use case |
 |---|---|---|
 | `enable_plugin_local(name)` | In-process | Plugin runs in the same Python process |
-| `enable_plugin_zmq(name, robot_id/endpoint)` | ZMQ | Plugin on the same LAN |
+| `enable_plugin_zmq(name, node_id/endpoint)` | ZMQ | Plugin on the same LAN |
 | `enable_plugin_mqtt(name, node_id)` | MQTT | Plugin via broker — internet-ready |
 | `enable_plugin_webrtc_mqtt(name, node_id)` | WebRTC+MQTT | Plugin via P2P — lowest latency over internet |
 | `enable_plugin_webrtc_zmq(name, node_id)` | WebRTC+ZMQ | Plugin via P2P — broker-less LAN |
