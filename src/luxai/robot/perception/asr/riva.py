@@ -1,5 +1,4 @@
-import time
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 from luxai.magpie.utils import Logger
 from luxai.magpie.frames import StringFrame, DictFrame
@@ -85,40 +84,23 @@ class ASRRivaNode(ASRBaseNode):
         """
         Return recognition result as (text, language) tuple or (None, None).
         """
-        timeout = args.get("timeout", 10.0) if args is not None else 10.0
         if not self.is_configured:
             Logger.error(f"{self.name} is not configured. Have you forgotten to call configure() first?")
             return None, None
 
         self.is_canceled = False
 
-        # Re-open stream if it was closed by a previous cancel or recognition
+        # Re-open stream if it was closed by a previous cancel
         if self.microphone_stream._closed:
             self.microphone_stream.__enter__()
         self.microphone_stream.reset()
-
-        # Wait for voice activity (with optional timeout)
-        start = time.time()
-        is_voice = False
-        while not is_voice and not self.is_canceled:
-            is_voice = self.microphone_stream.wait_for_voice(timeout=0.5)
-            if time.time() - start > timeout:
-                break
-
-        if self.is_canceled:
-            self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.CANCELED)))
-            return None, None
-
-        if not is_voice:
-            return None, None
-
-        self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.STARTED)))
 
         try:
             responses = self.asr_service.streaming_response_generator(
                 audio_chunks=self.microphone_stream,
                 streaming_config=self.riva_config,
             )
+            started_emitted = False
             for response in responses:
                 if self.is_canceled:
                     break
@@ -127,6 +109,9 @@ class ASRRivaNode(ASRBaseNode):
                 for result in response.results:
                     if not result.alternatives:
                         continue
+                    if not started_emitted:
+                        self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.STARTED)))
+                        started_emitted = True
                     self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.RECOGNIZING)))
                     transcript = result.alternatives[0].transcript
                     if result.is_final:

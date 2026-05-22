@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import queue
 import math
 from threading import Event
-import time
 import numpy as np
 
 from luxai.magpie.utils import Logger
@@ -13,245 +12,259 @@ from luxai.magpie.frames import AudioFrameRaw
 if TYPE_CHECKING:
     from luxai.robot.core import Robot
 
+
 class SileroVAD:
     """
-    SileroVAD is a wrapper for the Silero VAD model loaded via torch.hub.
-    It supports voice activity detection for 16kHz or 8kHz mono audio streams.
+    Stateful VAD using Silero's VADIterator for proper streaming detection with
+    hysteresis: speech onset is confirmed over multiple frames (avoiding noise
+    false-triggers) and offset requires a configurable silence duration.
+    """
 
-    Methods:
-        - is_voice(audio_chunk: bytes) -> bool:
-            Returns True if voice is detected in the given audio chunk.
-    """    
-    def __init__(self, confidence_threshold=0.6, rate=16000):
+    def __init__(self, threshold: float = 0.8, rate: int = 16000,
+                 min_silence_ms: int = 300, speech_pad_ms: int = 30):
         try:
             import torch
-            import torchaudio
         except ImportError:
-            Logger.error(
-                "MicrophoneStream was initialized with 'use_vad=True', but required packages are missing.\n"                
-                "Please install them using pip or follow your platform-specific instructions:\n"
-                "pip install torch\n"
-                "pip install torchaudio\n"
-            )
+            Logger.error("SileroVAD requires torch: pip install torch")
+            raise
 
         self._torch = torch
-        self.model, utils = torch.hub.load(
-            repo_or_dir='snakers4/silero-vad',
-            model='silero_vad',
-            force_reload=False,
-            trust_repo=True
-        )
 
         if rate not in (16000, 8000):
             raise ValueError("SileroVAD: sample rate must be 16000 or 8000")
 
         self._rate = rate
-        self.confidence_threshold = confidence_threshold
-        (self.get_speech_timestamps, self.save_audio,
-         self.read_audio, self.VADIterator, self.collect_chunks) = utils
 
-    def is_voice(self, audio_chunk: bytes) -> bool:        
+        model, utils = torch.hub.load(
+            repo_or_dir='snakers4/silero-vad',
+            model='silero_vad',
+            force_reload=False,
+            trust_repo=True,
+        )
+        (_, _, _, VADIterator, _) = utils
+
+        self._iterator = VADIterator(
+            model,
+            threshold=threshold,
+            sampling_rate=rate,
+            min_silence_duration_ms=min_silence_ms,
+            speech_pad_ms=speech_pad_ms,
+        )
+
+    @property
+    def triggered(self) -> bool:
+        """True when currently inside a confirmed speech segment."""
+        return self._iterator.triggered
+
+    def process(self, audio_chunk: bytes) -> bool:
+        """
+        Feed one audio chunk through the VAD iterator.
+        Returns True when a complete speech segment just ended.
+        Chunk must be exactly 512 samples @ 16 kHz or 256 samples @ 8 kHz.
+        """
         audio_int16 = np.frombuffer(audio_chunk, np.int16)
         if audio_int16.size == 0:
             return False
         audio_float32 = audio_int16.astype('float32') / 32768.0
-        audio_tensor = self._torch.from_numpy(audio_float32)
-        confidence = 0
-        with self._torch.no_grad():  # Prevents autograd from building a graph and memory leaks
-            confidence = self.model(audio_tensor, self._rate).item()
-        return confidence > self.confidence_threshold
+        tensor = self._torch.from_numpy(audio_float32)
+        was_triggered = self._iterator.triggered
+        with self._torch.no_grad():
+            result = self._iterator(tensor)
+        if self._iterator.triggered and not was_triggered:
+            Logger.debug("VAD: speech started")
+        elif not self._iterator.triggered and was_triggered:
+            Logger.debug("VAD: speech ended")
+        return result is not None
+
+    def reset(self) -> None:
+        """Reset LSTM hidden state and iterator state. Call between recognition sessions."""
+        self._iterator.reset_states()
+        if hasattr(self._iterator, 'buffer'):
+            self._iterator.buffer = []
 
 
 class MicrophoneStream:
     """
     MicrophoneStream provides an iterator over audio data from a ROS audio topic.
-    It supports optional voice activity detection (VAD) using SileroVAD.
+    Supports optional voice activity detection (VAD) using SileroVAD via VADIterator.
 
     Usage:
-        with MicrophoneStream(use_vad=True, silence_timeout=1.0) as mic:
-            for audio_chunk in mic:
-                process(audio_chunk)
+        with MicrophoneStream(robot, use_vad=True) as mic:
+            for chunk in mic:
+                process(chunk)
 
     Modes:
-        - VAD disabled (`use_vad=False`):
-            Yields raw audio chunks continuously, without any voice filtering.
+        - VAD disabled:
+            Yields raw audio chunks continuously.
 
-        - VAD enabled (`use_vad=True`, `silence_timeout=None`):
-            Blocks until voice is detected, then yields all chunks continuously.
-            The iterator never ends unless the stream is closed or manually interrupted.
+        - VAD enabled, silence_timeout=None  (Azure mode):
+            Blocks in __next__() until speech starts, then yields chunks indefinitely.
+            The caller (e.g. Azure SDK) is responsible for detecting end-of-speech.
 
-        - VAD enabled (`use_vad=True`, `silence_timeout=seconds`):
-            Blocks until voice is detected, then yields chunks one by one (including silence).
-            Ends the iteration after the specified duration of continuous silence,
-            allowing your loop to process one complete voice segment per iteration.
-            
+        - VAD enabled, silence_timeout=float  (standalone mode):
+            Blocks until speech starts, then yields chunks until the speech segment ends
+            (VADIterator detects >= silence_timeout seconds of silence). Raises
+            StopIteration at the end of each segment so one utterance is processed per loop.
+
     Parameters:
-        ros_audio_topic: str - ROS topic name for audio input (default: /qt_respeaker_app/channel0)
-        rate: int - Audio sample rate (default: 16000)
-        num_samples: int - Audio chunk size in samples
-        use_vad: bool - Enable or disable VAD-based streaming
-        silence_timeout: float or None - If set, ends a voice segment after this many seconds of silence
+        rate: int - sample rate (16000 or 8000)
+        num_samples: int - chunk size in samples (512 @ 16 kHz or 256 @ 8 kHz for VAD)
+        use_vad: bool
+        silence_timeout: None or float
+            None  - Azure mode: stream never self-terminates after speech starts
+            float - standalone mode: stop when speech ends; value is passed to
+                    VADIterator as min_silence_duration_ms so the same parameter
+                    controls both the VAD hysteresis and the iteration boundary
     """
-
-    AUDIO_PRE_VOICE_BUFFER_TIME = 0.3 # seconds
 
     def __init__(self,
                  robot: Robot,
-                 rate=16000,
-                 num_samples=512,
-                 use_vad=False,
-                 silence_timeout=1.0):
+                 rate: int = 16000,
+                 num_samples: int = 512,
+                 use_vad: bool = False,
+                 silence_timeout: float | None = 1.0):
 
         self._robot = robot
-        self._vad = SileroVAD(rate=rate) if use_vad else None
-        self._silence_timeout = silence_timeout
         self._rate = rate
         self._num_samples = num_samples
         self._closed = True
-        self._voice_event = Event()  # Event to signal voice detection        
-        self._last_voice_time = None
+        self._silence_timeout = silence_timeout
         self._streaming_voice = False
+        self._speech_ended = False
+        self._aborted = False
 
-        # Buffer: 60 seconds worth of chunks
+        vad_silence_ms = int(silence_timeout * 1000) if silence_timeout is not None else 300
+        self._vad = SileroVAD(rate=rate, min_silence_ms=vad_silence_ms) if use_vad else None
+
+        # Set when VAD detects speech onset; cleared on reset() or standalone speech-end.
+        self._speech_gate = Event()
+
         max_chunks = math.ceil(60 / (num_samples / rate))
         self.stream_buff = queue.Queue(maxsize=max_chunks)
 
         self._robot.microphone.stream.on_int_audio_ch0(self._callback_audio_stream, queue_size=10)
 
-    def get_channels(self):
-        """
-        Returns the channel number of the audio stream.
-        """
+    def get_channels(self) -> int:
         return 1
 
-    def get_rate(self):       
-        """
-        Returns the sample rate of the audio stream.
-        """
+    def get_rate(self) -> int:
         return self._rate
 
-    def get_sample_width(self):
-        """
-        Returns the sample width of the audio stream in bytes.
-        """
+    def get_sample_width(self) -> int:
         return 2
 
-    def reset(self, seconds_to_keep=0.5):
-        # self.stream_buff.queue.clear()  # Clear the queue
+    def reset(self, seconds_to_keep: float = 0.5) -> None:
         if seconds_to_keep <= 0:
-            self.stream_buff.queue.clear()  # Clear the queue
-            self._streaming_voice = False
-            self._voice_event.clear()
-            return 
-        
-        frames_to_keep = math.ceil(seconds_to_keep / (self._num_samples/self._rate))        
-        # delete all except last frames_to_keep
-        last_two_items = list(self.stream_buff.queue)[-1 * frames_to_keep:]  # Get the last item
-        self.stream_buff.queue.clear()  # Clear the queue
-        for item in last_two_items:
-            self.stream_buff.put(item)  # Reinsert the last two items
+            self.stream_buff.queue.clear()
+        else:
+            frames_to_keep = math.ceil(seconds_to_keep / (self._num_samples / self._rate))
+            last_items = list(self.stream_buff.queue)[-frames_to_keep:]
+            self.stream_buff.queue.clear()
+            for item in last_items:
+                self.stream_buff.put(item)
+
         self._streaming_voice = False
-        self._voice_event.clear()
+        self._speech_ended = False
+        self._aborted = False
+        self._speech_gate.clear()
+        if self._vad:
+            self._vad.reset()
 
+    def abort_wait(self) -> None:
+        """Interrupt the current wait-for-speech without permanently closing the stream."""
+        self._aborted = True
+        self._speech_gate.set()
 
-    def close(self):
+    def close(self) -> None:
         if self._closed:
             return
         self._closed = True
-
-        # Unblock wait_for_voice(...)
-        self._voice_event.set()
-
-        # Best-effort: make sure any iterator unblocks without hanging close()
+        self._speech_gate.set()  # wake up any blocked __next__()
         try:
-            self.stream_buff.queue.clear()          # optional but helpful
-            self.stream_buff.put_nowait((None, False))
+            self.stream_buff.queue.clear()
+            self.stream_buff.put_nowait(None)
         except queue.Full:
             pass
 
-    def wait_for_voice(self, timeout=None):
-        if not self._vad:
-            return True
-        # This will block until voice_event is set
-        if not self._voice_event.wait(timeout=timeout):
-            return False
-        return not self._closed
-
-
-    def __enter__(self):   
-        self._voice_event.clear()     
-        self._closed = False   
+    def __enter__(self):
+        self._speech_gate.clear()
+        self._speech_ended = False
+        self._streaming_voice = False
+        self._aborted = False
+        self._closed = False
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):        
+    def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
-        
     def __iter__(self):
         return self
 
-
-    def __get_chunk(self, timeout=1):
+    def __get_chunk(self, timeout: float = 1.0) -> bytes:
         try:
-            chunk, is_voice = self.stream_buff.get(timeout=timeout)
+            chunk = self.stream_buff.get(timeout=timeout)
             if chunk is None or self._closed:
                 raise StopIteration
-            return chunk, is_voice
+            return chunk
         except queue.Empty:
             raise StopIteration
 
-
-    def __next__(self):        
-        if self._closed: # or rospy.is_shutdown():
+    def __next__(self) -> bytes:
+        if self._closed:
             raise StopIteration
 
         if not self._vad:
-            chunk, _ = self.__get_chunk(timeout=2)
-            return chunk
+            return self.__get_chunk(timeout=2)
 
-        # First chunk after silence: wait for voice
+        # VAD gate: block until speech is confirmed, or we are aborted/closed.
         if not self._streaming_voice:
-            while not self._closed: #rospy.is_shutdown():
-                chunk, is_voice = self.__get_chunk(timeout=1)
-                if is_voice:
-                    self._last_voice_time = time.time()
-                    self._streaming_voice = True
-                    return chunk
-            raise StopIteration
+            while not self._closed and not self._aborted:
+                if self._speech_gate.wait(timeout=0.2):
+                    if not self._closed and not self._aborted:
+                        self._streaming_voice = True
+                    break
+            if not self._streaming_voice:
+                raise StopIteration
 
-        # Streaming phase: return chunks until prolonged silence        
-        chunk, is_voice = self.__get_chunk(timeout=1)
-        if is_voice:
-            self._last_voice_time = time.time()
-        elif self._silence_timeout is not None and time.time() - self._last_voice_time > self._silence_timeout:
+        # Standalone mode: stop at the boundary of each speech segment.
+        if self._speech_ended and self._silence_timeout is not None:
             self._streaming_voice = False
+            self._speech_ended = False
+            self._speech_gate.clear()
             raise StopIteration
 
-        return chunk
-  
+        return self.__get_chunk(timeout=1)
 
-    def _callback_audio_stream(self, frame:AudioFrameRaw):
-        if not self._closed:
+    def _callback_audio_stream(self, frame: AudioFrameRaw) -> None:
+        if self._closed:
+            return
+
+        if self._rate != frame.sample_rate:
+            self._rate = frame.sample_rate
+            self._num_samples = frame.num_frames
+            max_chunks = math.ceil(60 / (self._num_samples / self._rate))
+            self.stream_buff = queue.Queue(maxsize=max_chunks)
+            if self._vad and frame.sample_rate not in (8000, 16000):
+                self._vad = None
+                Logger.error(
+                    f"SileroVAD: sample rate must be 16000 or 8000; "
+                    f"disabling VAD (current: {frame.sample_rate})"
+                )
+
+        chunk = frame.data
+
+        if self._vad is not None:
             try:
-                # re-iitlaize buffer size if needed 
-                if self._rate != frame.sample_rate: 
-                    self._rate = frame.sample_rate
-                    self._num_samples = frame.num_frames
-                    # Buffer: 60 seconds worth of chunks
-                    max_chunks = math.ceil(60 / (self._num_samples / self._rate))
-                    self.stream_buff = queue.Queue(maxsize=max_chunks)
-                    if self._vad and frame.sample_rate not in [8000, 16000]:
-                        self._vad = None
-                        Logger.error(f"SileroVAD: sample rate must be 16000 or 8000; Disabling VAD! (current sample rate: {frame.sample_rate})")
-                                        
-                chunk = frame.data               
-                is_voice = False
-                try:
-                    is_voice = self._vad.is_voice(chunk) if self._vad is not None else False                    
-                    if is_voice:
-                        self._voice_event.set()
-                except Exception as e:
-                    pass
-                self.stream_buff.put_nowait((chunk, is_voice))
-            except queue.Full:
-                pass  # drop if buffer is full
+                speech_ended = self._vad.process(chunk)
+                if self._vad.triggered:
+                    self._speech_gate.set()
+                elif speech_ended and self._silence_timeout is not None:
+                    # Speech segment ended in standalone mode — signal __next__() to stop.
+                    self._speech_ended = True
+            except Exception as e:
+                Logger.warning(f"SileroVAD error: {e}")
+
+        try:
+            self.stream_buff.put_nowait(chunk)
+        except queue.Full:
+            pass

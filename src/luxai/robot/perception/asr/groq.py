@@ -1,5 +1,4 @@
 import io
-import time
 import wave
 from typing import Optional, Tuple
 
@@ -78,40 +77,25 @@ class ASRGroqNode(ASRBaseNode):
         Collect one utterance (VAD-gated) and transcribe it via Groq Whisper.
         Returns (text, language) or (None, None).
         """
-        timeout = args.get("timeout", 10.0) if args is not None else 10.0
         if not self.is_configured:
             Logger.error(f"{self.name} is not configured. Have you forgotten to call configure() first?")
             return None, None
 
         self.is_canceled = False
 
-        # Re-open stream if it was closed by a previous cancel or recognition
+        # Re-open stream if it was closed by a previous cancel
         if self.microphone_stream._closed:
             self.microphone_stream.__enter__()
         self.microphone_stream.reset(seconds_to_keep=0)
 
-        # Wait for voice activity (with optional timeout)
-        start = time.time()
-        is_voice = False
-        while not is_voice and not self.is_canceled:
-            is_voice = self.microphone_stream.wait_for_voice(timeout=0.5)
-            if time.time() - start > timeout:
-                break
-
-        if self.is_canceled:
-            self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.CANCELED)))
-            return None, None
-
-        if not is_voice:
-            return None, None
-
-        self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.STARTED)))
-
-        # Collect audio chunks until the stream ends (silence_timeout reached)
+        # __next__() blocks until VAD detects speech onset, then yields chunks
+        # until VADIterator detects silence (or cancel() closes the stream).
         buffered_chunks = []
         for chunk in self.microphone_stream:
             if self.is_canceled:
                 break
+            if not buffered_chunks:
+                self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.STARTED)))
             self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.RECOGNIZING)))
             buffered_chunks.append(chunk)
 

@@ -38,18 +38,21 @@ webrtc = [
 ]
 
 asr-azure = [
+    "numpy",
     "torch",  # for VAD
     "torchaudio", # for VAD
     "azure-cognitiveservices-speech"
 ]
 
 asr-riva = [
+    "numpy",
     "torch",  # for VAD
     "torchaudio",  # for VAD
     "nvidia-riva-client"
 ]
 
 asr-groq = [
+    "numpy",
     "torch",  # for VAD
     "torchaudio",  # for VAD
     "groq"

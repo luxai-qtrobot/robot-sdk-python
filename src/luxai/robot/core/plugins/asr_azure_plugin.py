@@ -24,7 +24,10 @@ class ASRAzurePlugin(RobotPlugin):
         except Exception as e:
             pass 
         
-        self._transport  = transport
+        self._transport = transport
+
+        if ASRAzureNode is None:
+            raise RuntimeError("azure-cognitiveservices-speech package is not installed. Please install it using: pip install azure-cognitiveservices-speech")
 
         self.azure_node = ASRAzureNode(
             robot=robot,

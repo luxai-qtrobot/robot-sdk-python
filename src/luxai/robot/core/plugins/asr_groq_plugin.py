@@ -24,6 +24,9 @@ class ASRGroqPlugin(RobotPlugin):
 
         self._transport = transport
 
+        if ASRGroqNode is None:
+            raise RuntimeError("groq package is not installed. Please install it using: pip install groq")
+
         self.groq_node = ASRGroqNode(
             robot=robot,
             responder=ZMQRpcResponder(f"inproc://{self.plugin_name}-rpc", bind=True),

@@ -1,5 +1,5 @@
 # Version
-__version__ = "0.6.3"
+__version__ = "0.6.4"
 
 try:
     from luxai.robot.core.transport.mqtt_options import (

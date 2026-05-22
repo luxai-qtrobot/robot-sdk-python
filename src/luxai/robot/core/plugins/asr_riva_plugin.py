@@ -24,6 +24,9 @@ class ASRRivaPlugin(RobotPlugin):
 
         self._transport = transport
 
+        if ASRRivaNode is None:
+            raise RuntimeError("nvidia-riva-client package is not installed. Please install it using: pip install nvidia-riva-client")
+
         self.riva_node = ASRRivaNode(
             robot=robot,
             responder=ZMQRpcResponder(f"inproc://{self.plugin_name}-rpc", bind=True),
