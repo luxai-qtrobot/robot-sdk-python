@@ -777,6 +777,64 @@ class AsrStreamAPI:
         """
         ...
 
+    def open_parakeet_speech_reader(self, queue_size: int | None = ...) -> TypedStreamReader[DictFrame]:
+        """
+        Outbound stream of transcribed speech segments from Parakeet ASR.
+
+        Published for both interim (is_final=False) and final (is_final=True) results
+        in both one-shot (``recognize_parakeet()``) and continuous modes.
+        Frame type is DictFrame with fields: 'text' and 'language'.
+
+        Typical usage:
+            def on_speech(frame):
+                print(frame.value.get('text'))
+            sub = robot.asr.stream.on_parakeet_speech(on_speech)
+        """
+        ...
+
+    def on_parakeet_speech(self, callback: Callable[[DictFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Outbound stream of transcribed speech segments from Parakeet ASR.
+
+        Published for both interim (is_final=False) and final (is_final=True) results
+        in both one-shot (``recognize_parakeet()``) and continuous modes.
+        Frame type is DictFrame with fields: 'text' and 'language'.
+
+        Typical usage:
+            def on_speech(frame):
+                print(frame.value.get('text'))
+            sub = robot.asr.stream.on_parakeet_speech(on_speech)
+        """
+        ...
+
+    def open_parakeet_event_reader(self, queue_size: int | None = ...) -> TypedStreamReader[StringFrame]:
+        """
+        Outbound stream of speech recognition lifecycle events from Parakeet ASR.
+
+        Frame type is StringFrame. Possible values:
+          'STARTED', 'RECOGNIZING', 'RECOGNIZED', 'STOPPED', 'CANCELED'.
+
+        Typical usage:
+            def on_event(frame):
+                print(frame.value)  # e.g. 'RECOGNIZED'
+            sub = robot.asr.stream.on_parakeet_event(on_event)
+        """
+        ...
+
+    def on_parakeet_event(self, callback: Callable[[StringFrame], None], queue_size: int | None = ...) -> StreamSubscription:
+        """
+        Outbound stream of speech recognition lifecycle events from Parakeet ASR.
+
+        Frame type is StringFrame. Possible values:
+          'STARTED', 'RECOGNIZING', 'RECOGNIZED', 'STOPPED', 'CANCELED'.
+
+        Typical usage:
+            def on_event(frame):
+                print(frame.value)  # e.g. 'RECOGNIZED'
+            sub = robot.asr.stream.on_parakeet_event(on_event)
+        """
+        ...
+
 
 class AsrAPI:
     """Namespace for asr RPC/stream APIs."""
@@ -1001,6 +1059,86 @@ class AsrAPI:
 
             # Non-blocking
             h = robot.asr.recognize_groq_async()
+            result = h.result()
+            print(result.get('text'))
+        """
+        ...
+
+    def configure_parakeet(self, endpoint: str, language: str = ..., use_vad: bool = ..., silence_timeout: float = ..., continuous_mode: bool = ...) -> bool:
+        """
+        Configure the Parakeet ASR engine backed by qtrobot-parakeet-asr-server.
+
+        Must be called once before using ``recognize_parakeet()`` or subscribing
+        to the ``asr.parakeet_speech`` / ``asr.parakeet_event`` streams.
+
+        Args:
+            endpoint (str): ZMQ base endpoint of qtrobot-parakeet-asr-server
+                            (e.g. 'tcp://192.168.3.111:50860').
+            language (str): ISO-639-1 language code reported in results (default 'en').
+                            The model auto-detects the language from audio.
+            use_vad (bool): Enable client-side voice-activity detection (default True).
+            silence_timeout (float): Seconds of client-side silence that end an
+                                     utterance (default 1.0).
+            continuous_mode (bool): Enable continuous recognition mode (default False).
+
+        Returns:
+            bool: True if configured successfully.
+
+        Example:
+            ok = robot.asr.configure_parakeet(
+                endpoint='tcp://192.168.3.111:50860',
+                language='en',
+                use_vad=True,
+                continuous_mode=True,
+            )
+        """
+        ...
+
+    def recognize_parakeet(self) -> dict:
+        """
+        Perform a single speech recognition with the Parakeet ASR engine.
+
+        Waits for voice activity, streams audio to qtrobot-parakeet-asr-server,
+        and blocks until the final transcription is returned.
+        Interim results are published on the ``asr.parakeet_speech`` stream.
+        For non-blocking use, call ``recognize_parakeet_async()`` which returns an
+        :class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.
+
+        Returns:
+            dict: Recognition result with fields 'text' and 'language'.
+
+        Examples:
+            # Blocking
+            result = robot.asr.recognize_parakeet()
+            print(result.get('text'))
+
+            # Non-blocking
+            h = robot.asr.recognize_parakeet_async()
+            result = h.result()
+            print(result.get('text'))
+        """
+        ...
+
+    def recognize_parakeet_async(self) -> ActionHandle:
+        """
+        Perform a single speech recognition with the Parakeet ASR engine.
+
+        Waits for voice activity, streams audio to qtrobot-parakeet-asr-server,
+        and blocks until the final transcription is returned.
+        Interim results are published on the ``asr.parakeet_speech`` stream.
+        For non-blocking use, call ``recognize_parakeet_async()`` which returns an
+        :class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.
+
+        Returns:
+            dict: Recognition result with fields 'text' and 'language'.
+
+        Examples:
+            # Blocking
+            result = robot.asr.recognize_parakeet()
+            print(result.get('text'))
+
+            # Non-blocking
+            h = robot.asr.recognize_parakeet_async()
             result = h.result()
             print(result.get('text'))
         """

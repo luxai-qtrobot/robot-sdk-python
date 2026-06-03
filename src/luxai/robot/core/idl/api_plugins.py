@@ -318,6 +318,89 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             ),
         },
         # =========================
+        # ASR Parakeet RPCs
+        # =========================
+        "asr.configure_parakeet": {
+            "service_name": "/asr-parakeet/configure",
+            "cancel_service_name": None,
+            "params": [
+                ("endpoint", str),
+                ("language", str, "en"),
+                ("use_vad", bool, True),
+                ("silence_timeout", float, 1.0),
+                ("continuous_mode", bool, False),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "asr-parakeet",
+            "since": "0.1.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Configure the Parakeet ASR engine backed by qtrobot-parakeet-asr-server.\n"
+                "\n"
+                "Must be called once before using ``recognize_parakeet()`` or subscribing\n"
+                "to the ``asr.parakeet_speech`` / ``asr.parakeet_event`` streams.\n"
+                "\n"
+                "Args:\n"
+                "    endpoint (str): ZMQ base endpoint of qtrobot-parakeet-asr-server\n"
+                "                    (e.g. 'tcp://192.168.3.111:50860').\n"
+                "    language (str): ISO-639-1 language code reported in results (default 'en').\n"
+                "                    The model auto-detects the language from audio.\n"
+                "    use_vad (bool): Enable client-side voice-activity detection (default True).\n"
+                "    silence_timeout (float): Seconds of client-side silence that end an\n"
+                "                             utterance (default 1.0).\n"
+                "    continuous_mode (bool): Enable continuous recognition mode (default False).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True if configured successfully.\n"
+                "\n"
+                "Example:\n"
+                "    ok = robot.asr.configure_parakeet(\n"
+                "        endpoint='tcp://192.168.3.111:50860',\n"
+                "        language='en',\n"
+                "        use_vad=True,\n"
+                "        continuous_mode=True,\n"
+                "    )\n"
+            ),
+        },
+        "asr.recognize_parakeet": {
+            "service_name": "/asr-parakeet/recognize",
+            "cancel_service_name": "/asr-parakeet/recognize/cancel",
+            "params": [],
+            "response_type": dict,
+            "local": True,
+            "provider": "asr-parakeet",
+            "since": "0.1.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Perform a single speech recognition with the Parakeet ASR engine.\n"
+                "\n"
+                "Waits for voice activity, streams audio to qtrobot-parakeet-asr-server,\n"
+                "and blocks until the final transcription is returned.\n"
+                "Interim results are published on the ``asr.parakeet_speech`` stream.\n"
+                "For non-blocking use, call ``recognize_parakeet_async()`` which returns an\n"
+                ":class:`ActionHandle` — call ``.cancel()`` on it to abort recognition.\n"
+                "\n"
+                "Returns:\n"
+                "    dict: Recognition result with fields 'text' and 'language'.\n"
+                "\n"
+                "Examples:\n"
+                "    # Blocking\n"
+                "    result = robot.asr.recognize_parakeet()\n"
+                "    print(result.get('text'))\n"
+                "\n"
+                "    # Non-blocking\n"
+                "    h = robot.asr.recognize_parakeet_async()\n"
+                "    result = h.result()\n"
+                "    print(result.get('text'))\n"
+            ),
+        },
+
+        # =========================
         # Kinematics RPCs
         # =========================
         "kinematics.configure": {
@@ -860,6 +943,47 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
                 "    def on_event(frame):\n"
                 "        print(frame.value)  # e.g. 'RECOGNIZED'\n"
                 "    sub = robot.asr.stream.on_groq_event(on_event)\n"
+            ),
+        },
+
+        # -----------------------------------
+        #  ASR Parakeet streams
+        # -----------------------------------
+        "asr.parakeet_speech": {
+            "direction": "out",
+            "frame_type": "DictFrame",
+            "topic": "/asr-parakeet/speech",
+            "local": True,
+            "provider": "asr-parakeet",
+            "doc": (
+                "Outbound stream of transcribed speech segments from Parakeet ASR.\n"
+                "\n"
+                "Published for both interim (is_final=False) and final (is_final=True) results\n"
+                "in both one-shot (``recognize_parakeet()``) and continuous modes.\n"
+                "Frame type is DictFrame with fields: 'text' and 'language'.\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_speech(frame):\n"
+                "        print(frame.value.get('text'))\n"
+                "    sub = robot.asr.stream.on_parakeet_speech(on_speech)\n"
+            ),
+        },
+        "asr.parakeet_event": {
+            "direction": "out",
+            "frame_type": "StringFrame",
+            "topic": "/asr-parakeet/event",
+            "local": True,
+            "provider": "asr-parakeet",
+            "doc": (
+                "Outbound stream of speech recognition lifecycle events from Parakeet ASR.\n"
+                "\n"
+                "Frame type is StringFrame. Possible values:\n"
+                "  'STARTED', 'RECOGNIZING', 'RECOGNIZED', 'STOPPED', 'CANCELED'.\n"
+                "\n"
+                "Typical usage:\n"
+                "    def on_event(frame):\n"
+                "        print(frame.value)  # e.g. 'RECOGNIZED'\n"
+                "    sub = robot.asr.stream.on_parakeet_event(on_event)\n"
             ),
         },
 

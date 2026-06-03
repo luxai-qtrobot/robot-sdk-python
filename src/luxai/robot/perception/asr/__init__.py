@@ -13,8 +13,14 @@ try:
 except ImportError:
     ASRGroqNode = None
 
+try:
+    from .parakeet import ASRParakeetNode
+except ImportError:
+    ASRParakeetNode = None
+
 __all__ = [
     "ASRAzureNode",
     "ASRRivaNode",
     "ASRGroqNode",
+    "ASRParakeetNode",
 ]

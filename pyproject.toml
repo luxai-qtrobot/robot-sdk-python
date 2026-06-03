@@ -58,6 +58,11 @@ asr-groq = [
     "groq"
 ]
 
+asr-parakeet = [
+    "torch",      # for client-side VAD (MicrophoneStream / Silero VAD)
+    "torchaudio", # for client-side VAD    
+]
+
 dev = [
     "pytest",
     "coverage",

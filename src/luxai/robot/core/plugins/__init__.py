@@ -34,6 +34,13 @@ except ImportError:
     PLUGIN_REGISTRY["asr-groq"] = None
 
 try:
+    # Parakeet ASR plugin — qtrobot-parakeet-asr-server over Magpie ZMQ
+    from .asr_parakeet_plugin import ASRParakeetPlugin
+    PLUGIN_REGISTRY["asr-parakeet"] = ASRParakeetPlugin
+except ImportError:
+    PLUGIN_REGISTRY["asr-parakeet"] = None
+
+try:
     from .remote_plugin import RealsenseDriverPlugin, HumanDetectorPlugin
     PLUGIN_REGISTRY["realsense-driver"] = RealsenseDriverPlugin
     PLUGIN_REGISTRY["human-detector"] = HumanDetectorPlugin
