@@ -6,11 +6,11 @@ from luxai.robot.core import Robot
 
 
 def asr_event_callback(event: StringFrame):
-    Logger.info(f"event: {event.value}")
+    Logger.info(f"event: {event.value}")    
 
 
 def asr_speech_callback(speech: DictFrame):
-    Logger.info(f"speech: {speech.value}")
+    Logger.debug(f"speech: {speech.value}")
 
 
 if __name__ == "__main__":
@@ -24,10 +24,11 @@ if __name__ == "__main__":
     robot.enable_plugin_local("asr-parakeet")
 
     ret = robot.asr.configure_parakeet(
-        endpoint="tcp://10.231.0.3:50860",  # qtrobot-parakeet-asr-server on Jetson Orin
-        language="en",                       # ISO-639-1 language code (model auto-detects)
-        use_vad=True,                        # client-side VAD to detect speech start/end
-        silence_timeout=1.0,                 # seconds of client-side silence that end an utterance
+        endpoint="tcp://10.231.0.2:50860",  # qtrobot-parakeet-asr-server on Jetson Orin
+        language="en",                      # ISO-639-1 language code (model auto-detects)
+        use_vad=True,
+        silence_timeout=0.3,            # silence duration (s) — used by client VAD and server RMS detection
+        max_buffer_seconds=20.0,        # max utterance duration before forced finalization
         continuous_mode=True,
     )
     Logger.info(f"configure_parakeet returned {ret}")

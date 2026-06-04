@@ -327,7 +327,12 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
                 ("endpoint", str),
                 ("language", str, "en"),
                 ("use_vad", bool, True),
-                ("silence_timeout", float, 1.0),
+                ("silence_timeout", float, 0.5),           # seconds of silence that end an utterance —
+                                                            # used by client VAD and forwarded to server RMS detection
+                # --- server-side ASR processing (qtrobot-parakeet-asr-server) ---
+                ("interim_chunks", int, 5),                # run interim inference every N audio chunks (0 = disable)
+                ("silence_energy_threshold", float, 0.01), # RMS amplitude threshold for silence detection [0, 1]
+                ("max_buffer_seconds", float, 20.0),       # max utterance duration before forced finalization
                 ("continuous_mode", bool, False),
             ],
             "response_type": bool,

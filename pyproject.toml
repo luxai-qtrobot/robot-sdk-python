@@ -59,8 +59,14 @@ asr-groq = [
 ]
 
 asr-parakeet = [
-    "torch",      # for client-side VAD (MicrophoneStream / Silero VAD)
-    "torchaudio", # for client-side VAD    
+    "numpy",
+    "packaging",  # required by torch.hub.load() (Silero VAD) — not pulled in by any other dep here
+    "torch",      # for client-side Silero VAD (MicrophoneStream)
+    "torchaudio", # for client-side Silero VAD
+    # No backend inference package needed — ASR runs on qtrobot-parakeet-asr-server (Jetson Orin).
+    # On non-GPU machines install CPU-only torch first to avoid pulling CUDA packages:
+    #   uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+    #   uv pip install luxai-robot[asr-parakeet]
 ]
 
 dev = [

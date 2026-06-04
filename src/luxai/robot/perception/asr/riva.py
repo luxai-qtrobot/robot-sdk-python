@@ -86,7 +86,7 @@ class ASRRivaNode(ASRBaseNode):
         """
         if not self.is_configured:
             Logger.error(f"{self.name} is not configured. Have you forgotten to call configure() first?")
-            return None, None
+            return None, None, False
 
         self.is_canceled = False
 
@@ -118,7 +118,7 @@ class ASRRivaNode(ASRBaseNode):
                         self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.RECOGNIZED)))
                         # Close stream to cleanly terminate the gRPC generator
                         self.microphone_stream.close()
-                        return transcript.strip(), self.language_code
+                        return self.language_code, transcript.strip(), True
 
         except Exception as e:
             if not self.is_canceled:
@@ -142,7 +142,7 @@ class ASRRivaNode(ASRBaseNode):
         else:
             self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.STOPPED)))
 
-        return None, None
+        return None, None, False
 
     # --------------------------------------------------
     # ASRBaseNode: Cancel recognition

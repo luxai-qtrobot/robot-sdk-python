@@ -160,7 +160,7 @@ class ASRBaseNode(ServerNode):
     # Abstract engine hooks (to be implemented by subclasses)
     # ------------------------------------------------------------------
     @abstractmethod
-    def recognize_once(self, args: object | None = None) -> Optional[Tuple[str, str]]:
+    def recognize_once(self, args: object | None = None) -> Optional[Tuple[str, str, bool]]:
         """
         Perform a single recognition pass.
 
@@ -204,9 +204,9 @@ class ASRBaseNode(ServerNode):
         while not self._cont_recog_stop_event.is_set():
             try:
                 with self._asr_engine_lock:
-                    lang, speech = self.recognize_once({'timeout': 3.0})
-                if speech is not None :
-                    frame = DictFrame(value={ "language": lang, "text": speech })
+                    lang, speech, is_final = self.recognize_once({'timeout': 3.0})
+                if speech is not None:
+                    frame = DictFrame(value={"language": lang, "text": speech, "is_final": is_final})
                     self.on_asr_speech(frame)
             except Exception as e:
                 Logger.warning(f"ASR {self.name}: continuous loop error: {e}")

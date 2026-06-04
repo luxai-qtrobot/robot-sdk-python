@@ -122,7 +122,7 @@ class MicrophoneStream:
                  rate: int = 16000,
                  num_samples: int = 512,
                  use_vad: bool = False,
-                 silence_timeout: float | None = 1.0):
+                 silence_timeout: float | None = 0.5):
 
         self._robot = robot
         self._rate = rate
@@ -142,7 +142,7 @@ class MicrophoneStream:
         max_chunks = math.ceil(60 / (num_samples / rate))
         self.stream_buff = queue.Queue(maxsize=max_chunks)
 
-        self._robot.microphone.stream.on_int_audio_ch0(self._callback_audio_stream, queue_size=10)
+        self._robot.microphone.stream.on_int_audio_ch0(self._callback_audio_stream, queue_size=10)        
 
     def get_channels(self) -> int:
         return 1

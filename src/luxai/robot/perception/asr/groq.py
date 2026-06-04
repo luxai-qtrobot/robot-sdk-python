@@ -79,7 +79,7 @@ class ASRGroqNode(ASRBaseNode):
         """
         if not self.is_configured:
             Logger.error(f"{self.name} is not configured. Have you forgotten to call configure() first?")
-            return None, None
+            return None, None, False
 
         self.is_canceled = False
 
@@ -101,11 +101,11 @@ class ASRGroqNode(ASRBaseNode):
 
         if self.is_canceled:
             self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.CANCELED)))
-            return None, None
+            return None, None, False
 
         if not buffered_chunks:
             self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.STOPPED)))
-            return None, None
+            return None, None, False
 
         # Pack collected chunks into an in-memory WAV file
         audio_bytes = io.BytesIO()
@@ -129,12 +129,12 @@ class ASRGroqNode(ASRBaseNode):
             if transcription.text and transcription.text.strip():
                 self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.RECOGNIZED)))
                 self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.STOPPED)))
-                return transcription.text.strip(), self.language_code
+                return self.language_code, transcription.text.strip(), True
         except Exception as e:
             Logger.error(f"{self.name}: Groq API error: {e}")
 
         self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.STOPPED)))
-        return None, None
+        return None, None, False
 
     # --------------------------------------------------
     # ASRBaseNode: Cancel recognition

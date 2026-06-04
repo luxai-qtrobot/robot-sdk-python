@@ -113,7 +113,7 @@ class ASRAzureNode(ASRBaseNode):
         """
         if not self.is_configured:
             Logger.error(f"{self.name} is not configured. have you forget to call the .configure() first?")
-            return None, None
+            return None, None, False
 
         self.is_canceled = False
         self.audio_input_stream.reset()
@@ -122,16 +122,17 @@ class ASRAzureNode(ASRBaseNode):
 
         if self.is_canceled:
             self.on_asr_event(StringFrame(value=str(ASRRecogntionEvent.CANCELED)))
-            return None, None
+            return None, None, False
 
         if result.reason == speechsdk.ResultReason.RecognizedSpeech:
             if self.auto_detect_language:
                 auto_detect_source_language_result = speechsdk.AutoDetectSourceLanguageResult(result)
                 detected_language = auto_detect_source_language_result.language
-            return result.text, detected_language if self.auto_detect_language else self.speech_recognition_languages[0]
+            lang = detected_language if self.auto_detect_language else self.speech_recognition_languages[0]
+            return lang, result.text, True
 
         if result.reason == speechsdk.ResultReason.NoMatch:
-            return None, None
+            return None, None, False
 
         if result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details
@@ -139,7 +140,7 @@ class ASRAzureNode(ASRBaseNode):
             if cancellation_details.reason == speechsdk.CancellationReason.Error:
                 Logger.error(f"{self.name}: {cancellation_details.error_details}")
 
-        return None, None
+        return None, None, False
 
     # --------------------------------------------------
     # ASRBaseNode: Cancel recognition
