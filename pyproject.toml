@@ -41,21 +41,24 @@ asr-azure = [
     "numpy",
     "torch",  # for VAD
     "torchaudio", # for VAD
-    "azure-cognitiveservices-speech"
+    "azure-cognitiveservices-speech",
+    "packaging"
 ]
 
 asr-riva = [
     "numpy",
     "torch",  # for VAD
     "torchaudio",  # for VAD
-    "nvidia-riva-client"
+    "nvidia-riva-client",
+    "packaging"
 ]
 
 asr-groq = [
     "numpy",
     "torch",  # for VAD
     "torchaudio",  # for VAD
-    "groq"
+    "groq",
+    "packaging"
 ]
 
 asr-parakeet = [
