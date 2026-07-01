@@ -1054,7 +1054,7 @@ The `human-detector` plugin connects to a running `qtrobot-yolo-driver` C++ serv
 robot.enable_plugin_local("human-detector")
 
 ok = robot.perception.configure_human_detector(
-    endpoint="tcp://10.231.0.1:50771",   # yolo driver /persons stream (base port + 1)
+    endpoint="tcp://10.231.0.1:50770",   # yolo driver base port
     default_depth=1.0,                   # fallback depth (m) when no depth reading
     use_vad=False,                       # True → adds voice.speaking (requires torch)
 )
@@ -1064,8 +1064,7 @@ ok = robot.perception.configure_human_detector(
 
 | Parameter | Default | Description |
 |---|---|---|
-| `endpoint` | `""` | ZMQ endpoint of the yolo driver's `/persons` stream. If empty, discovered via Zeroconf using `node_id`. |
-| `node_id` | `"qtrobot-yolo-driver"` | Zeroconf node ID — used only when `endpoint` is empty. |
+| `endpoint` | `""` | ZMQ endpoint of the yolo driver's base port |
 | `default_depth` | `1.0` | Fallback depth (metres) for xyz projection when a keypoint has no valid depth reading. |
 | `use_vad` | `False` | Enable Silero voice activity detection. Adds `voice` dict (with `speaking` bool and `score` float) to each person. |
 | `vad_threshold` | `0.5` | Silero VAD confidence threshold. |
