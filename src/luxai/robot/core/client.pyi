@@ -1064,7 +1064,7 @@ class AsrAPI:
         """
         ...
 
-    def configure_parakeet(self, endpoint: str, language: str = ..., use_vad: bool = ..., silence_timeout: float = ..., continuous_mode: bool = ...) -> bool:
+    def configure_parakeet(self, endpoint: str, language: str = ..., use_vad: bool = ..., silence_timeout: float = ..., interim_chunks: int = ..., silence_energy_threshold: float = ..., max_buffer_seconds: float = ..., continuous_mode: bool = ...) -> bool:
         """
         Configure the Parakeet ASR engine backed by qtrobot-parakeet-asr-server.
 
@@ -3100,6 +3100,39 @@ class PerceptionStreamAPI:
 
 class PerceptionAPI:
     """Namespace for perception RPC/stream APIs."""
+
+    def configure_human_detector(self, endpoint: str = ..., node_id: str = ..., default_depth: float = ..., use_vad: bool = ..., vad_threshold: float = ...) -> bool:
+        """
+        Configure the human detector plugin backed by qtrobot-yolo-driver.
+
+        Must be called once after enable_plugin_local('human-detector') before
+        subscribing to the perception.human_presence stream.
+
+        Args:
+            endpoint (str): ZMQ /persons stream endpoint of qtrobot-yolo-driver
+                            (e.g. 'tcp://10.231.0.1:50771'). If empty, the driver
+                            is discovered via Zeroconf using node_id.
+            node_id (str): Zeroconf node ID of the yolo driver (default
+                           'qtrobot-yolo-driver'). Ignored when endpoint is set.
+            default_depth (float): Fallback depth in metres used for xyz when a
+                                  keypoint has no valid depth reading (default 1.0).
+            use_vad (bool): Enable Silero voice activity detection. When True, each
+                            person entry gains a 'voice' field with 'speaking' bool
+                            (default False).
+            vad_threshold (float): Silero VAD confidence threshold (default 0.5).
+
+        Returns:
+            bool: True if configured and reader loop started successfully.
+
+        Example:
+            robot.enable_plugin_local('human-detector')
+            ok = robot.perception.configure_human_detector(
+                endpoint='tcp://10.231.0.1:50771',
+                default_depth=1.2,
+                use_vad=True,
+            )
+        """
+        ...
 
     @property
     def stream(self) -> PerceptionStreamAPI:

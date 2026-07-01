@@ -54,7 +54,7 @@ if __name__ == "__main__":
     # Connect the plugin to the running yolo driver.
     # Pass the yolo driver's RPC endpoint — the stream port is discovered automatically.
     ok = robot.perception.configure_human_detector(
-        endpoint="tcp://10.231.0.2:50770",  # yolo driver RPC port (not stream port)
+        endpoint="tcp://10.231.0.1:50770",  # yolo driver RPC port 
         default_depth=1.0,   # fallback depth (m) when a keypoint has no valid depth
         use_vad=False,       # set True to add voice.speaking field (requires torch)
     )
