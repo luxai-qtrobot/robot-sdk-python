@@ -39,6 +39,7 @@ A Python SDK for communicating with [LuxAI](https://luxai.com) robots. It provid
   - [ASR — Nvidia Riva](#asr--nvidia-riva)
   - [ASR — Groq (Whisper)](#asr--groq-whisper)
   - [Kinematics](#kinematics)
+  - [Human Detector](#human-detector)
   - [Full plugin guide →](PLUGIN.md)
 - [Examples](#examples)
 - [License](#license)
@@ -1043,6 +1044,98 @@ print(pt["x"], pt["y"], pt["z"])
 
 ---
 
+### Human Detector
+
+The `human-detector` plugin connects to a running `qtrobot-yolo-driver` C++ service, reads the raw `/persons` pose-detection stream, and enriches each frame before republishing it on `/human/presence`. It runs locally in the same Python process — no extra Python service needed.
+
+**Requires:** `qtrobot-yolo-driver` running and reachable on the network (publishes on port `50771` by default).
+
+```python
+robot.enable_plugin_local("human-detector")
+
+ok = robot.perception.configure_human_detector(
+    endpoint="tcp://10.231.0.1:50771",   # yolo driver /persons stream (base port + 1)
+    default_depth=1.0,                   # fallback depth (m) when no depth reading
+    use_vad=False,                       # True → adds voice.speaking (requires torch)
+)
+```
+
+**Configure parameters:**
+
+| Parameter | Default | Description |
+|---|---|---|
+| `endpoint` | `""` | ZMQ endpoint of the yolo driver's `/persons` stream. If empty, discovered via Zeroconf using `node_id`. |
+| `node_id` | `"qtrobot-yolo-driver"` | Zeroconf node ID — used only when `endpoint` is empty. |
+| `default_depth` | `1.0` | Fallback depth (metres) for xyz projection when a keypoint has no valid depth reading. |
+| `use_vad` | `False` | Enable Silero voice activity detection. Adds `voice` dict (with `speaking` bool and `score` float) to each person. |
+| `vad_threshold` | `0.5` | Silero VAD confidence threshold. |
+
+**Output stream — `/human/presence`:**
+
+Each `DictFrame` has a `persons` dict keyed by stable track ID:
+
+```python
+{
+  "persons": {
+    "1": {
+      "bbox":       [x1, y1, x2, y2],          # pixels
+      "confidence": float,                       # YOLO detection score
+      "keypoints": {                             # 17 COCO keypoints
+        "nose": {
+          "uv":    [u, v],                       # pixel coordinates
+          "conf":  float,                        # keypoint confidence
+          "depth": float,                        # metres; -1.0 if no valid reading
+          "xyz":   [x, y, z] | None,            # robot base frame (metres); None if depth <= 0
+        },
+        # ... same structure for all 17 COCO keypoints
+      },
+      "face":       {"yaw": float | None, "pitch": float | None},  # degrees; yaw>0 = turned right
+      "engagement": float,                       # 0.0–1.0
+      "voice":      {"speaking": bool, "score": float},  # only present when use_vad=True
+                                                 # score sums to 1.0 across all visible persons
+    }
+  }
+}
+```
+
+COCO keypoint names: `nose`, `left_eye`, `right_eye`, `left_ear`, `right_ear`,
+`left_shoulder`, `right_shoulder`, `left_elbow`, `right_elbow`, `left_wrist`,
+`right_wrist`, `left_hip`, `right_hip`, `left_knee`, `right_knee`,
+`left_ankle`, `right_ankle`. "left/right" are the person's anatomical side.
+
+**Subscribing:**
+
+```python
+def on_presence(frame):
+    for pid, p in frame.value["persons"].items():
+        face = p.get("face", {})
+        nose = p.get("keypoints", {}).get("nose", {})
+        print(f"person {pid}: yaw={face.get('yaw')}° nose_xyz={nose.get('xyz')} engagement={p['engagement']:.2f}")
+
+robot.perception.stream.on_human_presence(on_presence)
+```
+
+**Example — look at the most engaged person:**
+
+```python
+robot.enable_plugin_local("kinematics")
+robot.enable_plugin_local("human-detector")
+robot.perception.configure_human_detector(endpoint="tcp://10.231.0.1:50771")
+
+def on_presence(frame):
+    persons = frame.value.get("persons", {})
+    if not persons:
+        return
+    best = max(persons.values(), key=lambda p: p.get("engagement", 0))
+    nose_xyz = (best.get("keypoints") or {}).get("nose", {}).get("xyz")
+    if nose_xyz:
+        robot.kinematics.look_at_point(*nose_xyz, only_gaze=False)
+
+robot.perception.stream.on_human_presence(on_presence)
+```
+
+---
+
 ## Examples
 
 Ready-to-run examples are in the [`examples/`](examples/) directory:
@@ -1067,6 +1160,7 @@ Ready-to-run examples are in the [`examples/`](examples/) directory:
 | [`asr_azure_example.py`](examples/asr_azure_example.py) | Continuous speech recognition (Azure plugin) |
 | [`asr_riva_example.py`](examples/asr_riva_example.py) | Continuous speech recognition (Nvidia Riva plugin) |
 | [`asr_groq_example.py`](examples/asr_groq_example.py) | Continuous speech recognition via Groq Whisper API |
+| [`human_detection.py`](examples/human_detection.py) | Human presence detection, face orientation, 3-D position, engagement (human-detector plugin) |
 
 Each example connects to the robot, demonstrates a set of APIs, and exits cleanly on `Ctrl+C`.
 

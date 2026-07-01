@@ -66,9 +66,3 @@ class RealsenseDriverPlugin(RemotePlugin):
 
     def __init__(self):
         super().__init__(plugin_name="realsense-driver")
-
-
-class HumanDetectorPlugin(RemotePlugin):
-
-    def __init__(self):
-        super().__init__(plugin_name="human-detector")

@@ -706,6 +706,58 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
             ),
         },
 
+        # =========================
+        # Human Detector RPCs
+        # =========================
+        "perception.configure_human_detector": {
+            "service_name": "/human-detector/configure",
+            "cancel_service_name": None,
+            "params": [
+                ("endpoint", str, ""),
+                ("node_id", str, "qtrobot-yolo-driver"),
+                ("default_depth", float, 1.0),
+                ("use_vad", bool, False),
+                ("vad_threshold", float, 0.5),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "human-detector",
+            "since": "0.2.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Configure the human detector plugin backed by qtrobot-yolo-driver.\n"
+                "\n"
+                "Must be called once after enable_plugin_local('human-detector') before\n"
+                "subscribing to the perception.human_presence stream.\n"
+                "\n"
+                "Args:\n"
+                "    endpoint (str): ZMQ /persons stream endpoint of qtrobot-yolo-driver\n"
+                "                    (e.g. 'tcp://10.231.0.1:50771'). If empty, the driver\n"
+                "                    is discovered via Zeroconf using node_id.\n"
+                "    node_id (str): Zeroconf node ID of the yolo driver (default\n"
+                "                   'qtrobot-yolo-driver'). Ignored when endpoint is set.\n"
+                "    default_depth (float): Fallback depth in metres used for xyz when a\n"
+                "                          keypoint has no valid depth reading (default 1.0).\n"
+                "    use_vad (bool): Enable Silero voice activity detection. When True, each\n"
+                "                    person entry gains a 'voice' field with 'speaking' bool\n"
+                "                    (default False).\n"
+                "    vad_threshold (float): Silero VAD confidence threshold (default 0.5).\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True if configured and reader loop started successfully.\n"
+                "\n"
+                "Example:\n"
+                "    robot.enable_plugin_local('human-detector')\n"
+                "    ok = robot.perception.configure_human_detector(\n"
+                "        endpoint='tcp://10.231.0.1:50771',\n"
+                "        default_depth=1.2,\n"
+                "        use_vad=True,\n"
+                "    )\n"
+            ),
+        },
+
     },  # end of rpc
 
     # STREAM SECTION

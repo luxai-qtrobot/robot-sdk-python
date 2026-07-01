@@ -41,11 +41,15 @@ except ImportError:
     PLUGIN_REGISTRY["asr-parakeet"] = None
 
 try:
-    from .remote_plugin import RealsenseDriverPlugin, HumanDetectorPlugin
+    from .remote_plugin import RealsenseDriverPlugin
     PLUGIN_REGISTRY["realsense-driver"] = RealsenseDriverPlugin
-    PLUGIN_REGISTRY["human-detector"] = HumanDetectorPlugin
 except ImportError:
     PLUGIN_REGISTRY["realsense-driver"] = None
+
+try:
+    from .human_detector_plugin import HumanDetectorPlugin
+    PLUGIN_REGISTRY["human-detector"] = HumanDetectorPlugin
+except ImportError:
     PLUGIN_REGISTRY["human-detector"] = None
 
 try:
