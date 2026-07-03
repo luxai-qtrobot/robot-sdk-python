@@ -17,8 +17,10 @@ from luxai.magpie.utils import Logger
 
 from luxai.robot.kinematics.head_solver import HeadSolver
 
-PERSONS_TOPIC  = "/persons"
-PRESENCE_TOPIC = "/human/presence"
+PERSONS_TOPIC   = "/persons"
+ANNOTATED_TOPIC = "/annotated_image"
+PRESENCE_TOPIC  = "/human/presence"
+IMAGE_TOPIC     = "/human/annotated_image"
 
 _CONF_THRESH = 0.3   # minimum keypoint confidence to trust
 
@@ -148,11 +150,13 @@ class HumanDetectorNode(ServerNode):
         robot,
         responder: RpcResponder,
         stream_writer: ZmqStreamWriter,
+        image_writer: ZmqStreamWriter,
         name: str = "human-detector",
     ) -> None:
-        self._robot       = robot
-        self._out_writer  = stream_writer
-        self._head_solver = HeadSolver()
+        self._robot        = robot
+        self._out_writer   = stream_writer
+        self._image_writer = image_writer
+        self._head_solver  = HeadSolver()
 
         # Cached head joint angles (degrees), updated via joint-state stream.
         self._joint_lock     = threading.Lock()
@@ -167,6 +171,10 @@ class HumanDetectorNode(ServerNode):
         self._persons_reader: Optional[ZmqStreamReader] = None
         self._reader_stop   = threading.Event()
         self._reader_thread: Optional[threading.Thread] = None
+
+        # /annotated_image relay reader and thread.
+        self._image_reader: Optional[ZmqStreamReader] = None
+        self._image_thread: Optional[threading.Thread] = None
 
         # VAD state, written by audio callback and read by the reader loop.
         self._vad          = None
@@ -261,36 +269,54 @@ class HumanDetectorNode(ServerNode):
             transport.close()
             return False
 
-        # Resolve the stream endpoint: replace tcp://*:port with the real host.
+        # Resolve wildcard endpoints: replace tcp://*:port with the real host.
+        def _resolve(ep: str) -> str:
+            if ep.startswith("tcp://*:"):
+                host = (endpoint or transport._default_rpc_endpoint).split("://")[1].rsplit(":", 1)[0]
+                return ep.replace("tcp://*:", f"tcp://{host}:", 1)
+            return ep
+
         try:
-            zmq_info   = persons_stream.get("transports", {}).get("zmq", {})
-            stream_ep  = zmq_info.get("endpoint", "")
-            if not stream_ep:
+            persons_ep = _resolve(persons_stream.get("transports", {}).get("zmq", {}).get("endpoint", ""))
+            if not persons_ep:
                 raise RuntimeError("no zmq endpoint in /persons stream descriptor")
-            if stream_ep.startswith("tcp://*:"):
-                # Replace wildcard with the host from the user-provided endpoint.
-                base_host  = (endpoint or transport._default_rpc_endpoint).split("://")[1].rsplit(":", 1)[0]
-                stream_ep  = stream_ep.replace("tcp://*:", f"tcp://{base_host}:", 1)
         except Exception as e:
-            Logger.error(f"{self.name}: failed to resolve /persons stream endpoint: {e}")
+            Logger.error(f"{self.name}: failed to resolve /persons endpoint: {e}")
             transport.close()
             return False
 
-        transport.close()  # only used for the RPC call; stream reader is self-contained
+        # Resolve /annotated_image endpoint if the yolo driver publishes it.
+        annotated_stream = desc.get("stream", {}).get(ANNOTATED_TOPIC, {})
+        annotated_ep = ""
+        if annotated_stream:
+            annotated_ep = _resolve(annotated_stream.get("transports", {}).get("zmq", {}).get("endpoint", ""))
+
+        transport.close()  # only used for the RPC call; stream readers are self-contained
 
         self._default_depth = default_depth
         self._stop_reader_thread()
         if self._persons_reader is not None:
             self._persons_reader.close()
             self._persons_reader = None
+        if self._image_reader is not None:
+            self._image_reader.close()
+            self._image_reader = None
 
         try:
             self._persons_reader = ZmqStreamReader(
-                stream_ep, topic=PERSONS_TOPIC, queue_size=2, bind=False, delivery="latest"
+                persons_ep, topic=PERSONS_TOPIC, queue_size=2, bind=False, delivery="latest"
             )
         except Exception as e:
-            Logger.error(f"{self.name}: failed to open /persons stream at {stream_ep}: {e}")
+            Logger.error(f"{self.name}: failed to open /persons stream at {persons_ep}: {e}")
             return False
+
+        if annotated_ep:
+            try:
+                self._image_reader = ZmqStreamReader(
+                    annotated_ep, topic=ANNOTATED_TOPIC, queue_size=2, bind=False, delivery="latest"
+                )
+            except Exception as e:
+                Logger.warning(f"{self.name}: could not open /annotated_image stream: {e}")
 
         self._use_vad = use_vad
         if use_vad:
@@ -302,9 +328,16 @@ class HumanDetectorNode(ServerNode):
         )
         self._reader_thread.start()
 
+        if self._image_reader is not None:
+            self._image_thread = threading.Thread(
+                target=self._image_relay_loop, daemon=True, name=f"{self.name}-image"
+            )
+            self._image_thread.start()
+
         Logger.info(
             f"{self.name}: configured — node_id={node_id} endpoint={endpoint} "
-            f"default_depth={default_depth} use_vad={use_vad}"
+            f"default_depth={default_depth} use_vad={use_vad} "
+            f"annotated_image={'yes' if annotated_ep else 'no'}"
         )
         return True
 
@@ -361,6 +394,21 @@ class HumanDetectorNode(ServerNode):
                 self._out_writer.write(DictFrame(value=enriched).to_dict(), PRESENCE_TOPIC)
             except Exception as e:
                 Logger.warning(f"{self.name}: enrich error: {e}")
+
+    def _image_relay_loop(self) -> None:
+        while not self._reader_stop.is_set():
+            try:
+                msg, _topic = self._image_reader.read(timeout=1.0)
+            except TimeoutError:
+                continue
+            except Exception as e:
+                Logger.warning(f"{self.name}: /annotated_image reader error: {e}")
+                break
+            if msg is not None:
+                try:
+                    self._image_writer.write(msg, IMAGE_TOPIC)
+                except Exception as e:
+                    Logger.warning(f"{self.name}: annotated image relay error: {e}")
 
     # ------------------------------------------------------------------
     # Enrichment
@@ -481,12 +529,18 @@ class HumanDetectorNode(ServerNode):
         if self._reader_thread is not None and self._reader_thread.is_alive():
             self._reader_stop.set()
             self._reader_thread.join(timeout=2.0)
+        if self._image_thread is not None and self._image_thread.is_alive():
+            self._image_thread.join(timeout=2.0)
         self._reader_stop.clear()
         self._reader_thread = None
+        self._image_thread  = None
 
     def terminate(self, timeout=None) -> None:
         self._stop_reader_thread()
         if self._persons_reader is not None:
             self._persons_reader.close()
             self._persons_reader = None
+        if self._image_reader is not None:
+            self._image_reader.close()
+            self._image_reader = None
         super().terminate(timeout=timeout)

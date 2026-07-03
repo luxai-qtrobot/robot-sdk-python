@@ -1,7 +1,7 @@
 from luxai.magpie.transport import ZMQRpcResponder, ZmqStreamWriter
 from luxai.magpie.utils import Logger
 from luxai.robot.core.transport import Transport
-from luxai.robot.perception.vision.human_detector import HumanDetectorNode, PRESENCE_TOPIC
+from luxai.robot.perception.vision.human_detector import HumanDetectorNode, PRESENCE_TOPIC, IMAGE_TOPIC
 
 from .robot_plugin import RobotPlugin
 
@@ -26,6 +26,7 @@ class HumanDetectorPlugin(RobotPlugin):
             robot=robot,
             responder=ZMQRpcResponder(f"inproc://{n}-rpc", bind=True),
             stream_writer=ZmqStreamWriter(f"inproc://{n}-stream", bind=True, queue_size=10),
+            image_writer=ZmqStreamWriter(f"inproc://{n}-image-stream", bind=True, queue_size=2),
             name=n,
         )
 
@@ -34,6 +35,7 @@ class HumanDetectorPlugin(RobotPlugin):
         })
         robot._setup_stream_routes(transport, {
             PRESENCE_TOPIC: {"transports": {"zmq": {"endpoint": f"inproc://{n}-stream", "queue_size": 10}}},
+            IMAGE_TOPIC:    {"transports": {"zmq": {"endpoint": f"inproc://{n}-image-stream", "queue_size": 2}}},
         })
 
         Logger.debug(f"{n} plugin started.")
