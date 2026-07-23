@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import queue
 import math
+from collections import deque
 from threading import Event
 import numpy as np
 
@@ -115,7 +116,20 @@ class MicrophoneStream:
             float - standalone mode: stop when speech ends; value is passed to
                     VADIterator as min_silence_duration_ms so the same parameter
                     controls both the VAD hysteresis and the iteration boundary
+
+    stream_buff only ever holds chunks from a confirmed speech segment (plus a small
+    PREROLL_MS pre-roll right before onset) - chunks that arrive while still waiting
+    for VAD to trigger are kept in a short rolling _preroll buffer instead, not
+    stream_buff, so a recognition session can't accumulate an unbounded backlog of
+    silence ahead of the real speech (stream_buff used to be fed unconditionally by
+    _callback_audio_stream regardless of VAD state, so __next__()'s consumer would
+    end up draining several seconds of pre-speech silence before ever reaching the
+    actual utterance).
     """
+
+    # How much audio immediately before confirmed VAD onset to keep and prepend,
+    # so the very start of a word isn't clipped by trigger latency.
+    PREROLL_MS = 200
 
     def __init__(self,
                  robot: Robot,
@@ -141,8 +155,14 @@ class MicrophoneStream:
 
         max_chunks = math.ceil(60 / (num_samples / rate))
         self.stream_buff = queue.Queue(maxsize=max_chunks)
+        self._preroll: deque = deque(maxlen=self._preroll_chunks(num_samples, rate))
 
-        self._robot.microphone.stream.on_int_audio_ch0(self._callback_audio_stream, queue_size=10)        
+        self._robot.microphone.stream.on_int_audio_ch0(self._callback_audio_stream, queue_size=10)
+
+    @classmethod
+    def _preroll_chunks(cls, num_samples: int, rate: int) -> int:
+        chunk_ms = (num_samples / rate) * 1000
+        return max(1, round(cls.PREROLL_MS / chunk_ms))
 
     def get_channels(self) -> int:
         return 1
@@ -163,6 +183,7 @@ class MicrophoneStream:
             for item in last_items:
                 self.stream_buff.put(item)
 
+        self._preroll.clear()
         self._streaming_voice = False
         self._speech_ended = False
         self._aborted = False
@@ -244,6 +265,7 @@ class MicrophoneStream:
             self._num_samples = frame.num_frames
             max_chunks = math.ceil(60 / (self._num_samples / self._rate))
             self.stream_buff = queue.Queue(maxsize=max_chunks)
+            self._preroll = deque(maxlen=self._preroll_chunks(self._num_samples, self._rate))
             if self._vad and frame.sample_rate not in (8000, 16000):
                 self._vad = None
                 Logger.error(
@@ -253,17 +275,43 @@ class MicrophoneStream:
 
         chunk = frame.data
 
-        if self._vad is not None:
-            try:
-                speech_ended = self._vad.process(chunk)
-                if self._vad.triggered:
-                    self._speech_gate.set()
-                elif speech_ended and self._silence_timeout is not None:
-                    # Speech segment ended in standalone mode — signal __next__() to stop.
-                    self._speech_ended = True
-            except Exception as e:
-                Logger.warning(f"SileroVAD error: {e}")
+        if self._vad is None:
+            self._enqueue(chunk)
+            return
 
+        try:
+            was_triggered = self._vad.triggered
+            speech_ended = self._vad.process(chunk)
+            now_triggered = self._vad.triggered
+        except Exception as e:
+            Logger.warning(f"SileroVAD error: {e}")
+            return
+
+        if now_triggered and not was_triggered:
+            # Speech just confirmed - flush the short pre-roll first so the onset
+            # of the word isn't clipped by trigger latency, then this triggering
+            # chunk itself.
+            for preroll_chunk in self._preroll:
+                self._enqueue(preroll_chunk)
+            self._preroll.clear()
+
+        if now_triggered or was_triggered:
+            # Actively inside (or just finished) a confirmed speech segment.
+            self._enqueue(chunk)
+            if not now_triggered and speech_ended and self._silence_timeout is not None:
+                # Speech segment ended in standalone mode — signal __next__() to stop.
+                self._speech_ended = True
+        else:
+            # Not in a confirmed segment - keep only a short rolling pre-roll
+            # instead of buffering unconditionally, or a recognition session
+            # would start with however many seconds of silence accumulated
+            # while __next__() was still waiting for the gate to open.
+            self._preroll.append(chunk)
+
+        if now_triggered:
+            self._speech_gate.set()
+
+    def _enqueue(self, chunk: bytes) -> None:
         try:
             self.stream_buff.put_nowait(chunk)
         except queue.Full:
