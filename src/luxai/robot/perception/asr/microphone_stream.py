@@ -183,7 +183,16 @@ class MicrophoneStream:
             for item in last_items:
                 self.stream_buff.put(item)
 
-        self._preroll.clear()
+        # _preroll is deliberately NOT cleared here (unlike stream_buff): it's a
+        # tiny, self-bounding ~PREROLL_MS rolling window that continuously evicts
+        # its own oldest chunk, so it can never go stale the way an unbounded
+        # stream_buff backlog could - clearing it on every reset() just forces it
+        # to race to refill before the next VAD trigger, which is what produced
+        # inconsistent (sometimes near-zero) lead-in silence on utterances that
+        # start soon after the previous recognize_once() cycle ended. Left
+        # rolling, it already holds a consistent ~PREROLL_MS of recent audio by
+        # the time the next utterance is confirmed, no matter how little gap
+        # there was since the last one.
         self._streaming_voice = False
         self._speech_ended = False
         self._aborted = False
