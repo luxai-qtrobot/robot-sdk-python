@@ -627,6 +627,60 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("tts.supports_ssml", ""),
         },
+
+        # -------------------------------------------------------
+        # TALKING BEHAVIOR
+        # -------------------------------------------------------
+        "talking_behavior.set_enabled": {
+            "service_name": "/talking_behavior/enabled/set",
+            "cancel_service_name": None,
+            "params": [
+                ("enabled", bool),
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get(
+                "talking_behavior.set_enabled", ""
+            ),
+        },
+        "talking_behavior.get_enabled": {
+            "service_name": "/talking_behavior/enabled/get",
+            "cancel_service_name": None,
+            "params": [],
+            "response_type": bool,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get(
+                "talking_behavior.get_enabled", ""
+            ),
+        },
+        "talking_behavior.set_source_config": {
+            "service_name": "/talking_behavior/source/configure/set",
+            "cancel_service_name": None,
+            "params": [
+                ("source", str),
+                ("lipsync", str, None),
+                ("head_motion", bool, None),
+                ("arm_motion", bool, None),
+            ],
+            "response_type": type(None),
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get(
+                "talking_behavior.set_source_config", ""
+            ),
+        },
+        "talking_behavior.get_source_config": {
+            "service_name": "/talking_behavior/source/configure/get",
+            "cancel_service_name": None,
+            "params": [
+                ("source", str),
+            ],
+            "response_type": dict,
+            "robots": ["qtrobot-v3"],
+            "doc": QTROBOT_CORE_API_DOCS.get(
+                "talking_behavior.get_source_config", ""
+            ),
+        },
+
         # -------------------------------------------------------
         # Microphone
         # -------------------------------------------------------

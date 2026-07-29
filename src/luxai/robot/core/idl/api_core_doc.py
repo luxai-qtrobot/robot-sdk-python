@@ -801,6 +801,73 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
     ),
 
     # ===========================================================
+    # RPC APIs — TALKING BEHAVIOR
+    # ===========================================================
+
+    "talking_behavior.set_enabled": (
+        "Enable or disable all audio-driven talking behavior.\n"
+        "\n"
+        "Disabling stops active lip-sync and pending co-speech movement events.\n"
+        "Audio playback is not cancelled.\n"
+        "\n"
+        "Args:\n"
+        "    enabled (bool): True to enable talking behavior, False to disable it.\n"
+        "\n"
+        "Returns:\n"
+        "    None\n"
+        "\n"
+        "Example:\n"
+        "    robot.talking_behavior.set_enabled(False)\n"
+        "    robot.talking_behavior.set_enabled(True)\n"
+    ),
+    "talking_behavior.get_enabled": (
+        "Get the global talking-behavior enabled state.\n"
+        "\n"
+        "Returns:\n"
+        "    bool: True when audio-driven talking behavior is enabled.\n"
+        "\n"
+        "Example:\n"
+        "    enabled = robot.talking_behavior.get_enabled()\n"
+    ),
+    "talking_behavior.set_source_config": (
+        "Configure talking behavior for one audio source at runtime.\n"
+        "\n"
+        "Only supplied optional values are changed; omitted values preserve\n"
+        "their current settings.\n"
+        "\n"
+        "Args:\n"
+        "    source (str): One of 'tts', 'media_fg', or 'media_bg'.\n"
+        "    lipsync (str): Optional mode: 'off', 'generated', 'provided', or 'auto'.\n"
+        "    head_motion (bool): Optional head-motion enabled state.\n"
+        "    arm_motion (bool): Optional arm-motion enabled state.\n"
+        "\n"
+        "Returns:\n"
+        "    None\n"
+        "\n"
+        "Examples:\n"
+        "    # Generate lips and co-speech motion for streamed FG audio\n"
+        "    robot.talking_behavior.set_source_config(\n"
+        "        'media_fg', lipsync='auto', head_motion=True, arm_motion=True\n"
+        "    )\n"
+        "\n"
+        "    # Disable only arm motion for TTS\n"
+        "    robot.talking_behavior.set_source_config('tts', arm_motion=False)\n"
+    ),
+    "talking_behavior.get_source_config": (
+        "Get talking-behavior configuration for one audio source.\n"
+        "\n"
+        "Args:\n"
+        "    source (str): One of 'tts', 'media_fg', or 'media_bg'.\n"
+        "\n"
+        "Returns:\n"
+        "    dict: Contains source, lipsync, head_motion, and arm_motion.\n"
+        "\n"
+        "Example:\n"
+        "    config = robot.talking_behavior.get_source_config('media_fg')\n"
+        "    print(config['lipsync'], config['head_motion'])\n"
+    ),
+
+    # ===========================================================
     # STREAM APIs
     # ===========================================================
 

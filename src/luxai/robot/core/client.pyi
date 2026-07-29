@@ -600,6 +600,11 @@ class Robot:
         ...
 
     @property
+    def talking_behavior(self) -> Talking_behaviorAPI:
+        """Namespace view for talking_behavior APIs."""
+        ...
+
+    @property
     def tts(self) -> TtsAPI:
         """Namespace view for tts APIs."""
         ...
@@ -3191,6 +3196,84 @@ class SpeakerAPI:
 
         Example:
             robot.speaker.unmute()
+        """
+        ...
+
+
+class Talking_behaviorAPI:
+    """Namespace for talking_behavior RPC/stream APIs."""
+
+    def set_enabled(self, enabled: bool) -> None:
+        """
+        Enable or disable all audio-driven talking behavior.
+
+        Disabling stops active lip-sync and pending co-speech movement events.
+        Audio playback is not cancelled.
+
+        Args:
+            enabled (bool): True to enable talking behavior, False to disable it.
+
+        Returns:
+            None
+
+        Example:
+            robot.talking_behavior.set_enabled(False)
+            robot.talking_behavior.set_enabled(True)
+        """
+        ...
+
+    def get_enabled(self) -> bool:
+        """
+        Get the global talking-behavior enabled state.
+
+        Returns:
+            bool: True when audio-driven talking behavior is enabled.
+
+        Example:
+            enabled = robot.talking_behavior.get_enabled()
+        """
+        ...
+
+    def set_source_config(self, source: str, lipsync: str | None = None, head_motion: bool | None = None, arm_motion: bool | None = None) -> None:
+        """
+        Configure talking behavior for one audio source at runtime.
+
+        Only supplied optional values are changed; omitted values preserve
+        their current settings.
+
+        Args:
+            source (str): One of 'tts', 'media_fg', or 'media_bg'.
+            lipsync (str): Optional mode: 'off', 'generated', 'provided', or 'auto'.
+            head_motion (bool): Optional head-motion enabled state.
+            arm_motion (bool): Optional arm-motion enabled state.
+
+        Returns:
+            None
+
+        Examples:
+            # Generate lips and co-speech motion for streamed FG audio
+            robot.talking_behavior.set_source_config(
+                'media_fg', lipsync='auto', head_motion=True, arm_motion=True
+            )
+
+            # Disable only arm motion for TTS
+            robot.talking_behavior.set_source_config('tts', arm_motion=False)
+        """
+        ...
+
+    def get_source_config(self, source: str) -> dict:
+        """
+        Get talking-behavior configuration for one audio source.
+
+        Args:
+            source (str): One of 'tts', 'media_fg', or 'media_bg'.
+
+        Returns:
+            dict: Contains source, lipsync, head_motion, and arm_motion.
+
+        Example:
+            config = robot.talking_behavior.get_source_config('media_fg')
+            print(config['lipsync'], config['head_motion'])
         """
         ...
 
