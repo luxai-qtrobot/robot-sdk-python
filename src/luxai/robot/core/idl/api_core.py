@@ -26,7 +26,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/audio/fg/file/pause",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.pause_fg_audio_file", ""),
         },
@@ -34,7 +34,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/audio/fg/file/resume",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.resume_fg_audio_file", ""),
         },
@@ -42,7 +42,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/audio/fg/stream/cancel",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.cancel_fg_audio_stream", ""),
         },
@@ -50,7 +50,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/audio/fg/stream/pause",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.pause_fg_audio_stream", ""),
         },
@@ -58,7 +58,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/audio/fg/stream/resume",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.resume_fg_audio_stream", ""),
         },
@@ -68,7 +68,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [
                 ("value", float),           # volume in [0.0, 1.0]
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.set_fg_audio_volume", ""),
         },
@@ -98,7 +98,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/audio/bg/file/pause",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.pause_bg_audio_file", ""),
         },
@@ -106,7 +106,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/audio/bg/file/resume",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.resume_bg_audio_file", ""),
         },
@@ -114,7 +114,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/audio/bg/stream/cancel",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.cancel_bg_audio_stream", ""),
         },
@@ -122,7 +122,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/audio/bg/stream/pause",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.pause_bg_audio_stream", ""),
         },
@@ -130,7 +130,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/audio/bg/stream/resume",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.resume_bg_audio_stream", ""),
         },
@@ -140,7 +140,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [
                 ("value", float),           # volume in [0.0, 1.0]
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.set_bg_audio_volume", ""),
         },
@@ -172,7 +172,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/video/fg/file/pause",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.pause_fg_video_file", ""),
         },
@@ -180,7 +180,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/video/fg/file/resume",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.resume_fg_video_file", ""),
         },
@@ -188,7 +188,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/video/fg/stream/cancel",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.cancel_fg_video_stream", ""),
         },
@@ -196,7 +196,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/video/fg/stream/pause",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.pause_fg_video_stream", ""),
         },
@@ -204,7 +204,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/video/fg/stream/resume",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.resume_fg_video_stream", ""),
         },
@@ -214,7 +214,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [
                 ("value", float),               # alpha transparency [0.0, 1.0]
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.set_fg_video_alpha", ""),
         },
@@ -238,7 +238,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/video/bg/file/pause",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.pause_bg_video_file", ""),
         },
@@ -246,7 +246,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/video/bg/file/resume",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.resume_bg_video_file", ""),
         },
@@ -254,7 +254,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/video/bg/stream/cancel",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.cancel_bg_video_stream", ""),
         },
@@ -262,7 +262,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/video/bg/stream/pause",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.pause_bg_video_stream", ""),
         },
@@ -270,7 +270,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/media/video/bg/stream/resume",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("media.resume_bg_video_stream", ""),
         },
@@ -324,7 +324,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
                 ("r_eye", list),                # [dx, dy] pixel offset from center for right eye
                 ("duration", float, 0.0),       # optional; if >0 resets eyes to center after N seconds
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("face.look", ""),
         },
@@ -335,7 +335,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
                 ("emotion", str),               # emotion name or relative path (with/without .avi)
                 ("speed", float, None),         # optional; playback speed factor (default from config)
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("face.show_emotion", ""),
         },
@@ -368,10 +368,10 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
                 ("motor", str),                      # motor name
                 ("offset", float, None),             # optional; calibration offset value (degrees)
                 ("overload_threshold", int, None), # optional; calibration overload_threshold value (degrees)
-                ("velocity_max", int, None),       # optional; calibration velocity_max value (degrees)
+                ("velocity_max", int, None),       # optional; maximum velocity (degrees/second)
                 ("store", bool, False),              # optional; persist offset to config file
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("motor.set_calib", ""),
         },
@@ -379,7 +379,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/motor/calib/all",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("motor.calib_all", ""),
         },
@@ -388,9 +388,9 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "cancel_service_name": None,
             "params": [
                 ("motor", str),                 # motor name
-                ("velocity", int),              # velocity value (0 .. velocity_max)
+                ("velocity", int),              # degrees/second (0 .. velocity_max)
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("motor.set_velocity", ""),
         },
@@ -400,7 +400,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [
                 ("motor", str),                 # motor name to enable torque
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("motor.on", ""),
         },
@@ -410,7 +410,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [
                 ("motor", str),                 # motor name to disable torque
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("motor.off", ""),
         },
@@ -418,7 +418,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/motor/on/all",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("motor.on_all", ""),
         },
@@ -426,7 +426,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/motor/off/all",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("motor.off_all", ""),
         },
@@ -436,7 +436,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [
                 ("motor", str),                 # motor name to move to home position
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("motor.home", ""),
         },
@@ -444,7 +444,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/motor/move/home/all",
             "cancel_service_name": None,
             "params": [],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("motor.home_all", ""),
         },
@@ -471,7 +471,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
         "gesture.stop_record": {
             "service_name": "/gesture/record/stop",            
             "params": [],
-            "response_type": bool,                      # stops recording if in progress, returns True if recording was stopped, False if no recording in progress
+            "response_type": bool,                      # request acknowledgement; currently always True
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("gesture.stop_record", ""),
         },
@@ -481,7 +481,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [
                 ("gesture", str),                       # name/relative path to save as XML
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("gesture.store_record", ""),
         },
@@ -494,7 +494,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
                 ("rate_hz", float, 100.0),              # optional; resample rate in Hz
                 ("speed_factor", float, 1.0),           # optional; playback speed multiplier
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("gesture.play", ""),
         },
@@ -502,7 +502,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "service_name": "/gesture/file/play",
             "cancel_service_name": "/gesture/cancel",
             "params": [
-                ("gesture", str),                       # gesture name or path (with/without .xml)
+                ("gesture", str),                       # name returned by list_files(), without .xml
                 ("speed_factor", float, 1.0),           # optional; playback speed multiplier
             ],
             "response_type": bool,
@@ -527,7 +527,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [
                 ("engine", str),                # engine id (e.g. "acapela", "azure", or custom)
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("tts.set_default_engine", ""),
         },
@@ -560,7 +560,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
                 ("volume", float, None),        # optional; volume level
                 ("style", str, None),           # optional; speaking style (engine-dependent)
             ],
-            "response_type": type(None),        # blocks until audio playback completes
+            "response_type": bool,        # blocks until audio playback completes
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("tts.say_text", ""),
         },
@@ -571,7 +571,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
                 ("ssml", str),                  # SSML markup string
                 ("engine", str, None),          # optional; engine id to use 
             ],
-            "response_type": type(None),        # blocks until audio playback completes
+            "response_type": bool,        # blocks until audio playback completes
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("tts.say_ssml", ""),
         },
@@ -582,7 +582,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
                 ("config", dict),               # engine-specific config key/value pairs
                 ("engine", str, None),          # optional; engine id (uses default if omitted)
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get("tts.set_config", ""),
         },
@@ -637,7 +637,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
             "params": [
                 ("enabled", bool),
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get(
                 "talking_behavior.set_enabled", ""
@@ -662,7 +662,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
                 ("head_motion", bool, None),
                 ("arm_motion", bool, None),
             ],
-            "response_type": type(None),
+            "response_type": bool,
             "robots": ["qtrobot-v3"],
             "doc": QTROBOT_CORE_API_DOCS.get(
                 "talking_behavior.set_source_config", ""

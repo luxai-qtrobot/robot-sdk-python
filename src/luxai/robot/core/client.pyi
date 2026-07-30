@@ -1356,7 +1356,7 @@ class CameraAPI:
 class FaceAPI:
     """Namespace for face RPC/stream APIs."""
 
-    def look(self, l_eye: list, r_eye: list, duration: float = ...) -> None:
+    def look(self, l_eye: list, r_eye: list, duration: float = ...) -> bool:
         """
         Move (offset) the eyes on the face display.
 
@@ -1369,7 +1369,7 @@ class FaceAPI:
             duration (float): Optional reset delay in seconds (default 0.0).
 
         Returns:
-            None
+            bool: True on success, False on failure.
 
         Examples:
             robot.face.look(l_eye=[30, 0], r_eye=[30, 0])          # look right
@@ -1377,7 +1377,7 @@ class FaceAPI:
         """
         ...
 
-    def show_emotion(self, emotion: str, speed: float | None = None) -> None:
+    def show_emotion(self, emotion: str, speed: float | None = None) -> bool:
         """
         Play an emotion video on the face background lane.
 
@@ -1387,7 +1387,7 @@ class FaceAPI:
 
         Args:
             emotion (str): Emotion name or relative path (with/without .avi).
-            speed (float): Optional playback speed factor.
+            speed (float): Optional playback speed factor; when omitted, uses the configured face emotion speed.
 
         Returns:
             bool: True if playback completed, False otherwise.
@@ -1414,7 +1414,7 @@ class FaceAPI:
 
         Args:
             emotion (str): Emotion name or relative path (with/without .avi).
-            speed (float): Optional playback speed factor.
+            speed (float): Optional playback speed factor; when omitted, uses the configured face emotion speed.
 
         Returns:
             bool: True if playback completed, False otherwise.
@@ -1560,16 +1560,17 @@ class GestureAPI:
     def stop_record(self) -> bool:
         """
         Stop an in-progress gesture recording.
+        The blocked ``gesture.record()`` call returns the captured keyframes.
 
         Returns:
-            bool: True if a recording was stopped, False if none was in progress.
+            bool: Request acknowledgement (currently always True).
 
         Example:
             robot.gesture.stop_record()
         """
         ...
 
-    def store_record(self, gesture: str) -> None:
+    def store_record(self, gesture: str) -> bool:
         """
         Store the last recorded gesture trajectory to an XML file.
 
@@ -1584,7 +1585,7 @@ class GestureAPI:
         """
         ...
 
-    def play(self, keyframes: dict, resample: bool = ..., rate_hz: float = ..., speed_factor: float = ...) -> None:
+    def play(self, keyframes: dict, resample: bool = ..., rate_hz: float = ..., speed_factor: float = ...) -> bool:
         """
         Play a gesture trajectory (keyframes dict).
 
@@ -1653,7 +1654,7 @@ class GestureAPI:
         :class:`ActionHandle` — call ``.cancel()`` on it to stop playback early.
 
         Args:
-            gesture (str): Gesture name/path (with/without .xml).
+            gesture (str): Name returned by ``gesture.list_files()``; do not add ``.xml``.
             speed_factor (float): Playback speed multiplier (default 1.0).
 
         Returns:
@@ -1679,7 +1680,7 @@ class GestureAPI:
         :class:`ActionHandle` — call ``.cancel()`` on it to stop playback early.
 
         Args:
-            gesture (str): Gesture name/path (with/without .xml).
+            gesture (str): Name returned by ``gesture.list_files()``; do not add ``.xml``.
             speed_factor (float): Playback speed multiplier (default 1.0).
 
         Returns:
@@ -1698,10 +1699,10 @@ class GestureAPI:
 
     def list_files(self) -> list:
         """
-        List available gesture XML files under the configured gesture directory.
+        List available gestures under the configured gesture directory.
 
         Returns:
-            list: List[str] of gesture file paths.
+            list: List[str] of relative gesture names without the ``.xml`` extension.
 
         Example:
             gestures = robot.gesture.list_files()
@@ -2104,6 +2105,7 @@ class MediaAPI:
         """
         Play an audio file on the foreground (FG) audio lane.
 
+        File playback replaces and flushes queued FG stream audio.
         Blocks until playback finishes and returns the result.
         For non-blocking use, call ``play_fg_audio_file_async()`` which returns
         an :class:`ActionHandle` — call ``.cancel()`` on it to stop playback early.
@@ -2129,6 +2131,7 @@ class MediaAPI:
         """
         Play an audio file on the foreground (FG) audio lane.
 
+        File playback replaces and flushes queued FG stream audio.
         Blocks until playback finishes and returns the result.
         For non-blocking use, call ``play_fg_audio_file_async()`` which returns
         an :class:`ActionHandle` — call ``.cancel()`` on it to stop playback early.
@@ -2150,58 +2153,58 @@ class MediaAPI:
         """
         ...
 
-    def pause_fg_audio_file(self) -> None:
+    def pause_fg_audio_file(self) -> bool:
         """
         Pause current foreground (FG) audio file playback.
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def resume_fg_audio_file(self) -> None:
+    def resume_fg_audio_file(self) -> bool:
         """
         Resume foreground (FG) audio file playback after pause.
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def cancel_fg_audio_stream(self) -> None:
+    def cancel_fg_audio_stream(self) -> bool:
         """
         Cancel / stop the current foreground (FG) audio stream pipeline.
 
         This is for streamed audio frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def pause_fg_audio_stream(self) -> None:
+    def pause_fg_audio_stream(self) -> bool:
         """
         Pause foreground (FG) audio stream processing.
 
         This is for streamed audio frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def resume_fg_audio_stream(self) -> None:
+    def resume_fg_audio_stream(self) -> bool:
         """
         Resume foreground (FG) audio stream processing.
 
         This is for streamed audio frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def set_fg_audio_volume(self, value: float) -> None:
+    def set_fg_audio_volume(self, value: float) -> bool:
         """
         Set foreground (FG) audio lane volume.
 
@@ -2209,7 +2212,7 @@ class MediaAPI:
             value (float): Volume in range [0.0, 1.0].
 
         Returns:
-            None
+            bool: True on success, False on failure.
 
         Example:
             robot.media.set_fg_audio_volume(0.8)
@@ -2232,6 +2235,8 @@ class MediaAPI:
         """
         Play an audio file on the background (BG) audio lane.
 
+        File playback replaces and flushes queued BG stream audio and can mix
+        with foreground audio.
         Blocks until playback finishes and returns the result.
         For non-blocking use, call ``play_bg_audio_file_async()`` which returns
         an :class:`ActionHandle` — call ``.cancel()`` on it to stop playback early.
@@ -2257,6 +2262,8 @@ class MediaAPI:
         """
         Play an audio file on the background (BG) audio lane.
 
+        File playback replaces and flushes queued BG stream audio and can mix
+        with foreground audio.
         Blocks until playback finishes and returns the result.
         For non-blocking use, call ``play_bg_audio_file_async()`` which returns
         an :class:`ActionHandle` — call ``.cancel()`` on it to stop playback early.
@@ -2278,58 +2285,58 @@ class MediaAPI:
         """
         ...
 
-    def pause_bg_audio_file(self) -> None:
+    def pause_bg_audio_file(self) -> bool:
         """
         Pause current background (BG) audio file playback.
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def resume_bg_audio_file(self) -> None:
+    def resume_bg_audio_file(self) -> bool:
         """
         Resume background (BG) audio file playback after pause.
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def cancel_bg_audio_stream(self) -> None:
+    def cancel_bg_audio_stream(self) -> bool:
         """
         Cancel / stop the current background (BG) audio stream pipeline.
 
         This is for streamed audio frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def pause_bg_audio_stream(self) -> None:
+    def pause_bg_audio_stream(self) -> bool:
         """
         Pause background (BG) audio stream processing.
 
         This is for streamed audio frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def resume_bg_audio_stream(self) -> None:
+    def resume_bg_audio_stream(self) -> bool:
         """
         Resume background (BG) audio stream processing.
 
         This is for streamed audio frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def set_bg_audio_volume(self, value: float) -> None:
+    def set_bg_audio_volume(self, value: float) -> bool:
         """
         Set background (BG) audio lane volume.
 
@@ -2337,7 +2344,7 @@ class MediaAPI:
             value (float): Volume in range [0.0, 1.0].
 
         Returns:
-            None
+            bool: True on success, False on failure.
 
         Example:
             robot.media.set_bg_audio_volume(0.5)
@@ -2408,58 +2415,58 @@ class MediaAPI:
         """
         ...
 
-    def pause_fg_video_file(self) -> None:
+    def pause_fg_video_file(self) -> bool:
         """
         Pause current foreground (FG) video file playback.
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def resume_fg_video_file(self) -> None:
+    def resume_fg_video_file(self) -> bool:
         """
         Resume foreground (FG) video file playback after pause.
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def cancel_fg_video_stream(self) -> None:
+    def cancel_fg_video_stream(self) -> bool:
         """
         Cancel / stop the current foreground (FG) video stream pipeline.
 
         This is for streamed video frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def pause_fg_video_stream(self) -> None:
+    def pause_fg_video_stream(self) -> bool:
         """
         Pause foreground (FG) video stream processing.
 
         This is for streamed video frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def resume_fg_video_stream(self) -> None:
+    def resume_fg_video_stream(self) -> bool:
         """
         Resume foreground (FG) video stream processing.
 
         This is for streamed video frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def set_fg_video_alpha(self, value: float) -> None:
+    def set_fg_video_alpha(self, value: float) -> bool:
         """
         Set foreground (FG) video alpha (transparency).
 
@@ -2467,7 +2474,7 @@ class MediaAPI:
             value (float): Alpha in range [0.0, 1.0] where 0.0 is fully transparent.
 
         Returns:
-            None
+            bool: True on success, False on failure.
 
         Example:
             robot.media.set_fg_video_alpha(0.8)
@@ -2534,54 +2541,54 @@ class MediaAPI:
         """
         ...
 
-    def pause_bg_video_file(self) -> None:
+    def pause_bg_video_file(self) -> bool:
         """
         Pause current background (BG) video file playback.
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def resume_bg_video_file(self) -> None:
+    def resume_bg_video_file(self) -> bool:
         """
         Resume background (BG) video file playback after pause.
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def cancel_bg_video_stream(self) -> None:
+    def cancel_bg_video_stream(self) -> bool:
         """
         Cancel / stop the current background (BG) video stream pipeline.
 
         This is for streamed video frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def pause_bg_video_stream(self) -> None:
+    def pause_bg_video_stream(self) -> bool:
         """
         Pause background (BG) video stream processing.
 
         This is for streamed video frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
-    def resume_bg_video_stream(self) -> None:
+    def resume_bg_video_stream(self) -> bool:
         """
         Resume background (BG) video stream processing.
 
         This is for streamed video frames (not file playback).
 
         Returns:
-            None
+            bool: True on success, False on failure.
         """
         ...
 
@@ -2911,7 +2918,7 @@ class MotorAPI:
         """
         ...
 
-    def set_calib(self, motor: str, offset: float | None = None, overload_threshold: int | None = None, velocity_max: int | None = None, store: bool = ...) -> None:
+    def set_calib(self, motor: str, offset: float | None = None, overload_threshold: int | None = None, velocity_max: int | None = None, store: bool = ...) -> bool:
         """
         Set calibration parameters for a motor.
 
@@ -2919,7 +2926,7 @@ class MotorAPI:
             motor (str): Motor name.
             offset (float): Optional calibration offset in degrees.
             overload_threshold (int): Optional overload threshold value.
-            velocity_max (int): Optional maximum velocity value.
+            velocity_max (int): Optional maximum velocity in degrees per second.
             store (bool): If True, persist changes to config (default False).
 
         Returns:
@@ -2931,7 +2938,7 @@ class MotorAPI:
         """
         ...
 
-    def calib_all(self) -> None:
+    def calib_all(self) -> bool:
         """
         Run manual calibration procedure for all motors (writes offsets and stores them).
 
@@ -2940,13 +2947,13 @@ class MotorAPI:
         """
         ...
 
-    def set_velocity(self, motor: str, velocity: int) -> None:
+    def set_velocity(self, motor: str, velocity: int) -> bool:
         """
-        Set default velocity for a motor.
+        Set the default velocity for a motor.
 
         Args:
-            motor (str): Motor name.
-            velocity (int): Velocity value; validated against the motor's max.
+            motor (str): Motor name returned by ``motor.list()``.
+            velocity (int): Degrees per second, from 0 through the motor's ``velocity_max``.
 
         Returns:
             bool: True on success.
@@ -2956,7 +2963,7 @@ class MotorAPI:
         """
         ...
 
-    def on(self, motor: str) -> None:
+    def on(self, motor: str) -> bool:
         """
         Enable torque for a motor.
 
@@ -2971,7 +2978,7 @@ class MotorAPI:
         """
         ...
 
-    def off(self, motor: str) -> None:
+    def off(self, motor: str) -> bool:
         """
         Disable torque for a motor.
 
@@ -2986,7 +2993,7 @@ class MotorAPI:
         """
         ...
 
-    def on_all(self) -> None:
+    def on_all(self) -> bool:
         """
         Enable torque for all motors.
 
@@ -2998,7 +3005,7 @@ class MotorAPI:
         """
         ...
 
-    def off_all(self) -> None:
+    def off_all(self) -> bool:
         """
         Disable torque for all motors.
 
@@ -3010,7 +3017,7 @@ class MotorAPI:
         """
         ...
 
-    def home(self, motor: str) -> None:
+    def home(self, motor: str) -> bool:
         """
         Move a motor to its configured home position.
 
@@ -3025,7 +3032,7 @@ class MotorAPI:
         """
         ...
 
-    def home_all(self) -> None:
+    def home_all(self) -> bool:
         """
         Move all motors to their configured home positions.
 
@@ -3203,7 +3210,7 @@ class SpeakerAPI:
 class Talking_behaviorAPI:
     """Namespace for talking_behavior RPC/stream APIs."""
 
-    def set_enabled(self, enabled: bool) -> None:
+    def set_enabled(self, enabled: bool) -> bool:
         """
         Enable or disable all audio-driven talking behavior.
 
@@ -3214,7 +3221,7 @@ class Talking_behaviorAPI:
             enabled (bool): True to enable talking behavior, False to disable it.
 
         Returns:
-            None
+            bool: True on success, False on failure.
 
         Example:
             robot.talking_behavior.set_enabled(False)
@@ -3234,7 +3241,7 @@ class Talking_behaviorAPI:
         """
         ...
 
-    def set_source_config(self, source: str, lipsync: str | None = None, head_motion: bool | None = None, arm_motion: bool | None = None) -> None:
+    def set_source_config(self, source: str, lipsync: str | None = None, head_motion: bool | None = None, arm_motion: bool | None = None) -> bool:
         """
         Configure talking behavior for one audio source at runtime.
 
@@ -3248,7 +3255,7 @@ class Talking_behaviorAPI:
             arm_motion (bool): Optional arm-motion enabled state.
 
         Returns:
-            None
+            bool: True on success, False on failure.
 
         Examples:
             # Generate lips and co-speech motion for streamed FG audio
@@ -3281,15 +3288,15 @@ class Talking_behaviorAPI:
 class TtsAPI:
     """Namespace for tts RPC/stream APIs."""
 
-    def set_default_engine(self, engine: str) -> None:
+    def set_default_engine(self, engine: str) -> bool:
         """
         Set the default TTS engine id.
 
         Args:
-            engine (str): Engine id (e.g. 'acapela', 'azure', or custom).
+            engine (str): Engine id returned by ``tts.list_engines()``.
 
         Returns:
-            None
+            bool: True on success, False on failure.
 
         Example:
             robot.tts.set_default_engine('acapela')
@@ -3320,7 +3327,7 @@ class TtsAPI:
         """
         ...
 
-    def say_text(self, text: str, engine: str | None = None, lang: str | None = None, voice: str | None = None, rate: float | None = None, pitch: float | None = None, volume: float | None = None, style: str | None = None) -> None:
+    def say_text(self, text: str, engine: str | None = None, lang: str | None = None, voice: str | None = None, rate: float | None = None, pitch: float | None = None, volume: float | None = None, style: str | None = None) -> bool:
         """
         Synthesize and play plain text using a selected TTS engine.
 
@@ -3392,7 +3399,7 @@ class TtsAPI:
         """
         ...
 
-    def say_ssml(self, ssml: str, engine: str | None = None) -> None:
+    def say_ssml(self, ssml: str, engine: str | None = None) -> bool:
         """
         Synthesize and play SSML markup using a selected TTS engine.
 
@@ -3434,7 +3441,7 @@ class TtsAPI:
         """
         ...
 
-    def set_config(self, config: dict, engine: str | None = None) -> None:
+    def set_config(self, config: dict, engine: str | None = None) -> bool:
         """
         Set engine-specific configuration parameters.
 

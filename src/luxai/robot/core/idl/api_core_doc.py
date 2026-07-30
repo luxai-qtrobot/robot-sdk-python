@@ -10,6 +10,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
     "media.play_fg_audio_file": (
         "Play an audio file on the foreground (FG) audio lane.\n"
         "\n"
+        "File playback replaces and flushes queued FG stream audio.\n"
         "Blocks until playback finishes and returns the result.\n"
         "For non-blocking use, call ``play_fg_audio_file_async()`` which returns\n"
         "an :class:`ActionHandle` — call ``.cancel()`` on it to stop playback early.\n"
@@ -33,13 +34,13 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "Pause current foreground (FG) audio file playback.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.resume_fg_audio_file": (
         "Resume foreground (FG) audio file playback after pause.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.cancel_fg_audio_stream": (
         "Cancel / stop the current foreground (FG) audio stream pipeline.\n"
@@ -47,7 +48,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed audio frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.pause_fg_audio_stream": (
         "Pause foreground (FG) audio stream processing.\n"
@@ -55,7 +56,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed audio frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.resume_fg_audio_stream": (
         "Resume foreground (FG) audio stream processing.\n"
@@ -63,7 +64,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed audio frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.set_fg_audio_volume": (
         "Set foreground (FG) audio lane volume.\n"
@@ -72,7 +73,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "    value (float): Volume in range [0.0, 1.0].\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
         "\n"
         "Example:\n"
         "    robot.media.set_fg_audio_volume(0.8)\n"
@@ -90,6 +91,8 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
     "media.play_bg_audio_file": (
         "Play an audio file on the background (BG) audio lane.\n"
         "\n"
+        "File playback replaces and flushes queued BG stream audio and can mix\n"
+        "with foreground audio.\n"
         "Blocks until playback finishes and returns the result.\n"
         "For non-blocking use, call ``play_bg_audio_file_async()`` which returns\n"
         "an :class:`ActionHandle` — call ``.cancel()`` on it to stop playback early.\n"
@@ -113,13 +116,13 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "Pause current background (BG) audio file playback.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.resume_bg_audio_file": (
         "Resume background (BG) audio file playback after pause.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.cancel_bg_audio_stream": (
         "Cancel / stop the current background (BG) audio stream pipeline.\n"
@@ -127,7 +130,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed audio frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.pause_bg_audio_stream": (
         "Pause background (BG) audio stream processing.\n"
@@ -135,7 +138,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed audio frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.resume_bg_audio_stream": (
         "Resume background (BG) audio stream processing.\n"
@@ -143,7 +146,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed audio frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.set_bg_audio_volume": (
         "Set background (BG) audio lane volume.\n"
@@ -152,7 +155,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "    value (float): Volume in range [0.0, 1.0].\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
         "\n"
         "Example:\n"
         "    robot.media.set_bg_audio_volume(0.5)\n"
@@ -194,13 +197,13 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "Pause current foreground (FG) video file playback.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.resume_fg_video_file": (
         "Resume foreground (FG) video file playback after pause.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.cancel_fg_video_stream": (
         "Cancel / stop the current foreground (FG) video stream pipeline.\n"
@@ -208,7 +211,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed video frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.pause_fg_video_stream": (
         "Pause foreground (FG) video stream processing.\n"
@@ -216,7 +219,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed video frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.resume_fg_video_stream": (
         "Resume foreground (FG) video stream processing.\n"
@@ -224,7 +227,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed video frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.set_fg_video_alpha": (
         "Set foreground (FG) video alpha (transparency).\n"
@@ -233,7 +236,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "    value (float): Alpha in range [0.0, 1.0] where 0.0 is fully transparent.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
         "\n"
         "Example:\n"
         "    robot.media.set_fg_video_alpha(0.8)\n"
@@ -270,13 +273,13 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "Pause current background (BG) video file playback.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.resume_bg_video_file": (
         "Resume background (BG) video file playback after pause.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.cancel_bg_video_stream": (
         "Cancel / stop the current background (BG) video stream pipeline.\n"
@@ -284,7 +287,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed video frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.pause_bg_video_stream": (
         "Pause background (BG) video stream processing.\n"
@@ -292,7 +295,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed video frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
     "media.resume_bg_video_stream": (
         "Resume background (BG) video stream processing.\n"
@@ -300,7 +303,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "This is for streamed video frames (not file playback).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
     ),
 
     # ===========================================================
@@ -363,7 +366,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "    duration (float): Optional reset delay in seconds (default 0.0).\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
         "\n"
         "Examples:\n"
         "    robot.face.look(l_eye=[30, 0], r_eye=[30, 0])          # look right\n"
@@ -378,7 +381,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "\n"
         "Args:\n"
         "    emotion (str): Emotion name or relative path (with/without .avi).\n"
-        "    speed (float): Optional playback speed factor.\n"
+        "    speed (float): Optional playback speed factor; when omitted, uses the configured face emotion speed.\n"
         "\n"
         "Returns:\n"
         "    bool: True if playback completed, False otherwise.\n"
@@ -430,7 +433,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "    motor (str): Motor name.\n"
         "    offset (float): Optional calibration offset in degrees.\n"
         "    overload_threshold (int): Optional overload threshold value.\n"
-        "    velocity_max (int): Optional maximum velocity value.\n"
+        "    velocity_max (int): Optional maximum velocity in degrees per second.\n"
         "    store (bool): If True, persist changes to config (default False).\n"
         "\n"
         "Returns:\n"
@@ -447,11 +450,11 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "    bool: True on success.\n"
     ),
     "motor.set_velocity": (
-        "Set default velocity for a motor.\n"
+        "Set the default velocity for a motor.\n"
         "\n"
         "Args:\n"
-        "    motor (str): Motor name.\n"
-        "    velocity (int): Velocity value; validated against the motor's max.\n"
+        "    motor (str): Motor name returned by ``motor.list()``.\n"
+        "    velocity (int): Degrees per second, from 0 through the motor's ``velocity_max``.\n"
         "\n"
         "Returns:\n"
         "    bool: True on success.\n"
@@ -563,9 +566,10 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
     ),
     "gesture.stop_record": (
         "Stop an in-progress gesture recording.\n"
+        "The blocked ``gesture.record()`` call returns the captured keyframes.\n"
         "\n"
         "Returns:\n"
-        "    bool: True if a recording was stopped, False if none was in progress.\n"
+        "    bool: Request acknowledgement (currently always True).\n"
         "\n"
         "Example:\n"
         "    robot.gesture.stop_record()\n"
@@ -617,7 +621,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         ":class:`ActionHandle` — call ``.cancel()`` on it to stop playback early.\n"
         "\n"
         "Args:\n"
-        "    gesture (str): Gesture name/path (with/without .xml).\n"
+        "    gesture (str): Name returned by ``gesture.list_files()``; do not add ``.xml``.\n"
         "    speed_factor (float): Playback speed multiplier (default 1.0).\n"
         "\n"
         "Returns:\n"
@@ -633,10 +637,10 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "    h.cancel()\n"
     ),
     "gesture.list_files": (
-        "List available gesture XML files under the configured gesture directory.\n"
+        "List available gestures under the configured gesture directory.\n"
         "\n"
         "Returns:\n"
-        "    list: List[str] of gesture file paths.\n"
+        "    list: List[str] of relative gesture names without the ``.xml`` extension.\n"
         "\n"
         "Example:\n"
         "    gestures = robot.gesture.list_files()\n"
@@ -652,10 +656,10 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "Set the default TTS engine id.\n"
         "\n"
         "Args:\n"
-        "    engine (str): Engine id (e.g. 'acapela', 'azure', or custom).\n"
+        "    engine (str): Engine id returned by ``tts.list_engines()``.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
         "\n"
         "Example:\n"
         "    robot.tts.set_default_engine('acapela')\n"
@@ -814,7 +818,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "    enabled (bool): True to enable talking behavior, False to disable it.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
         "\n"
         "Example:\n"
         "    robot.talking_behavior.set_enabled(False)\n"
@@ -842,7 +846,7 @@ QTROBOT_CORE_API_DOCS: Dict[str, str] = {
         "    arm_motion (bool): Optional arm-motion enabled state.\n"
         "\n"
         "Returns:\n"
-        "    None\n"
+        "    bool: True on success, False on failure.\n"
         "\n"
         "Examples:\n"
         "    # Generate lips and co-speech motion for streamed FG audio\n"
