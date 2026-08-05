@@ -492,6 +492,45 @@ QTROBOT_PLUGINS_APIS: Dict[str, Dict[str, Any]] = {
                 "    robot.kinematics.look_at_point(0.8, 0.3, 1.0, only_gaze=True)\n"
             ),
         },
+        "kinematics.set_look_target": {
+            "service_name": "/kinematics/set_look_target",
+            "cancel_service_name": None,
+            "async_variant": False,
+            "params": [
+                ("x",          float),
+                ("y",          float),
+                ("z",          float),
+                ("only_gaze",  bool,  False),
+                ("velocity",   float, 0.0),
+            ],
+            "response_type": bool,
+            "local": True,
+            "provider": "kinematics",
+            "since": "0.6.0",
+            "deprecated": False,
+            "deprecated_message": None,
+            "robots": ["qtrobot-v3"],
+            "doc": (
+                "Set an immediate gaze/head target for real-time tracking.\n"
+                "\n"
+                "Calculates the gaze and head joint targets, sends them to the robot,\n"
+                "and returns without waiting for the head motors to finish moving.\n"
+                "Repeated calls replace the robot's current motion target.\n"
+                "\n"
+                "Args:\n"
+                "    x (float): Forward distance from robot base (metres).\n"
+                "    y (float): Lateral distance (positive = left, negative = right).\n"
+                "    z (float): Height above base (metres).\n"
+                "    only_gaze (bool): If True, update only the eyes (default False).\n"
+                "    velocity (float): Joint velocity override; 0 uses the robot default.\n"
+                "\n"
+                "Returns:\n"
+                "    bool: True once the target commands have been sent.\n"
+                "\n"
+                "Example:\n"
+                "    robot.kinematics.set_look_target(0.8, 0.2, 1.2)\n"
+            ),
+        },
         "kinematics.look_at_pixel": {
             "service_name": "/kinematics/look_at_pixel",
             "cancel_service_name": "/kinematics/look_at_pixel/cancel",

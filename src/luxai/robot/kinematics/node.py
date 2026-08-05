@@ -165,6 +165,8 @@ class KinematicsNode(ServerNode):
                 response = self._handle_configure(args)
             elif name == f"/{n}/look_at_point":
                 response = self._handle_look_at_point(args)
+            elif name == f"/{n}/set_look_target":
+                response = self._handle_set_look_target(args)
             elif name == f"/{n}/look_at_pixel":
                 response = self._handle_look_at_pixel(args)
             elif name == f"/{n}/reach_right":
@@ -218,6 +220,15 @@ class KinematicsNode(ServerNode):
                 velocity  = float(args.get("velocity", 0.0)),
             )
 
+    def _handle_set_look_target(self, args: dict) -> bool:
+        """Send a replaceable gaze/head target without waiting for motion."""
+        return self._look_at_xyz(
+            [args["x"], args["y"], args["z"]],
+            only_gaze=bool(args.get("only_gaze", False)),
+            velocity=float(args.get("velocity", 0.0)),
+            wait_for_completion=False,
+        )
+
     def _handle_look_at_pixel(self, args: dict) -> bool:
         with self._action_lock:
             self._cancel_event.clear()
@@ -234,8 +245,14 @@ class KinematicsNode(ServerNode):
                 velocity  = float(args.get("velocity", 0.0)),
             )
 
-    def _look_at_xyz(self, xyz: List[float], only_gaze: bool, velocity: float) -> bool:
-        """Internal: compute head IK, send gaze + optional head command, wait."""
+    def _look_at_xyz(
+        self,
+        xyz: List[float],
+        only_gaze: bool,
+        velocity: float,
+        wait_for_completion: bool = True,
+    ) -> bool:
+        """Compute head IK and send gaze/head commands, optionally waiting."""
         head_angles = self._head_solver.calculate_head_angles(xyz)
         
         with self._joint_lock:
@@ -258,7 +275,8 @@ class KinematicsNode(ServerNode):
             return True
 
         self._send_command({"HeadYaw": head_angles[0], "HeadPitch": head_angles[1]}, velocity)
-        self._wait_for_joints_done(["HeadYaw", "HeadPitch"])
+        if wait_for_completion:
+            self._wait_for_joints_done(["HeadYaw", "HeadPitch"])
         return True
 
     # ------------------------------------------------------------------

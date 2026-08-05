@@ -1802,6 +1802,29 @@ class KinematicsAPI:
         """
         ...
 
+    def set_look_target(self, x: float, y: float, z: float, only_gaze: bool = ..., velocity: float = ...) -> bool:
+        """
+        Set an immediate gaze/head target for real-time tracking.
+
+        Calculates the gaze and head joint targets, sends them to the robot,
+        and returns without waiting for the head motors to finish moving.
+        Repeated calls replace the robot's current motion target.
+
+        Args:
+            x (float): Forward distance from robot base (metres).
+            y (float): Lateral distance (positive = left, negative = right).
+            z (float): Height above base (metres).
+            only_gaze (bool): If True, update only the eyes (default False).
+            velocity (float): Joint velocity override; 0 uses the robot default.
+
+        Returns:
+            bool: True once the target commands have been sent.
+
+        Example:
+            robot.kinematics.set_look_target(0.8, 0.2, 1.2)
+        """
+        ...
+
     def look_at_pixel(self, u: int, v: int, depth: float = ..., only_gaze: bool = ..., velocity: float = ...) -> bool:
         """
         Move the robot head to look at a camera pixel.

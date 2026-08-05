@@ -34,6 +34,7 @@ class KinematicsPlugin(RobotPlugin):
             f"/{self.plugin_name}/configure":          {"transports": {"zmq": {"endpoint": f"inproc://{self.plugin_name}-rpc"}}},
             f"/{self.plugin_name}/look_at_point":      {"transports": {"zmq": {"endpoint": f"inproc://{self.plugin_name}-rpc"}}},
             f"/{self.plugin_name}/look_at_point/cancel": {"transports": {"zmq": {"endpoint": f"inproc://{self.plugin_name}-rpc"}}},
+            f"/{self.plugin_name}/set_look_target":    {"transports": {"zmq": {"endpoint": f"inproc://{self.plugin_name}-rpc"}}},
             f"/{self.plugin_name}/look_at_pixel":      {"transports": {"zmq": {"endpoint": f"inproc://{self.plugin_name}-rpc"}}},
             f"/{self.plugin_name}/look_at_pixel/cancel": {"transports": {"zmq": {"endpoint": f"inproc://{self.plugin_name}-rpc"}}},
             f"/{self.plugin_name}/reach_right":        {"transports": {"zmq": {"endpoint": f"inproc://{self.plugin_name}-rpc"}}},
