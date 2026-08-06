@@ -661,6 +661,7 @@ QTROBOT_CORE_APIS: Dict[str, Dict[str, Any]] = {
                 ("lipsync", str, None),
                 ("head_motion", bool, None),
                 ("arm_motion", bool, None),
+                ("pitch_semitones", float, None),
             ],
             "response_type": bool,
             "robots": ["qtrobot-v3"],

@@ -3264,7 +3264,7 @@ class Talking_behaviorAPI:
         """
         ...
 
-    def set_source_config(self, source: str, lipsync: str | None = None, head_motion: bool | None = None, arm_motion: bool | None = None) -> bool:
+    def set_source_config(self, source: str, lipsync: str | None = None, head_motion: bool | None = None, arm_motion: bool | None = None, pitch_semitones: float | None = None) -> bool:
         """
         Configure talking behavior for one audio source at runtime.
 
@@ -3276,6 +3276,7 @@ class Talking_behaviorAPI:
             lipsync (str): Optional mode: 'off', 'generated', 'provided', or 'auto'.
             head_motion (bool): Optional head-motion enabled state.
             arm_motion (bool): Optional arm-motion enabled state.
+            pitch_semitones (float): Optional pitch shift from -12.0 to 12.0; 0.0 is unmodified. Applied from the next audio session and requires pitch support enabled for the lane in the service configuration.
 
         Returns:
             bool: True on success, False on failure.
@@ -3283,7 +3284,8 @@ class Talking_behaviorAPI:
         Examples:
             # Generate lips and co-speech motion for streamed FG audio
             robot.talking_behavior.set_source_config(
-                'media_fg', lipsync='auto', head_motion=True, arm_motion=True
+                'media_fg', lipsync='auto', head_motion=True, arm_motion=True,
+                pitch_semitones=4.0
             )
 
             # Disable only arm motion for TTS
@@ -3299,7 +3301,7 @@ class Talking_behaviorAPI:
             source (str): One of 'tts', 'media_fg', or 'media_bg'.
 
         Returns:
-            dict: Contains source, lipsync, head_motion, and arm_motion.
+            dict: Contains source, lipsync, head_motion, arm_motion, and pitch_semitones.
 
         Example:
             config = robot.talking_behavior.get_source_config('media_fg')
