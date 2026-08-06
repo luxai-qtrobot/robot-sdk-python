@@ -264,7 +264,10 @@ class KinematicsNode(ServerNode):
         # Eye gaze: clipped angular difference → pixel offset
         xp = int(max(-self._GAZE_CLIP_DEG, min(self._GAZE_CLIP_DEG, yaw_diff)))
         yp = int(max(-self._GAZE_CLIP_DEG, min(self._GAZE_CLIP_DEG, pitch_diff)))
-        self._robot.face.look(l_eye=[xp, yp], r_eye=[xp, yp])
+        try:
+            self._robot.face.look(l_eye=[xp, yp], r_eye=[xp, yp])
+        except Exception as exc:
+            Logger.debug(f"{self.name}: ignored gaze update failure: {exc}")
 
         if only_gaze:
             return True

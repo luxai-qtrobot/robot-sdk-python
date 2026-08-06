@@ -185,7 +185,10 @@ class HumanDetectorNode(ServerNode):
         self._ema: dict = {}
 
         try:
-            robot.motor.stream.on_joints_state(self._on_joint_state)
+            robot.motor.stream.on_joints_state(
+                self._on_joint_state,
+                queue_size=0,
+            )
         except Exception as e:
             Logger.warning(
                 f"{name}: could not subscribe to joint states ({e}); "
@@ -304,7 +307,11 @@ class HumanDetectorNode(ServerNode):
 
         try:
             self._persons_reader = ZmqStreamReader(
-                persons_ep, topic=PERSONS_TOPIC, queue_size=2, bind=False, delivery="latest"
+                persons_ep,
+                topic=PERSONS_TOPIC,
+                queue_size=0,
+                bind=False,
+                delivery="latest",
             )
         except Exception as e:
             Logger.error(f"{self.name}: failed to open /persons stream at {persons_ep}: {e}")
@@ -515,7 +522,11 @@ class HumanDetectorNode(ServerNode):
             "stream": {
                 PRESENCE_TOPIC: {
                     "transports": {
-                        "zmq": {"endpoint": f"inproc://{n}-stream", "queue_size": 10}
+                        "zmq": {
+                            "endpoint": f"inproc://{n}-stream",
+                            "queue_size": 0,
+                            "delivery": "latest",
+                        }
                     }
                 },
             },
