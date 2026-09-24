@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/luxai-robot)](https://pypi.org/project/luxai-robot/)
 [![Python](https://img.shields.io/pypi/pyversions/luxai-robot)](https://pypi.org/project/luxai-robot/)
-[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 ![Test Status](https://github.com/luxai-qtrobot/robot-sdk-python/actions/workflows/python-tests.yml/badge.svg?branch=main)
 
 A Python SDK for communicating with [LuxAI](https://luxai.com) robots. It provides a clean, transport-agnostic API for controlling robot hardware — speech synthesis, face animations, gestures, motors, audio/video playback, camera, and microphone — from any Python environment over a network connection.
@@ -1167,7 +1167,9 @@ Each example connects to the robot, demonstrates a set of APIs, and exits cleanl
 
 ## License
 
-This project is licensed under the **GNU Lesser General Public License v3.0** (LGPL-3.0).
+This project is licensed under the **GNU General Public License v3.0** (GPL-3.0).
 See the [LICENSE](LICENSE) file for the full text.
+
+The optional `asr-azure` extra installs Microsoft's Speech SDK, which is distributed under separate proprietary terms. Review those terms before distributing a bundle that includes the SDK and this project.
 
 © LuxAI S.A.
