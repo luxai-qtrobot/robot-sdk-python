@@ -7,7 +7,8 @@ Each plugin gets its own independent WebRTC peer connection — with a dedicated
 data channel and its own video/audio media tracks — so plugin streams never
 conflict with the robot's streams.
 
-When connected via Robot.connect_webrtc_mqtt() or connect_webrtc_zmq(), all
+When connected via Robot.connect_webrtc_mqtt(), connect_webrtc_http(), or
+connect_webrtc_zmq(), all
 signaling parameters (broker, options, timeout) are inherited by the plugin
 peer automatically. Override any of them to target a different gateway.
 
@@ -20,6 +21,7 @@ from luxai.robot.core import Robot
 from luxai.robot import MqttOptions, MqttTlsOptions, WebRTCOptions, WebRTCTurnServer
 
 BROKER        = "mqtt://10.231.0.2:1883"        # MQTT broker used for signaling
+SIGNAL_URL    = "https://signaling.example.com/signal"  # replace with your relay
 ROBOT_ID      = "QTRD000320"                    # change to your robot serial
 PLUGIN_NODE   = "qtrobot-realsense-driver"      # plugin's ZMQ node_id
 
@@ -155,6 +157,27 @@ def plugin_webrtc_zmq():
     robot.close()
 
 
+# HTTP signaling: the plugin uses a separate session named by PLUGIN_NODE.
+# Its relay and WebRTC options are inherited from the robot connection.
+def plugin_webrtc_http():
+    robot = Robot.connect_webrtc_http(
+        SIGNAL_URL, ROBOT_ID,
+        # headers={"Authorization": "Bearer YOUR_TOKEN"},
+        webrtc_options=WebRTCOptions(
+            stun_servers=["stun:stun.example.com:3478"],
+            turn_servers=[WebRTCTurnServer(
+                url="turn:turn.example.com:3478?transport=udp",
+                username="YOUR_TURN_USERNAME", credential="YOUR_TURN_CREDENTIAL",
+            )],
+        ),
+    )
+    try:
+        robot.enable_plugin_webrtc_http("realsense-driver", node_id=PLUGIN_NODE)
+        Logger.info(f"Color intrinsics: {robot.camera.get_color_intrinsics()}")
+    finally:
+        robot.close()
+
+
 # ── Option 7 ──────────────────────────────────────────────────────────────────
 # Use Robot as a context manager — all peers (robot + plugins) are closed
 # automatically on exit.
@@ -177,6 +200,7 @@ if __name__ == "__main__":
         # plugin_different_broker()
         # plugin_mtls_with_turn()
         # plugin_webrtc_zmq()
+        # plugin_webrtc_http()
         # plugin_context_manager()
     except ImportError as e:
         Logger.error(f"Missing dependency: {e}")

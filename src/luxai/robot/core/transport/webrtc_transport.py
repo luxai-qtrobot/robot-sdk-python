@@ -18,8 +18,8 @@ class WebRTCTransport(Transport):
 
     Connects to a QTrobot directly via a P2P WebRTC peer connection.  Signaling
     (SDP offer/answer + ICE candidates) is exchanged through a pluggable
-    WebRtcSignaler — use MQTT signaling for internet connectivity or ZMQ
-    signaling for broker-less LAN use.
+    WebRtcSignaler — use MQTT or HTTP signaling for remote connectivity, or
+    ZMQ signaling for broker-less LAN use.
 
     All RPC calls and stream data travel over a single ``"magpie"`` data channel;
     video and audio streams use dedicated native WebRTC media tracks.
@@ -35,8 +35,9 @@ class WebRTCTransport(Transport):
             connection:       A connected WebRTCConnection instance (from luxai.magpie).
             signaling_params: Internal dict storing the signaling configuration used to
                               establish this connection (type, broker_url, mqtt_options,
-                              webrtc_options, reconnect, connect_timeout, endpoint, bind).
-                              Used by enable_plugin_webrtc_mqtt/zmq to reuse the same
+                              webrtc_options, reconnect, connect_timeout, endpoint, bind,
+                              base_url, headers, and HTTP settings).
+                              Used by enable_plugin_webrtc_mqtt/http/zmq to reuse the same
                               signaling setup for plugin peer connections.
         """
         self._connection = connection

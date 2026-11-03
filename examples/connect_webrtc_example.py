@@ -4,8 +4,8 @@ connect_webrtc_example.py
 Shows the different ways to create a Robot client over WebRTC transport.
 
 WebRTC provides a direct P2P connection between the operator and the robot.
-Signaling (handshake) is exchanged through either an MQTT broker or a
-broker-less ZMQ PAIR socket — after that, all traffic flows directly over
+Signaling (handshake) is exchanged through MQTT, HTTP, or a broker-less
+ZMQ PAIR socket — after that, all traffic flows directly over
 the WebRTC data channel (for RPC and generic streams) or native media tracks
 (for video/audio streams).
 
@@ -26,6 +26,7 @@ from luxai.robot import (
 
 BROKER_LOCAL  = "mqtt://10.231.0.2:1883"     # MQTT broker used for signaling
 BROKER_PUBLIC = "mqtt://broker.hivemq.com:1883"
+SIGNAL_URL    = "https://signaling.example.com/signal"  # replace with your relay
 ROBOT_ID      = "QTRD000320"                  # change to your robot serial
 
 BROKER = BROKER_LOCAL   # switch to BROKER_PUBLIC to signal over the internet
@@ -118,6 +119,26 @@ def connect_webrtc_zmq():
     robot.close()
 
 
+# HTTP signaling: the gateway and client share the robot ID as their session.
+# TURN credentials are supplied by the caller and should be current.
+def connect_webrtc_http():
+    robot = Robot.connect_webrtc_http(
+        SIGNAL_URL,
+        ROBOT_ID,
+        # headers={"Authorization": "Bearer YOUR_TOKEN"},
+        webrtc_options=WebRTCOptions(
+            stun_servers=["stun:stun.example.com:3478"],
+            turn_servers=[WebRTCTurnServer(
+                url="turn:turn.example.com:3478?transport=udp",
+                username="YOUR_TURN_USERNAME",
+                credential="YOUR_TURN_CREDENTIAL",
+            )],
+        ),
+    )
+    Logger.info(f"[webrtc/http] connected to {robot.robot_id} ({robot.robot_type})")
+    robot.close()
+
+
 # ── Option 6 ──────────────────────────────────────────────────────────────────
 # Power-user style: construct WebRTCConnection and WebRTCTransport manually,
 # then pass the transport directly to Robot().
@@ -158,6 +179,7 @@ if __name__ == "__main__":
         # connect_webrtc_mqtt_mtls_with_turn()
         # connect_webrtc_mqtt_reconnect()
         # connect_webrtc_zmq()
+        # connect_webrtc_http()
         # connect_manual_transport()
         # connect_context_manager()
     except ImportError as e:

@@ -34,7 +34,7 @@ mqtt = [
 ]
 
 webrtc = [
-    "luxai-magpie[webrtc]",
+    "luxai-magpie[webrtc]>=0.9.7",
 ]
 
 asr-azure = [

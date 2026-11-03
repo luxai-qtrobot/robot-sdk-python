@@ -75,14 +75,14 @@ if __name__ == "__main__":
 
     # connect robot by robot_id (serial number), e.g. "QTRD000123" or by endpoint (IP:port)
     # robot = Robot.connect_zmq(robot_id="QTRD000123")
-    robot = Robot.connect_zmq(endpoint="tcp://10.231.0.2:50500")
+    robot = Robot.connect_zmq(endpoint="tcp://192.168.3.110:50500")
     Logger.info(f"Connected to {robot.robot_id} ({robot.robot_type}), SDK version: {robot.sdk_version}")
 
     list_motors(robot)
     # torque_control(robot)
-    home_motors(robot)
+    # home_motors(robot)
     # set_motor_velocity(robot)    
-    # joint_state_stream(robot)
+    joint_state_stream(robot)
     # joint_command_stream(robot)
 
     try:

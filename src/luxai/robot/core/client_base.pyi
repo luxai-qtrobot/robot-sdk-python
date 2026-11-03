@@ -265,6 +265,25 @@ class Robot:
         ...
 
     @classmethod
+    def connect_webrtc_http(
+        cls,
+        base_url: str,
+        robot_id: str,
+        *,
+        headers: Any | None = None,
+        headers_provider: Callable[[], Any] | None = None,
+        http_client: Any | None = None,
+        poll_wait: float = 20.0,
+        request_timeout: float = 10.0,
+        webrtc_options: Any | None = None,
+        reconnect: bool = False,
+        connect_timeout: float = 15.0,
+        default_rpc_timeout: float | None = None,
+    ) -> Robot:
+        """Connect via WebRTC with HTTP signaling at base_url using robot_id as the session."""
+        ...
+
+    @classmethod
     def connect_webrtc_zmq(
         cls,
         endpoint: str,
@@ -501,6 +520,24 @@ class Robot:
                 broker_url="mqtt://10.231.0.2:1883",
             )
         """
+        ...
+
+    def enable_plugin_webrtc_http(
+        self,
+        name: str,
+        node_id: str,
+        *,
+        base_url: str | None = None,
+        headers: Any | None = None,
+        headers_provider: Callable[[], Any] | None = None,
+        http_client: Any | None = None,
+        poll_wait: float | None = None,
+        request_timeout: float | None = None,
+        webrtc_options: Any | None = None,
+        reconnect: bool | None = None,
+        connect_timeout: float | None = None,
+    ) -> None:
+        """Enable a plugin over WebRTC with HTTP signaling; inherit robot settings."""
         ...
 
     def enable_plugin_webrtc_zmq(

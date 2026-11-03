@@ -325,6 +325,78 @@ class Robot:
             raise
 
     @classmethod
+    def connect_webrtc_http(
+        cls,
+        base_url: str,
+        robot_id: str,
+        *,
+        headers=None,
+        headers_provider=None,
+        http_client=None,
+        poll_wait: float = 20.0,
+        request_timeout: float = 10.0,
+        webrtc_options=None,
+        reconnect: bool = False,
+        connect_timeout: float = 15.0,
+        default_rpc_timeout: float | None = None,
+    ) -> "Robot":
+        """Connect over WebRTC using an HTTP signaling relay.
+
+        ``base_url`` is the relay's signaling prefix (for example
+        ``https://host/signal``). The robot must use ``robot_id`` as its
+        signaling session. HTTP headers and an optional per-request provider
+        are passed to MAGPIE; STUN/TURN is configured via ``webrtc_options``.
+        """
+        try:
+            from luxai.magpie.transport.webrtc import WebRTCConnection
+        except ImportError as e:
+            raise ImportError(
+                "WebRTC transport requires aiortc. "
+                "Install via: pip install luxai-robot[webrtc]"
+            ) from e
+
+        conn = WebRTCConnection.with_http(
+            base_url,
+            session_id=robot_id,
+            headers=headers,
+            headers_provider=headers_provider,
+            http_client=http_client,
+            poll_wait=poll_wait,
+            request_timeout=request_timeout,
+            reconnect=reconnect,
+            options=webrtc_options,
+        )
+        try:
+            connected = conn.connect(timeout=connect_timeout)
+        except Exception:
+            conn.disconnect()
+            raise
+        if not connected:
+            conn.disconnect()
+            raise RuntimeError(
+                f"Robot: WebRTC handshake timed out after {connect_timeout}s. "
+                "Check that the robot is reachable and uses the same robot_id."
+            )
+
+        transport = WebRTCTransport(conn, signaling_params={
+            "type": "http",
+            "base_url": base_url,
+            "headers": headers,
+            "headers_provider": headers_provider,
+            "http_client": http_client,
+            "poll_wait": poll_wait,
+            "request_timeout": request_timeout,
+            "webrtc_options": webrtc_options,
+            "reconnect": reconnect,
+            "connect_timeout": connect_timeout,
+        })
+        try:
+            return cls(transport=transport, connect_timeout=connect_timeout, default_rpc_timeout=default_rpc_timeout)
+        except Exception:
+            transport.close()
+            raise
+
+    @classmethod
     def connect_webrtc_zmq(
         cls,
         endpoint: str,
@@ -817,6 +889,81 @@ class Robot:
             options=_webrtc_opts,
         )
         if not conn.connect(timeout=_timeout):
+            conn.disconnect()
+            raise RuntimeError(
+                f"Robot: WebRTC handshake for plugin {node_id!r} timed out after {_timeout}s."
+            )
+        transport = WebRTCTransport(conn)
+        try:
+            self.enable_plugin(name, transport)
+        except Exception:
+            transport.close()
+            raise
+
+    def enable_plugin_webrtc_http(
+        self,
+        name: str,
+        node_id: str,
+        *,
+        base_url: str | None = None,
+        headers=None,
+        headers_provider=None,
+        http_client=None,
+        poll_wait: float | None = None,
+        request_timeout: float | None = None,
+        webrtc_options=None,
+        reconnect: bool | None = None,
+        connect_timeout: float | None = None,
+    ) -> None:
+        """Connect a plugin over HTTP signaling using its node ID as the session.
+
+        Omitted settings inherit from :meth:`connect_webrtc_http`; ``base_url``
+        can be supplied explicitly for a robot connected via another transport.
+        """
+        try:
+            from luxai.magpie.transport.webrtc import WebRTCConnection
+        except ImportError as e:
+            raise ImportError(
+                "WebRTC transport requires aiortc. "
+                "Install via: pip install luxai-robot[webrtc]"
+            ) from e
+
+        if not isinstance(self._robot_transport, WebRTCTransport):
+            raise RuntimeError(
+                "enable_plugin_webrtc_http() requires a WebRTC robot connection. "
+                "Alternatively, use enable_plugin(name, WebRTCTransport(...)) directly."
+            )
+
+        params = self._robot_transport._signaling_params
+        _base_url = base_url if base_url is not None else params.get("base_url")
+        if not _base_url:
+            raise RuntimeError("base_url is required when the robot was not connected via connect_webrtc_http().")
+        _headers = headers if headers is not None else params.get("headers")
+        _headers_provider = headers_provider if headers_provider is not None else params.get("headers_provider")
+        _http_client = http_client if http_client is not None else params.get("http_client")
+        _poll_wait = poll_wait if poll_wait is not None else params.get("poll_wait", 20.0)
+        _request_timeout = request_timeout if request_timeout is not None else params.get("request_timeout", 10.0)
+        _webrtc_options = webrtc_options if webrtc_options is not None else params.get("webrtc_options")
+        _reconnect = reconnect if reconnect is not None else params.get("reconnect", False)
+        _timeout = connect_timeout if connect_timeout is not None else params.get("connect_timeout", 15.0)
+
+        conn = WebRTCConnection.with_http(
+            _base_url,
+            session_id=node_id,
+            headers=_headers,
+            headers_provider=_headers_provider,
+            http_client=_http_client,
+            poll_wait=_poll_wait,
+            request_timeout=_request_timeout,
+            reconnect=_reconnect,
+            options=_webrtc_options,
+        )
+        try:
+            connected = conn.connect(timeout=_timeout)
+        except Exception:
+            conn.disconnect()
+            raise
+        if not connected:
             conn.disconnect()
             raise RuntimeError(
                 f"Robot: WebRTC handshake for plugin {node_id!r} timed out after {_timeout}s."

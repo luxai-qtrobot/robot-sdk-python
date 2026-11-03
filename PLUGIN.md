@@ -68,6 +68,7 @@ robot.enable_plugin_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
 | `enable_plugin_zmq(name, ...)` | Same LAN | Direct TCP/ZMQ |
 | `enable_plugin_mqtt(name, node_id)` | Anywhere with broker access | MQTT topics |
 | `enable_plugin_webrtc_mqtt(name, node_id)` | Anywhere (internet) | P2P WebRTC, MQTT signaling |
+| `enable_plugin_webrtc_http(name, node_id)` | Anywhere with relay access | P2P WebRTC, HTTP signaling |
 | `enable_plugin_webrtc_zmq(name, node_id)` | LAN, broker-less | P2P WebRTC, ZMQ signaling |
 
 ---
@@ -149,7 +150,7 @@ robot.enable_plugin("realsense-driver", transport)
 
 Each plugin gets its own independent **WebRTC peer connection** — with a dedicated data channel and its own video/audio media tracks. This means the robot's media tracks and the plugin's media tracks never conflict, even when both stream video simultaneously.
 
-When the robot is connected via `connect_webrtc_mqtt()` or `connect_webrtc_zmq()`, all signaling parameters (broker URL, options, timeout) are **inherited automatically**.
+When the robot is connected via `connect_webrtc_mqtt()`, `connect_webrtc_http()`, or `connect_webrtc_zmq()`, signaling and ICE settings are **inherited automatically**.
 
 **MQTT signaling:**
 
@@ -165,6 +166,17 @@ robot.enable_plugin_webrtc_mqtt(
     node_id="qtrobot-realsense-driver",
     broker_url="mqtt://other-broker:1883",
 )
+```
+
+**HTTP signaling:**
+
+```python
+robot = Robot.connect_webrtc_http(
+    "https://signaling.example.com/signal", "QTRD000320",
+    headers={"Authorization": "Bearer YOUR_TOKEN"},  # optional
+)
+# Plugin node ID is its separate signaling session; headers and ICE settings carry over.
+robot.enable_plugin_webrtc_http("realsense-driver", node_id="qtrobot-realsense-driver")
 ```
 
 **ZMQ signaling (broker-less LAN):**

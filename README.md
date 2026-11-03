@@ -57,7 +57,7 @@ pip install luxai-robot
 | Extra | Installs | When to use |
 |---|---|---|
 | `luxai-robot[mqtt]` | `paho-mqtt` (via `luxai-magpie[mqtt]`) | Connect to the robot over MQTT |
-| `luxai-robot[webrtc]` | `aiortc` (via `luxai-magpie[webrtc]`) | Connect to the robot over WebRTC |
+| `luxai-robot[webrtc]` | `aiortc`, `httpx` (via `luxai-magpie[webrtc]`) | Connect to the robot over WebRTC |
 | `luxai-robot[asr-azure]` | Azure Cognitive Services Speech SDK + PyTorch VAD | Azure cloud ASR plugin |
 | `luxai-robot[asr-riva]` | Nvidia Riva client SDK + PyTorch VAD | On-device Riva ASR plugin |
 | `luxai-robot[asr-groq]` | Groq SDK (Whisper API) + PyTorch VAD | Groq cloud ASR plugin |
@@ -168,10 +168,10 @@ robot = Robot.connect_mqtt(
 
 ### WebRTC transport
 
-Connect to the robot directly via a **P2P WebRTC** connection. The MQTT broker or a ZMQ socket is used only for the signaling handshake (SDP offer/answer + ICE candidates); once established, all traffic flows directly over the WebRTC data channel or native media tracks. This gives the lowest round-trip latency and removes the broker as a bottleneck for streaming data.
+Connect to the robot directly via a **P2P WebRTC** connection. MQTT, HTTP, or a ZMQ socket carries only signaling (SDP offer/answer + ICE candidates). Once established, data flows over the WebRTC data channel or native media tracks.
 
 ```bash
-pip install "luxai-robot[webrtc]"              # ZMQ signaling (no broker)
+pip install "luxai-robot[webrtc]"              # HTTP or ZMQ signaling
 pip install "luxai-robot[webrtc,mqtt]"         # MQTT signaling
 ```
 
@@ -213,6 +213,27 @@ robot = Robot.connect_webrtc_mqtt(
 )
 ```
 
+**HTTP signaling** — the URL is the relay's signaling prefix; the robot gateway must use the same session ID. Supply ICE servers and credentials explicitly:
+
+```python
+from luxai.robot.core import Robot
+from luxai.robot import WebRTCOptions, WebRTCTurnServer
+
+robot = Robot.connect_webrtc_http(
+    "https://signaling.example.com/signal", "QTRD000320",
+    headers={"Authorization": "Bearer YOUR_TOKEN"},  # optional
+    webrtc_options=WebRTCOptions(
+        stun_servers=["stun:stun.example.com:3478"],
+        turn_servers=[WebRTCTurnServer(
+            url="turn:turn.example.com:3478?transport=udp",
+            username="YOUR_TURN_USERNAME", credential="YOUR_TURN_CREDENTIAL",
+        )],
+    ),
+)
+```
+
+Use `headers_provider` for tokens that change while the connection is active. The SDK does not fetch ICE credentials; pass fresh values when creating the connection.
+
 **ZMQ signaling** — broker-less, LAN only. One peer binds, the other connects:
 
 ```python
@@ -228,6 +249,7 @@ See [`examples/connect_webrtc_example.py`](examples/connect_webrtc_example.py) f
 | Signaling | Broker needed | Works over internet | Use case |
 |---|---|---|---|
 | MQTT | Yes | Yes | Cloud/remote deployments |
+| HTTP | HTTP relay | Yes | Web and cloud deployments |
 | ZMQ | No | LAN only | Local / embedded |
 
 ---
@@ -753,6 +775,7 @@ Plugins extend the SDK with additional hardware or services not part of the robo
 | `enable_plugin_zmq(name, node_id/endpoint)` | ZMQ | Plugin on the same LAN |
 | `enable_plugin_mqtt(name, node_id)` | MQTT | Plugin via broker — internet-ready |
 | `enable_plugin_webrtc_mqtt(name, node_id)` | WebRTC+MQTT | Plugin via P2P — lowest latency over internet |
+| `enable_plugin_webrtc_http(name, node_id)` | WebRTC+HTTP | Plugin via P2P — inherits HTTP and ICE settings |
 | `enable_plugin_webrtc_zmq(name, node_id)` | WebRTC+ZMQ | Plugin via P2P — broker-less LAN |
 
 ```python
@@ -769,6 +792,10 @@ robot.enable_plugin_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
 # Internet — WebRTC P2P (reuses robot's signaling broker automatically)
 robot = Robot.connect_webrtc_mqtt("mqtt://broker.example.com:1883", "QTRD000320")
 robot.enable_plugin_webrtc_mqtt("realsense-driver", node_id="qtrobot-realsense-driver")
+
+# Or with HTTP signaling (uses the plugin node ID as its separate session)
+robot = Robot.connect_webrtc_http("https://signaling.example.com/signal", "QTRD000320")
+robot.enable_plugin_webrtc_http("realsense-driver", node_id="qtrobot-realsense-driver")
 ```
 
 > See [PLUGIN.md](PLUGIN.md) for a full guide to the plugin system — architecture, all transports, and examples.
@@ -1143,7 +1170,7 @@ Ready-to-run examples are in the [`examples/`](examples/) directory:
 |---|---|
 | [`connect_zmq_example.py`](examples/connect_zmq_example.py) | All ZMQ connection variants: endpoint, robot_id, timeout, manual transport, context manager |
 | [`connect_mqtt_example.py`](examples/connect_mqtt_example.py) | All MQTT connection variants: plain, user/pass, TLS, mTLS, WebSocket, full options, manual transport |
-| [`connect_webrtc_example.py`](examples/connect_webrtc_example.py) | All WebRTC connection variants: MQTT signaling, ZMQ signaling, TLS, TURN, reconnect, manual transport |
+| [`connect_webrtc_example.py`](examples/connect_webrtc_example.py) | WebRTC with MQTT, HTTP or ZMQ signaling, TLS, TURN, reconnect, manual transport |
 | [`tts_examples.py`](examples/tts_examples.py) | List engines, say text, cancel speech, SSML, voices |
 | [`face_examples.py`](examples/face_examples.py) | List emotions, play animations, control eye gaze |
 | [`gesture_examples.py`](examples/gesture_examples.py) | List gestures, play, record, and store gesture files |
@@ -1153,7 +1180,7 @@ Ready-to-run examples are in the [`examples/`](examples/) directory:
 | [`speaker_examples.py`](examples/speaker_examples.py) | Volume control, mute/unmute |
 | [`microphone_example.py`](examples/microphone_example.py) | Record to WAV, VAD events, DSP tuning |
 | [`plugin_mqtt_example.py`](examples/plugin_mqtt_example.py) | Enable/disable plugins over MQTT: shared broker, stream, different broker, context manager |
-| [`plugin_webrtc_example.py`](examples/plugin_webrtc_example.py) | Enable/disable plugins over WebRTC: inherit signaling, mTLS+TURN, ZMQ signaling, context manager |
+| [`plugin_webrtc_example.py`](examples/plugin_webrtc_example.py) | Enable/disable plugins over WebRTC: MQTT, HTTP or ZMQ signaling, inherited settings, context manager |
 | [`kinematics_example.py`](examples/kinematics_example.py) | Head gaze, look at pixel, reach/aim with both arms, non-blocking motion, cancel |
 | [`camera_example.py`](examples/camera_example.py) | Camera intrinsics, color stream (RealSense plugin) |
 | [`asr_azure_example.py`](examples/asr_azure_example.py) | Continuous speech recognition (Azure plugin) |

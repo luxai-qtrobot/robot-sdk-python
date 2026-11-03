@@ -59,9 +59,7 @@ class HeadSolver:
     def pixel_to_base(self, uv, depth, head_yaw_deg, head_pitch_deg):
         """Camera pixel + depth + current head angles → 3-D point in robot base frame."""
         xyz_cam  = self.pixel_to_camera(uv[0], uv[1], depth)
-        xyz_base = self._camera_to_base(xyz_cam, head_yaw_deg, head_pitch_deg)
-        # x is approximated by depth (forward distance) for head angle calculation
-        return [depth, xyz_base[1], xyz_base[2]]
+        return self._camera_to_base(xyz_cam, head_yaw_deg, head_pitch_deg)
 
     def pixel_to_camera(self, u, v, depth):
         """Pixel (u, v) + depth → 3-D point in camera frame."""
