@@ -60,7 +60,7 @@ class _NpHeadSolver:
         T23 = np.array([[0,-s2,c2,0.16*s2],[0,c2,s2,-0.16*c2],[-1,0,0,0],[0,0,0,1]])
         T = np.dot(np.dot(T01, T12), T23)
         p = np.dot(T, np.append(xyz_cam, 1))
-        return [depth, float(p[1]), float(p[2])]
+        return [float(p[0]), float(p[1]), float(p[2])]
 
 
 class _NpArmsSolver:
